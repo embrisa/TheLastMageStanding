@@ -1,0 +1,30 @@
+# Build outputs
+bin/
+obj/
+**/bin/
+**/obj/
+
+# IDE/editor
+.vs/
+.idea/
+.vscode/
+*.user
+*.userprefs
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# MonoGame content intermediate/output
+src/Game/Content/bin/
+src/Game/Content/obj/
+
+# Logs and temp
+*.log
+*.orig
+*.tmp
+*.temp
+
