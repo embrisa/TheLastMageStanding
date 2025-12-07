@@ -1,6 +1,6 @@
 # Task Documentation & Workflow
 
-Use this file to track active work items. Each task should be created by copying `TASK_TEMPLATE.md` and filling in the fields. Keep entries concise and status-driven so agents can pick up quickly.
+This file indexes tasks. Each task lives in its own markdown file under `tasks/`, created from `TASK_TEMPLATE.md`. Keep entries concise and status-driven so agents can pick up quickly.
 
 ## Status labels
 - `backlog` — not started, ready to be picked.
@@ -12,18 +12,33 @@ Use this file to track active work items. Each task should be created by copying
 ## Required fields per task
 - Title/ID
 - Summary and rationale
+- Goals / Non Goals
 - Acceptance criteria (observable behaviors/outputs)
 - Definition of done (tests/builds, docs, handoff)
-- Owner + branch/PR links when available
+- Plan
 - Notes/risks/blockers
 
 ## Workflow
-1. Copy `TASK_TEMPLATE.md` into a new section below and fill it out.
-2. Update status + notes daily; include latest commit/branch if WIP.
-3. When opening a PR, link it and restate acceptance criteria in the PR body.
+1. Copy `TASK_TEMPLATE.md` into `tasks/<id>-<slug>.md` and fill it out.
+2. Add a bullet link under Active tasks.
+3. Update status + notes daily.
 4. On completion, verify acceptance criteria and testing notes, then mark `done`.
-5. If handing off, leave next steps, open questions, and any gotchas.
+5. If handing off, leave next steps, open questions, and any gotchas in the task file.
 
 ## Active tasks
-<!-- Add task entries below by duplicating TASK_TEMPLATE.md contents -->
+- [010 - TMX map loading integration](tasks/010-map-loading-integration.md)
+- [013 - Event bus & intent system](tasks/013-event-bus-intent-system.md)
+- [012 - Player hit animation not playing](tasks/012-player-hit-animation.md)
+
+## Done
+- [009 - Combat readability & feedback](tasks/009-combat-readability-feedback.md)
+- [008 - Enemy visuals & basic variety](tasks/008-enemy-visuals-variety.md)
+- [007 - Player visuals & animation hookup](tasks/007-player-visuals-animation.md)
+- [011 - Player facing direction bug (WASD mismatch)](tasks/011-player-facing-direction-bug.md)
+- [006 - Enemy smearing investigation & fix](tasks/006-enemy-smearing-investigation.md)
+- [005 - ECS enemy waves & combat](tasks/005-ecs-enemy-waves-combat.md)
+- [004 - Player ECS migration](tasks/004-player-ecs-migration.md)
+- [003 - ECS foundation bootstrap](tasks/003-ecs-foundation-bootstrap.md)
+- [001 - Placeholder assets import](tasks/001-placeholder-assets-import.md)
+- [002 - Basic enemy wave prototype](tasks/002-basic-enemy-wave-prototype.md)
 
