@@ -1,5 +1,7 @@
+using System;
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -8,8 +10,31 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// </summary>
 internal sealed class HitEffectSystem : IUpdateSystem
 {
+    private EcsWorld _world = null!;
+
     public void Initialize(EcsWorld world)
     {
+        _world = world;
+        world.EventBus.Subscribe<EntityDamagedEvent>(OnEntityDamaged);
+    }
+
+    private void OnEntityDamaged(EntityDamagedEvent evt)
+    {
+        var flashDuration = 0.12f;
+        ApplyFlash(_world, evt.Target, flashDuration);
+    }
+
+    private static void ApplyFlash(EcsWorld world, Entity entity, float duration)
+    {
+        if (world.TryGetComponent(entity, out HitFlash flash))
+        {
+            flash.RemainingSeconds = MathF.Max(flash.RemainingSeconds, duration);
+            world.SetComponent(entity, flash);
+        }
+        else
+        {
+            world.SetComponent(entity, new HitFlash(duration));
+        }
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)

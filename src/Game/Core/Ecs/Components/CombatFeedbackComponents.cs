@@ -2,22 +2,7 @@ using Microsoft.Xna.Framework;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Components;
 
-/// <summary>
-/// Raised when an entity takes damage; processed within the same frame by hit reaction systems.
-/// </summary>
-internal struct DamageEvent
-{
-    public DamageEvent(float amount, Vector2 sourcePosition, Faction sourceFaction)
-    {
-        Amount = amount;
-        SourcePosition = sourcePosition;
-        SourceFaction = sourceFaction;
-    }
 
-    public float Amount { get; set; }
-    public Vector2 SourcePosition { get; set; }
-    public Faction SourceFaction { get; set; }
-}
 
 internal struct HitFlash
 {

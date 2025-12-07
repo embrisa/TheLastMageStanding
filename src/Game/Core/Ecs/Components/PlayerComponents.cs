@@ -19,12 +19,10 @@ internal struct MoveSpeed
 internal struct InputIntent
 {
     public Vector2 Movement { get; set; }
-    public bool Attack { get; set; }
 
     public void Reset()
     {
         Movement = Vector2.Zero;
-        Attack = false;
     }
 }
 

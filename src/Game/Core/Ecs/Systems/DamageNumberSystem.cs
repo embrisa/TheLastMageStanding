@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using TheLastMageStanding.Game.Core.Ecs.Components;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -14,9 +15,44 @@ internal sealed class DamageNumberSystem : IUpdateSystem, IDrawSystem, ILoadCont
 {
     private SpriteFont? _font;
     private bool _contentLoaded;
+    private EcsWorld _world = null!;
+    private readonly Random _random = new();
 
     public void Initialize(EcsWorld world)
     {
+        _world = world;
+        world.EventBus.Subscribe<EntityDamagedEvent>(OnEntityDamaged);
+    }
+
+    private void OnEntityDamaged(EntityDamagedEvent evt)
+    {
+        if (!_world.TryGetComponent(evt.Target, out Position position))
+        {
+            return;
+        }
+
+        var targetFaction = _world.TryGetComponent(evt.Target, out Faction faction) ? faction : Faction.Neutral;
+        SpawnDamageNumber(_world, position.Value, evt.Amount, evt.SourceFaction, targetFaction);
+    }
+
+    private void SpawnDamageNumber(EcsWorld world, Vector2 position, float amount, Faction sourceFaction, Faction targetFaction)
+    {
+        if (amount <= 0f || targetFaction == Faction.Player)
+        {
+            return;
+        }
+
+        var numberEntity = world.CreateEntity();
+        var lifetimeSeconds = 0.9f;
+        var floatSpeed = 22f;
+        var horizontalJitter = (_random.NextSingle() - 0.5f) * 14f;
+        var scale = targetFaction == Faction.Player ? 0.55f : 0.6f;
+        var color = sourceFaction == Faction.Player ? Color.Gold : Color.Crimson;
+        var spawnOffset = new Vector2(horizontalJitter * 0.5f, -18f);
+
+        world.SetComponent(numberEntity, new Position(position + spawnOffset));
+        world.SetComponent(numberEntity, new DamageNumber(amount, lifetimeSeconds, floatSpeed, horizontalJitter, scale, color));
+        world.SetComponent(numberEntity, new Lifetime(lifetimeSeconds));
     }
 
     public void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content)

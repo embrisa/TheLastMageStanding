@@ -1,12 +1,17 @@
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
 internal sealed class CombatSystem : IUpdateSystem
 {
+    private EcsWorld _world = null!;
+
     public void Initialize(EcsWorld world)
     {
+        _world = world;
+        world.EventBus.Subscribe<PlayerAttackIntentEvent>(OnPlayerAttackIntent);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
@@ -18,31 +23,33 @@ internal sealed class CombatSystem : IUpdateSystem
                 attack.CooldownTimer = MathF.Max(0f, attack.CooldownTimer - deltaSeconds);
             });
 
-        HandlePlayerAttacks(world);
         HandleEnemyContact(world);
     }
 
-    private static void HandlePlayerAttacks(EcsWorld world)
+    private void OnPlayerAttackIntent(PlayerAttackIntentEvent evt)
     {
-        world.ForEach<PlayerTag, InputIntent, AttackStats>(
-            (Entity entity, ref PlayerTag _, ref InputIntent intent, ref AttackStats attack) =>
-            {
-                if (!intent.Attack || attack.CooldownTimer > 0f)
-                {
-                    return;
-                }
+        var entity = evt.Player;
+        if (!_world.TryGetComponent(entity, out AttackStats attack))
+        {
+            return;
+        }
 
-                attack.CooldownTimer = attack.CooldownSeconds;
+        if (attack.CooldownTimer > 0f)
+        {
+            return;
+        }
 
-                if (!world.TryGetComponent(entity, out Position position) ||
-                    !world.TryGetComponent(entity, out Hitbox hitbox) ||
-                    !world.TryGetComponent(entity, out Faction faction))
-                {
-                    return;
-                }
+        attack.CooldownTimer = attack.CooldownSeconds;
+        _world.SetComponent(entity, attack);
 
-                ApplyDamageInRange(world, position.Value, hitbox.Radius, attack.Damage, attack.Range, faction);
-            });
+        if (!_world.TryGetComponent(entity, out Position position) ||
+            !_world.TryGetComponent(entity, out Hitbox hitbox) ||
+            !_world.TryGetComponent(entity, out Faction faction))
+        {
+            return;
+        }
+
+        ApplyDamageInRange(_world, position.Value, hitbox.Radius, attack.Damage, attack.Range, faction);
     }
 
     private static void HandleEnemyContact(EcsWorld world)
@@ -109,20 +116,7 @@ internal sealed class CombatSystem : IUpdateSystem
                     return;
                 }
 
-                health.Current = MathF.Max(0f, health.Current - damage);
-                world.SetComponent(target, health);
-
-                if (world.TryGetComponent(target, out DamageEvent existing))
-                {
-                    existing.Amount += damageApplied;
-                    existing.SourcePosition = origin;
-                    existing.SourceFaction = attackerFaction;
-                    world.SetComponent(target, existing);
-                }
-                else
-                {
-                    world.SetComponent(target, new DamageEvent(damageApplied, origin, attackerFaction));
-                }
+                world.EventBus.Publish(new EntityDamagedEvent(target, damageApplied, origin, attackerFaction));
 
                 hit = true;
             });

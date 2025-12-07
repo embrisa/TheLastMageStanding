@@ -105,6 +105,16 @@ internal sealed class PlayerRenderSystem : IUpdateSystem, IDrawSystem, ILoadCont
 
                 if (hitActive)
                 {
+                    // Update facing based on current input during hit animation
+                    if (world.TryGetComponent(entity, out InputIntent intent))
+                    {
+                        var movement = intent.Movement;
+                        if (movement.LengthSquared() > 0.0001f)
+                        {
+                            state.Facing = ToFacing(movement);
+                        }
+                    }
+
                     if (state.ActiveClip != PlayerAnimationClip.Hit)
                     {
                         state.ActiveClip = PlayerAnimationClip.Hit;

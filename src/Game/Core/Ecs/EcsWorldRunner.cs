@@ -8,12 +8,14 @@ using TheLastMageStanding.Game.Core.Ecs.Config;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Ecs.Systems;
 using TheLastMageStanding.Game.Core.Input;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
 internal sealed class EcsWorldRunner
 {
     private readonly EcsWorld _world = new();
+    private readonly EventBus _eventBus = new();
     private readonly PlayerEntityFactory _playerFactory;
     private readonly EnemyEntityFactory _enemyFactory;
     private readonly EnemyWaveConfig _waveConfig;
@@ -24,6 +26,7 @@ internal sealed class EcsWorldRunner
 
     public EcsWorldRunner(Camera2D camera)
     {
+        _world.EventBus = _eventBus;
         _camera = camera;
         _waveConfig = EnemyWaveConfig.Default;
         _playerFactory = new PlayerEntityFactory(_world);
@@ -114,6 +117,8 @@ internal sealed class EcsWorldRunner
         {
             system.Update(_world, context);
         }
+
+        _eventBus.ProcessEvents();
     }
 
     public void Draw(SpriteBatch spriteBatch)

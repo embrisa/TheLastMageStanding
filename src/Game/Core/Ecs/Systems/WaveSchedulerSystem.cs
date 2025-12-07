@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Ecs.Config;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -29,8 +30,15 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
             return;
         }
 
+        if (_waveIndex > 0)
+        {
+            world.EventBus.Publish(new WaveCompletedEvent(_waveIndex));
+        }
+
         _waveTimer = 0f;
         _waveIndex++;
+
+        world.EventBus.Publish(new WaveStartedEvent(_waveIndex));
 
         if (!TryGetPlayerPosition(world, out var playerPosition))
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
@@ -53,6 +54,8 @@ internal sealed class ComponentPool<T> : IComponentPool where T : struct
 
 internal sealed class EcsWorld
 {
+    public IEventBus EventBus { get; set; } = null!;
+
     private int _nextEntityId;
     private readonly HashSet<int> _alive = new();
     private readonly Dictionary<Type, IComponentPool> _componentPools = new();

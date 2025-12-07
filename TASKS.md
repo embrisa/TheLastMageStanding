@@ -26,11 +26,16 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 5. If handing off, leave next steps, open questions, and any gotchas in the task file.
 
 ## Active tasks
-- [010 - TMX map loading integration](tasks/010-map-loading-integration.md)
-- [013 - Event bus & intent system](tasks/013-event-bus-intent-system.md)
-- [012 - Player hit animation not playing](tasks/012-player-hit-animation.md)
+- [018 - Game over & wave HUD](tasks/018-game-over-and-wave-hud.md)
+- [017 - Directional TakeDamage animation](tasks/017-directional-takedamage-animation.md)
 
 ## Done
+- [016 - Game State Events](tasks/016-game-state-events.md)
+- [015 - Migrate Player Actions to Event Bus](tasks/015-migrate-player-actions.md)
+- [014 - Migrate Combat Events to Event Bus](tasks/014-migrate-combat-events.md)
+- [013 - Event bus & intent system](tasks/013-event-bus-intent-system.md)
+- [012 - Player hit animation not playing](tasks/012-player-hit-animation.md)
+- [010 - TMX map loading integration](tasks/010-map-loading-integration.md)
 - [009 - Combat readability & feedback](tasks/009-combat-readability-feedback.md)
 - [008 - Enemy visuals & basic variety](tasks/008-enemy-visuals-variety.md)
 - [007 - Player visuals & animation hookup](tasks/007-player-visuals-animation.md)

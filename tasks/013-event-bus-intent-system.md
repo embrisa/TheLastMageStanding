@@ -1,5 +1,5 @@
 # Task: 013 - Event bus & intent system
-- Status: backlog
+- Status: done
 
 ## Summary
 Design a robust, explicit event/intent system so gameplay, UI, and ECS systems can communicate via typed, ordered events without ad-hoc component hacks. Provide a plan for publish/subscribe APIs, lifecycle, ordering, and integration points that fit the current single-threaded MonoGame/ECS loop.
@@ -17,12 +17,12 @@ Design a robust, explicit event/intent system so gameplay, UI, and ECS systems c
 - Refactoring all current systems to the new bus in one go.
 
 ## Acceptance criteria
-- [ ] Documented design/plan for an event/intent bus with clear API and lifecycle.
-- [ ] Delivery semantics: ordering, once/exactly-once per frame, priorities defined.
-- [ ] Strategy for ECS integration (component-to-event and event-to-component bridges).
-- [ ] Migration outline for at least one path (e.g., damage/hit feedback) using the bus.
-- [ ] Testing approach for determinism and perf (allocs/frame) described.
-- [ ] `dotnet build` passes.
+- [x] Documented design/plan for an event/intent bus with clear API and lifecycle.
+- [x] Delivery semantics: ordering, once/exactly-once per frame, priorities defined.
+- [x] Strategy for ECS integration (component-to-event and event-to-component bridges).
+- [x] Migration outline for at least one path (e.g., damage/hit feedback) using the bus.
+- [x] Testing approach for determinism and perf (allocs/frame) described.
+- [x] `dotnet build` passes.
 
 ## Definition of done
 - Builds pass (`dotnet build`)
@@ -39,6 +39,9 @@ Design a robust, explicit event/intent system so gameplay, UI, and ECS systems c
 - Step 6: Outline instrumentation/testing (allocation budget, determinism checks, debug taps) and phased migration (start with damage/hit feedback).
 
 ## Notes / Risks / Blockers
+- Implemented core `EventBus` in `src/Game/Core/Events`.
+- Integrated into `EcsWorld` and `EcsWorldRunner`.
+- Design doc at `docs/design/013-event-bus.md`.
 - Must remain single-threaded and deterministic; avoid allocations each frame (consider struct events + pooling).
 - Clear dispatch points in the frame are required to avoid reentrancy surprises.
 - Need to ensure bus does not bypass ECS ownership rules; bridge patterns must be well-defined.
