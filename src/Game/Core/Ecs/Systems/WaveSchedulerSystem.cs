@@ -20,6 +20,7 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
 
     public void Initialize(EcsWorld world)
     {
+        world.EventBus.Subscribe<SessionRestartedEvent>(_ => Reset());
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
@@ -114,6 +115,12 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
             });
 
         return count;
+    }
+
+    private void Reset()
+    {
+        _waveTimer = 0f;
+        _waveIndex = 0;
     }
 }
 

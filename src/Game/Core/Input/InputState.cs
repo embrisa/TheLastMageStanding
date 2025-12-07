@@ -6,38 +6,55 @@ namespace TheLastMageStanding.Game.Core.Input;
 internal sealed class InputState
 {
     public Vector2 Movement { get; private set; }
-    public bool QuitRequested { get; private set; }
+    public bool PausePressed { get; private set; }
+    public bool MenuUpPressed { get; private set; }
+    public bool MenuDownPressed { get; private set; }
+    public bool MenuConfirmPressed { get; private set; }
+    public bool RestartPressed { get; private set; }
     public bool AttackPressed { get; private set; }
+
+    private KeyboardState _previousKeyboard;
+    private KeyboardState _currentKeyboard;
+    private MouseState _currentMouse;
 
     public void Update()
     {
-        var keyboard = Keyboard.GetState();
-        var mouse = Mouse.GetState();
+        _previousKeyboard = _currentKeyboard;
+
+        _currentKeyboard = Keyboard.GetState();
+        _currentMouse = Mouse.GetState();
         var movement = Vector2.Zero;
 
-        if (keyboard.IsKeyDown(Keys.W) || keyboard.IsKeyDown(Keys.Up))
+        if (_currentKeyboard.IsKeyDown(Keys.W) || _currentKeyboard.IsKeyDown(Keys.Up))
         {
             movement.Y -= 1f;
         }
 
-        if (keyboard.IsKeyDown(Keys.S) || keyboard.IsKeyDown(Keys.Down))
+        if (_currentKeyboard.IsKeyDown(Keys.S) || _currentKeyboard.IsKeyDown(Keys.Down))
         {
             movement.Y += 1f;
         }
 
-        if (keyboard.IsKeyDown(Keys.A) || keyboard.IsKeyDown(Keys.Left))
+        if (_currentKeyboard.IsKeyDown(Keys.A) || _currentKeyboard.IsKeyDown(Keys.Left))
         {
             movement.X -= 1f;
         }
 
-        if (keyboard.IsKeyDown(Keys.D) || keyboard.IsKeyDown(Keys.Right))
+        if (_currentKeyboard.IsKeyDown(Keys.D) || _currentKeyboard.IsKeyDown(Keys.Right))
         {
             movement.X += 1f;
         }
 
         Movement = movement == Vector2.Zero ? Vector2.Zero : Vector2.Normalize(movement);
-        QuitRequested = keyboard.IsKeyDown(Keys.Escape);
-        AttackPressed = keyboard.IsKeyDown(Keys.Space) || mouse.LeftButton == ButtonState.Pressed;
+        PausePressed = IsNewKeyPress(Keys.Escape);
+        MenuUpPressed = IsNewKeyPress(Keys.Up) || IsNewKeyPress(Keys.W);
+        MenuDownPressed = IsNewKeyPress(Keys.Down) || IsNewKeyPress(Keys.S);
+        MenuConfirmPressed = IsNewKeyPress(Keys.Enter) || IsNewKeyPress(Keys.Space);
+        RestartPressed = IsNewKeyPress(Keys.R);
+        AttackPressed = _currentKeyboard.IsKeyDown(Keys.Space) || _currentMouse.LeftButton == ButtonState.Pressed;
     }
+
+    private bool IsNewKeyPress(Keys key) =>
+        _currentKeyboard.IsKeyDown(key) && !_previousKeyboard.IsKeyDown(key);
 }
 

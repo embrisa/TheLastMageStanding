@@ -13,6 +13,7 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
 {
     private SpriteFont _regularFont = null!;
     private SpriteFont _titleFont = null!;
+    private Texture2D _pixel = null!;
     private Entity? _sessionEntity;
     private Entity? _notificationEntity;
 
@@ -25,6 +26,7 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
     {
         _regularFont = content.Load<SpriteFont>("Fonts/FontRegularText");
         _titleFont = content.Load<SpriteFont>("Fonts/FontRegularTitle");
+        _pixel = CreatePixel(graphicsDevice);
     }
 
     public void Draw(EcsWorld world, in EcsDrawContext context)
@@ -53,6 +55,9 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
         // Get session state
         if (_sessionEntity.HasValue && world.TryGetComponent<GameSession>(_sessionEntity.Value, out var session))
         {
+            var hasPauseMenu = world.TryGetComponent(_sessionEntity.Value, out PauseMenu pauseMenu);
+            var hasAudioSettings = world.TryGetComponent(_sessionEntity.Value, out AudioSettingsState audioSettings);
+
             // Draw HUD in top-left corner (only if playing)
             if (session.State == GameState.Playing)
             {
@@ -67,12 +72,24 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
                 spriteBatch.DrawString(_regularFont, waveText, position, Color.White);
                 position.Y += 25f;
                 spriteBatch.DrawString(_regularFont, killsText, position, Color.White);
+                position.Y += 25f;
+
+                // Draw XP bar and level
+                DrawPlayerXpBar(world, spriteBatch, position);
             }
 
             // Draw game over overlay
             if (session.State == GameState.GameOver)
             {
                 DrawGameOverOverlay(spriteBatch, session);
+            }
+
+            if (session.State == GameState.Paused)
+            {
+                DrawPauseOverlay(
+                    spriteBatch,
+                    hasPauseMenu ? pauseMenu : new PauseMenu(0),
+                    hasAudioSettings ? audioSettings : new AudioSettingsState(false, false));
             }
         }
 
@@ -87,9 +104,7 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
     {
         // Draw semi-transparent background
         var screenRect = new Rectangle(0, 0, 960, 540);
-        var pixel = new Texture2D(spriteBatch.GraphicsDevice, 1, 1);
-        pixel.SetData(new[] { Color.White });
-        spriteBatch.Draw(pixel, screenRect, Color.Black * 0.7f);
+        spriteBatch.Draw(_pixel, screenRect, Color.Black * 0.7f);
 
         // Draw "GAME OVER" text centered
         var gameOverText = "GAME OVER";
@@ -120,6 +135,72 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
         spriteBatch.DrawString(_regularFont, restartText, restartPosition, Color.White);
     }
 
+    private void DrawPauseOverlay(SpriteBatch spriteBatch, PauseMenu pauseMenu, AudioSettingsState audioSettings)
+    {
+        var screenRect = new Rectangle(0, 0, 960, 540);
+        spriteBatch.Draw(_pixel, screenRect, Color.Black * 0.65f);
+
+        const float panelWidth = 360f;
+        const float panelHeight = 260f;
+        var panelRect = new Rectangle(
+            (int)((screenRect.Width - panelWidth) * 0.5f),
+            (int)((screenRect.Height - panelHeight) * 0.5f),
+            (int)panelWidth,
+            (int)panelHeight);
+        spriteBatch.Draw(_pixel, panelRect, Color.Black * 0.85f);
+
+        var title = "Paused";
+        var titleSize = _titleFont.MeasureString(title);
+        var titlePosition = new Vector2(
+            panelRect.Center.X - titleSize.X / 2f,
+            panelRect.Top + 24f);
+        spriteBatch.DrawString(_titleFont, title, titlePosition, Color.White);
+
+        var options = new[]
+        {
+            "Resume",
+            "Restart Run",
+            $"Music: {(audioSettings.MusicMuted ? "Muted" : "On")}",
+            $"SFX: {(audioSettings.SfxMuted ? "Muted" : "On")}",
+            "Quit",
+        };
+
+        var selectedIndex = pauseMenu.SelectedIndex;
+        if (selectedIndex < 0)
+        {
+            selectedIndex = 0;
+        }
+        else if (selectedIndex >= options.Length)
+        {
+            selectedIndex = options.Length - 1;
+        }
+
+        var optionStartY = titlePosition.Y + titleSize.Y + 28f;
+        var optionX = panelRect.Left + 40f;
+        const float optionSpacing = 34f;
+
+        for (var i = 0; i < options.Length; i++)
+        {
+            var isSelected = i == selectedIndex;
+            var text = options[i];
+            var textSize = _regularFont.MeasureString(text);
+            var position = new Vector2(optionX, optionStartY + optionSpacing * i);
+
+            if (isSelected)
+            {
+                var highlightRect = new Rectangle(
+                    (int)(optionX - 16f),
+                    (int)(position.Y - 6f),
+                    (int)(panelWidth - 80f),
+                    (int)(textSize.Y + 12f));
+                spriteBatch.Draw(_pixel, highlightRect, Color.DarkGray * 0.8f);
+            }
+
+            var color = isSelected ? Color.Gold : Color.White;
+            spriteBatch.DrawString(_regularFont, text, position, color);
+        }
+    }
+
     private void DrawNotification(SpriteBatch spriteBatch, WaveNotification notification)
     {
         // Skip game over notifications (handled by overlay)
@@ -137,5 +218,65 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
             100f
         );
         spriteBatch.DrawString(_titleFont, notification.Message, position, color);
+    }
+
+    private void DrawPlayerXpBar(EcsWorld world, SpriteBatch spriteBatch, Vector2 position)
+    {
+        // Find player with XP component
+        world.ForEach<PlayerTag, PlayerXp>(
+            (Entity entity, ref PlayerTag _, ref PlayerXp playerXp) =>
+            {
+                // Draw level label
+                var levelText = $"Level {playerXp.Level}";
+                spriteBatch.DrawString(_regularFont, levelText, position, Color.White);
+
+                // Move down for XP bar
+                var barPosition = position + new Vector2(0f, 25f);
+                const float barWidth = 180f;
+                const float barHeight = 8f;
+
+                // Calculate XP ratio
+                var xpRatio = playerXp.XpToNextLevel > 0
+                    ? MathHelper.Clamp((float)playerXp.CurrentXp / playerXp.XpToNextLevel, 0f, 1f)
+                    : 0f;
+
+                // Draw background
+                spriteBatch.Draw(
+                    _pixel,
+                    barPosition,
+                    null,
+                    Color.DarkGray,
+                    0f,
+                    Vector2.Zero,
+                    new Vector2(barWidth, barHeight),
+                    SpriteEffects.None,
+                    0f);
+
+                // Draw fill
+                var fillColor = Color.Lerp(Color.Yellow, Color.Gold, xpRatio);
+                spriteBatch.Draw(
+                    _pixel,
+                    barPosition,
+                    null,
+                    fillColor,
+                    0f,
+                    Vector2.Zero,
+                    new Vector2(barWidth * xpRatio, barHeight),
+                    SpriteEffects.None,
+                    0f);
+
+                // Draw XP text
+                var xpText = $"{playerXp.CurrentXp}/{playerXp.XpToNextLevel}";
+                var xpTextSize = _regularFont.MeasureString(xpText);
+                var xpTextPosition = barPosition + new Vector2(barWidth + 10f, -4f);
+                spriteBatch.DrawString(_regularFont, xpText, xpTextPosition, Color.White);
+            });
+    }
+
+    private static Texture2D CreatePixel(GraphicsDevice graphicsDevice)
+    {
+        var pixel = new Texture2D(graphicsDevice, 1, 1);
+        pixel.SetData(new[] { Color.White });
+        return pixel;
     }
 }

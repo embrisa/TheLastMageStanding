@@ -35,6 +35,7 @@ Current enemies are melee-only. To increase variety and pressure, introduce a ra
 - Step 4: Wire archetype into wave config and playtest with melee enemies; run `dotnet build`.
 
 ## Notes / Risks / Blockers
+- Prereq: complete collision tasks 023–026 before starting this; projectile hit handling depends on that system.
 - Avoid double-damage per projectile; ensure it deactivates on first hit.
 - Consider friendly-fire rules; default to no ally hits unless explicitly allowed.
 - Keep telegraph duration readable to offset ranged pressure; balance alongside melee spawn counts.

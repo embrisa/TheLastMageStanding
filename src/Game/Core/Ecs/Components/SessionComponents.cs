@@ -6,6 +6,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Components;
 internal enum GameState
 {
     Playing,
+    Paused,
     GameOver
 }
 
@@ -30,6 +31,34 @@ internal struct GameSession
         EnemiesKilled = 0;
         TimeSurvived = 0f;
     }
+}
+
+/// <summary>
+/// Tracks the current pause menu selection.
+/// </summary>
+internal struct PauseMenu
+{
+    public PauseMenu(int selectedIndex)
+    {
+        SelectedIndex = selectedIndex;
+    }
+
+    public int SelectedIndex { get; set; }
+}
+
+/// <summary>
+/// Session-level audio settings that mirror the applied audio configuration.
+/// </summary>
+internal struct AudioSettingsState
+{
+    public AudioSettingsState(bool musicMuted, bool sfxMuted)
+    {
+        MusicMuted = musicMuted;
+        SfxMuted = sfxMuted;
+    }
+
+    public bool MusicMuted { get; set; }
+    public bool SfxMuted { get; set; }
 }
 
 /// <summary>

@@ -7,8 +7,10 @@ using TheLastMageStanding.Game.Core.Camera;
 using TheLastMageStanding.Game.Core.Ecs.Config;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Ecs.Systems;
+using TheLastMageStanding.Game.Core.Ecs.Systems.Collision;
 using TheLastMageStanding.Game.Core.Input;
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Config;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
@@ -19,34 +21,45 @@ internal sealed class EcsWorldRunner
     private readonly PlayerEntityFactory _playerFactory;
     private readonly EnemyEntityFactory _enemyFactory;
     private readonly EnemyWaveConfig _waveConfig;
+    private readonly ProgressionConfig _progressionConfig;
+    private readonly AudioSettingsConfig _audioSettings;
+    private readonly GameSessionSystem _gameSessionSystem;
     private readonly List<IUpdateSystem> _updateSystems;
     private readonly List<IDrawSystem> _drawSystems;
     private readonly List<IDrawSystem> _uiDrawSystems;
     private readonly List<ILoadContentSystem> _loadSystems;
     private readonly Camera2D _camera;
 
-    public EcsWorldRunner(Camera2D camera)
+    public EcsWorldRunner(Camera2D camera, AudioSettingsConfig audioSettings)
     {
         _world.EventBus = _eventBus;
         _camera = camera;
+        _audioSettings = audioSettings;
         _waveConfig = EnemyWaveConfig.Default;
-        _playerFactory = new PlayerEntityFactory(_world);
+        _progressionConfig = ProgressionConfig.Default;
+        _playerFactory = new PlayerEntityFactory(_world, _progressionConfig);
         _enemyFactory = new EnemyEntityFactory(_world);
         _playerFactory.CreatePlayer(Vector2.Zero);
 
+        _gameSessionSystem = new GameSessionSystem(_audioSettings);
         var enemyRenderSystem = new EnemyRenderSystem();
         var playerRenderSystem = new PlayerRenderSystem();
         var hitReactionSystem = new HitReactionSystem();
         var hitEffectSystem = new HitEffectSystem();
         var damageNumberSystem = new DamageNumberSystem();
+        var xpOrbRenderSystem = new XpOrbRenderSystem();
+        var collisionSystem = new CollisionSystem();
+        var collisionDebugRenderSystem = new CollisionDebugRenderSystem();
+        
         _updateSystems =
         [
-            new GameSessionSystem(),
+            _gameSessionSystem,
             new InputSystem(),
             new WaveSchedulerSystem(_waveConfig),
             new SpawnSystem(_enemyFactory),
             new AiSeekSystem(),
             new MovementIntentSystem(),
+            collisionSystem,  // Run collision detection after movement intent
             new CombatSystem(),
             hitReactionSystem,
             hitEffectSystem,
@@ -55,6 +68,9 @@ internal sealed class EcsWorldRunner
             playerRenderSystem,
             new CameraFollowSystem(),
             damageNumberSystem,
+            new XpOrbSpawnSystem(_progressionConfig),
+            new XpCollectionSystem(_progressionConfig),
+            new LevelUpSystem(_progressionConfig),
             new CleanupSystem(),
             new IntentResetSystem(),
         ];
@@ -65,6 +81,8 @@ internal sealed class EcsWorldRunner
             playerRenderSystem,
             new RenderDebugSystem(),
             damageNumberSystem,
+            xpOrbRenderSystem,
+            collisionDebugRenderSystem,  // Draw collision debug last
         ];
 
         _uiDrawSystems =
@@ -98,6 +116,8 @@ internal sealed class EcsWorldRunner
         _world.SetComponent(sessionEntity, new GameSession(_waveConfig.WaveIntervalSeconds));
     }
 
+    public bool ExitRequested => _gameSessionSystem.ExitRequested;
+
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {
         foreach (var loadSystem in _loadSystems)
@@ -130,9 +150,16 @@ internal sealed class EcsWorldRunner
             input,
             _camera);
 
-        foreach (var system in _updateSystems)
+        // Always run session system to handle pause/resume/restart
+        _gameSessionSystem.Update(_world, context);
+
+        var sessionState = GetSessionState();
+        if (sessionState == GameState.Playing)
         {
-            system.Update(_world, context);
+            for (int i = 1; i < _updateSystems.Count; i++)
+            {
+                _updateSystems[i].Update(_world, context);
+            }
         }
 
         _eventBus.ProcessEvents();
@@ -154,6 +181,17 @@ internal sealed class EcsWorldRunner
         {
             system.Draw(_world, context);
         }
+    }
+
+    private GameState GetSessionState()
+    {
+        var state = GameState.Playing;
+        _world.ForEach<GameSession>((Entity _, ref GameSession session) =>
+        {
+            state = session.State;
+        });
+
+        return state;
     }
 }
 

@@ -1,15 +1,18 @@
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
+using TheLastMageStanding.Game.Core.Ecs.Config;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
 internal sealed class PlayerEntityFactory
 {
     private readonly EcsWorld _world;
+    private readonly ProgressionConfig _progressionConfig;
 
-    public PlayerEntityFactory(EcsWorld world)
+    public PlayerEntityFactory(EcsWorld world, ProgressionConfig progressionConfig)
     {
         _world = world;
+        _progressionConfig = progressionConfig;
     }
 
     public Entity CreatePlayer(Vector2 spawnPosition)
@@ -26,6 +29,11 @@ internal sealed class PlayerEntityFactory
         _world.SetComponent(entity, new AttackStats(damage: 20f, cooldownSeconds: 0.35f, range: 42f));
         _world.SetComponent(entity, new Health(current: 100f, max: 100f));
         _world.SetComponent(entity, new Hitbox(radius: 6f));
+
+        // Initialize XP/level progression
+        var startingLevel = 1;
+        var xpToNextLevel = _progressionConfig.CalculateXpForLevel(startingLevel + 1);
+        _world.SetComponent(entity, new PlayerXp(currentXp: 0, level: startingLevel, xpToNextLevel: xpToNextLevel));
 
         return entity;
     }

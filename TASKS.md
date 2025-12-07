@@ -26,11 +26,15 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 5. If handing off, leave next steps, open questions, and any gotchas in the task file.
 
 ## Active tasks
-- [020 - Pause and settings overlay](tasks/020-pause-and-settings-overlay.md)
 - [021 - Ranged enemy and projectiles](tasks/021-ranged-enemy-and-projectiles.md)
-- [022 - XP orbs and level-ups](tasks/022-xp-orbs-and-level-ups.md)
+- [024 - Static world collision](tasks/024-static-world-collision.md)
+- [025 - Dynamic actor separation & knockback](tasks/025-dynamic-actor-separation-and-knockback.md)
+- [026 - Collider-driven combat hits](tasks/026-collider-driven-combat-hits.md)
 
 ## Done
+- [022 - XP orbs and level-ups](tasks/022-xp-orbs-and-level-ups.md)
+- [023 - Collision system foundation](tasks/023-collision-system-foundation.md)
+- [020 - Pause and settings overlay](tasks/020-pause-and-settings-overlay.md)
 - [019 - Session stats and run summary](tasks/019-session-stats-and-run-summary.md)
 - [018 - Game over & wave HUD](tasks/018-game-over-and-wave-hud.md)
 - [017 - Directional TakeDamage animation](tasks/017-directional-takedamage-animation.md)

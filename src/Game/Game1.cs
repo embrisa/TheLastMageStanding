@@ -1,8 +1,9 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 using TheLastMageStanding.Game.Core.Camera;
+using TheLastMageStanding.Game.Core.Config;
 using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Input;
 using TheLastMageStanding.Game.Core.World.Map;
@@ -22,6 +23,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private InputState _input = null!;
     private EcsWorldRunner _ecs = null!;
     private TiledMapService _mapService = null!;
+    private AudioSettingsConfig _audioSettings = null!;
+    private Song _backgroundSong = null!;
 
     private const string HubMapAsset = "Tiles/Maps/HubMap";
     private const string FirstMapAsset = "Tiles/Maps/FirstMap";
@@ -43,8 +46,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
     protected override void Initialize()
     {
         _camera = new Camera2D(VirtualWidth, VirtualHeight);
+        _audioSettings = AudioSettingsConfig.Default;
         _input = new InputState();
-        _ecs = new EcsWorldRunner(_camera);
+        _ecs = new EcsWorldRunner(_camera, _audioSettings);
 
         base.Initialize();
     }
@@ -62,19 +66,24 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _camera.LookAt(playerSpawn);
 
         _ecs.LoadContent(GraphicsDevice, Content);
+
+        _backgroundSong = Content.Load<Song>("Audio/Stage1Music");
+        MediaPlayer.IsRepeating = true;
+        _audioSettings.Apply();
+        MediaPlayer.Play(_backgroundSong);
     }
 
     protected override void Update(GameTime gameTime)
     {
         _input.Update();
 
-        if (_input.QuitRequested)
+        _mapService.Update(gameTime);
+        _ecs.Update(gameTime, _input);
+
+        if (_ecs.ExitRequested)
         {
             Exit();
         }
-
-        _mapService.Update(gameTime);
-        _ecs.Update(gameTime, _input);
 
         base.Update(gameTime);
     }
