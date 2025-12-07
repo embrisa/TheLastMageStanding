@@ -50,9 +50,14 @@ internal sealed class EcsWorldRunner
         var xpOrbRenderSystem = new XpOrbRenderSystem();
         var collisionSystem = new CollisionSystem();
         var collisionResolutionSystem = new CollisionResolutionSystem();
+        var knockbackSystem = new KnockbackSystem();
+        var dynamicSeparationSystem = new DynamicSeparationSystem();
+        var contactDamageSystem = new ContactDamageSystem();
+        var meleeHitSystem = new MeleeHitSystem();
+        var projectileRenderSystem = new ProjectileRenderSystem();
         var collisionDebugRenderSystem = new CollisionDebugRenderSystem();
         var debugInputSystem = new DebugInputSystem(collisionDebugRenderSystem);
-        
+
         _updateSystems =
         [
             _gameSessionSystem,
@@ -60,10 +65,17 @@ internal sealed class EcsWorldRunner
             new InputSystem(),
             new WaveSchedulerSystem(_waveConfig),
             new SpawnSystem(_enemyFactory),
+            new RangedAttackSystem(),  // Handle ranged enemy AI
             new AiSeekSystem(),
             new MovementIntentSystem(),
+            new ProjectileUpdateSystem(),  // Update projectile lifetimes
+            knockbackSystem,  // Apply knockback before collision resolution
             collisionResolutionSystem,  // Resolve collisions before applying movement
             collisionSystem,  // Detect collisions after resolution
+            dynamicSeparationSystem,  // Separate overlapping dynamic entities
+            contactDamageSystem,  // Handle contact damage with cooldowns
+            meleeHitSystem,  // Handle attack hitbox collisions
+            new ProjectileHitSystem(),  // Handle projectile collisions
             new CombatSystem(),
             hitReactionSystem,
             hitEffectSystem,
@@ -84,6 +96,7 @@ internal sealed class EcsWorldRunner
             enemyRenderSystem,
             playerRenderSystem,
             new RenderDebugSystem(),
+            projectileRenderSystem,
             damageNumberSystem,
             xpOrbRenderSystem,
             collisionDebugRenderSystem,  // Draw collision debug last
@@ -121,7 +134,7 @@ internal sealed class EcsWorldRunner
     }
 
     public bool ExitRequested => _gameSessionSystem.ExitRequested;
-    
+
     /// <summary>
     /// Exposes the ECS world for map collision loading and other external integrations.
     /// </summary>

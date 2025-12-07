@@ -61,6 +61,69 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
             // Draw center point (red for static, otherwise original color)
             DrawPoint(spriteBatch, worldCenter, isStatic ? Color.Blue : Color.Red);
         });
+
+        // Draw knockback vectors
+        world.ForEach<Position, Knockback>((Entity entity, ref Position pos, ref Knockback kb) =>
+        {
+            var knockbackVel = kb.GetDecayedVelocity();
+            if (knockbackVel.LengthSquared() > 0.1f)
+            {
+                var endPoint = pos.Value + knockbackVel * 0.1f; // Scale for visibility
+                DrawArrow(spriteBatch, pos.Value, endPoint, Color.Orange * 0.8f, 3f);
+            }
+        });
+
+        // Draw velocity vectors (for debugging separation)
+        world.ForEach<Position, Velocity>((Entity entity, ref Position pos, ref Velocity vel) =>
+        {
+            // Skip static entities
+            if (staticPool.TryGet(entity, out _))
+                return;
+
+            if (vel.Value.LengthSquared() > 1f) // Only draw if moving
+            {
+                var endPoint = pos.Value + vel.Value * 0.05f; // Scale for visibility
+                DrawArrow(spriteBatch, pos.Value, endPoint, Color.Cyan * 0.6f, 2f);
+            }
+        });
+
+        // Draw attack hitboxes (magenta for visibility)
+        world.ForEach<Position, AttackHitbox, Collider>((Entity entity, ref Position pos, ref AttackHitbox hitbox, ref Collider col) =>
+        {
+            var worldCenter = col.GetWorldCenter(pos.Value);
+            var hitboxColor = hitbox.OwnerFaction == Faction.Player ? Color.Magenta * 0.7f : Color.Red * 0.7f;
+
+            if (col.Shape == ColliderShape.Circle)
+            {
+                DrawCircle(spriteBatch, worldCenter, col.Width, hitboxColor, 16);
+                // Draw center cross
+                DrawLine(spriteBatch, worldCenter - new Vector2(4, 0), worldCenter + new Vector2(4, 0), hitboxColor, 2f);
+                DrawLine(spriteBatch, worldCenter - new Vector2(0, 4), worldCenter + new Vector2(0, 4), hitboxColor, 2f);
+            }
+        });
+    }
+
+    private void DrawArrow(SpriteBatch spriteBatch, Vector2 start, Vector2 end, Color color, float thickness)
+    {
+        // Draw main line
+        DrawLine(spriteBatch, start, end, color, thickness);
+
+        // Draw arrowhead
+        var direction = end - start;
+        var length = direction.Length();
+        if (length < 0.1f)
+            return;
+
+        direction.Normalize();
+        var arrowSize = MathF.Min(10f, length * 0.3f);
+        var perpendicular = new Vector2(-direction.Y, direction.X);
+
+        var arrowBase = end - direction * arrowSize;
+        var arrowLeft = arrowBase + perpendicular * arrowSize * 0.5f;
+        var arrowRight = arrowBase - perpendicular * arrowSize * 0.5f;
+
+        DrawLine(spriteBatch, end, arrowLeft, color, thickness);
+        DrawLine(spriteBatch, end, arrowRight, color, thickness);
     }
 
     private void DrawCircle(SpriteBatch spriteBatch, Vector2 center, float radius, Color color, int segments = 24)

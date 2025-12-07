@@ -21,7 +21,18 @@ internal readonly record struct EnemyArchetype(
     float AttackCooldownSeconds,
     float AttackRange,
     float CollisionRadius,
-    EnemyVisualDefinition Visual);
+    float Mass,
+    EnemyVisualDefinition Visual,
+    RangedAttackDefinition? RangedAttack = null);
+
+/// <summary>
+/// Optional configuration for ranged enemies that fire projectiles.
+/// </summary>
+internal readonly record struct RangedAttackDefinition(
+    float ProjectileSpeed,
+    float ProjectileDamage,
+    float OptimalRange,
+    float WindupSeconds);
 
 internal readonly record struct EnemySpawnProfile(EnemyArchetype Archetype, float Weight, int UnlockWave);
 
@@ -99,6 +110,10 @@ internal sealed class EnemyWaveConfig
                     Archetype: ScoutHexer(),
                     Weight: 1.2f,
                     UnlockWave: 2),
+                new EnemySpawnProfile(
+                    Archetype: BoneMage(),
+                    Weight: 0.8f,
+                    UnlockWave: 3),
             });
 
     private static EnemyArchetype BaseHexer() =>
@@ -110,6 +125,7 @@ internal sealed class EnemyWaveConfig
             AttackCooldownSeconds: 1.2f,
             AttackRange: 7f,
             CollisionRadius: 5.5f,
+            Mass: 0.6f,
             Visual: new EnemyVisualDefinition(
                 IdleAsset: "Sprites/enemies/BoneHexer/Idle",
                 RunAsset: "Sprites/enemies/BoneHexer/Run",
@@ -127,6 +143,7 @@ internal sealed class EnemyWaveConfig
             AttackCooldownSeconds: 0.9f,
             AttackRange: 7f,
             CollisionRadius: 5f,
+            Mass: 0.4f,
             Visual: new EnemyVisualDefinition(
                 IdleAsset: "Sprites/enemies/BoneHexer/Idle",
                 RunAsset: "Sprites/enemies/BoneHexer/Run",
@@ -134,6 +151,29 @@ internal sealed class EnemyWaveConfig
                 Scale: 0.92f,
                 Tint: Color.LightSkyBlue,
                 FrameSize: 128));
+
+    private static EnemyArchetype BoneMage() =>
+        new(
+            Id: "bone_mage",
+            MoveSpeed: 65f,
+            MaxHealth: 20f,
+            Damage: 0f, // Ranged enemy - damage comes from projectiles
+            AttackCooldownSeconds: 2.5f,
+            AttackRange: 150f, // Not used for ranged - OptimalRange is used instead
+            CollisionRadius: 5.5f,
+            Mass: 0.5f,
+            Visual: new EnemyVisualDefinition(
+                IdleAsset: "Sprites/enemies/BoneHexer/Idle",
+                RunAsset: "Sprites/enemies/BoneHexer/Run",
+                Origin: new Vector2(64f, 96f),
+                Scale: 1.05f,
+                Tint: new Color(200, 100, 255), // Purple tint for mages
+                FrameSize: 128),
+            RangedAttack: new RangedAttackDefinition(
+                ProjectileSpeed: 180f,
+                ProjectileDamage: 12f,
+                OptimalRange: 140f,
+                WindupSeconds: 0.6f));
 }
 
 

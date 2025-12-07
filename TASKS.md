@@ -30,6 +30,12 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 - [024 - Static world collision](tasks/024-static-world-collision.md)
 - [025 - Dynamic actor separation & knockback](tasks/025-dynamic-actor-separation-and-knockback.md)
 - [026 - Collider-driven combat hits](tasks/026-collider-driven-combat-hits.md)
+- [027 - Animation events & directional hitboxes](tasks/027-animation-events-and-directional-hitboxes.md)
+- [028 - Telegraphs, VFX/SFX, and hit-stop](tasks/028-telegraphs-vfx-sfx-hit-stop.md)
+- [029 - Unified stat and damage model](tasks/029-unified-stat-and-damage-model.md)
+- [030 - Loot and equipment foundations](tasks/030-loot-and-equipment-foundations.md)
+- [031 - Talent/perk tree](tasks/031-talent-perk-tree.md)
+- [032 - Elites/boss waves & rewards](tasks/032-elites-boss-waves-and-rewards.md)
 
 ## Done
 - [022 - XP orbs and level-ups](tasks/022-xp-orbs-and-level-ups.md)

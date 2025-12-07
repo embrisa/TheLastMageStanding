@@ -29,6 +29,12 @@ internal sealed class PlayerEntityFactory
         _world.SetComponent(entity, new AttackStats(damage: 20f, cooldownSeconds: 0.35f, range: 42f));
         _world.SetComponent(entity, new Health(current: 100f, max: 100f));
         _world.SetComponent(entity, new Hitbox(radius: 6f));
+        _world.SetComponent(entity, new Mass(1.0f)); // Standard player mass
+        _world.SetComponent(entity, Collider.CreateCircle(6f, CollisionLayer.Player, CollisionLayer.Enemy | CollisionLayer.Pickup | CollisionLayer.WorldStatic, isTrigger: false));
+
+        // Combat hitbox/hurtbox components
+        _world.SetComponent(entity, new Hurtbox { IsInvulnerable = false, InvulnerabilityEndsAt = 0f });
+        _world.SetComponent(entity, new MeleeAttackConfig(hitboxRadius: 42f, hitboxOffset: Vector2.Zero, duration: 0.15f));
 
         // Initialize XP/level progression
         var startingLevel = 1;

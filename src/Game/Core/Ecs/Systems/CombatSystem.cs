@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
@@ -36,8 +37,6 @@ internal sealed class CombatSystem : IUpdateSystem
             {
                 attack.CooldownTimer = MathF.Max(0f, attack.CooldownTimer - deltaSeconds);
             });
-
-        HandleEnemyContact(world);
     }
 
     private void OnPlayerAttackIntent(PlayerAttackIntentEvent evt)
@@ -57,85 +56,53 @@ internal sealed class CombatSystem : IUpdateSystem
         _world.SetComponent(entity, attack);
 
         if (!_world.TryGetComponent(entity, out Position position) ||
-            !_world.TryGetComponent(entity, out Hitbox hitbox) ||
             !_world.TryGetComponent(entity, out Faction faction))
         {
             return;
         }
 
-        ApplyDamageInRange(_world, position.Value, hitbox.Radius, attack.Damage, attack.Range, faction);
+        // Get melee config or use defaults
+        var meleeConfig = _world.TryGetComponent(entity, out MeleeAttackConfig config)
+            ? config
+            : new MeleeAttackConfig(attack.Range, Vector2.Zero, 0.15f);
+
+        // Spawn hitbox entity
+        SpawnAttackHitbox(_world, entity, position.Value, meleeConfig, attack.Damage, faction);
     }
 
-    private static void HandleEnemyContact(EcsWorld world)
-    {
-        world.ForEach<AttackStats, Faction, Position>(
-            (Entity entity, ref AttackStats attack, ref Faction faction, ref Position position) =>
-            {
-                if (faction != Faction.Enemy || attack.CooldownTimer > 0f)
-                {
-                    return;
-                }
-
-                if (!world.TryGetComponent(entity, out Hitbox hitbox))
-                {
-                    return;
-                }
-
-                var hit = ApplyDamageInRange(world, position.Value, hitbox.Radius, attack.Damage, attack.Range, faction);
-                if (hit)
-                {
-                    attack.CooldownTimer = attack.CooldownSeconds;
-                }
-            });
-    }
-
-    private static bool ApplyDamageInRange(
+    /// <summary>
+    /// Creates a transient hitbox entity for melee attacks.
+    /// </summary>
+    private static void SpawnAttackHitbox(
         EcsWorld world,
-        Vector2 origin,
-        float attackerRadius,
+        Entity owner,
+        Vector2 ownerPosition,
+        MeleeAttackConfig config,
         float damage,
-        float range,
-        Faction attackerFaction)
+        Faction ownerFaction)
     {
-        var hit = false;
-        var reachBase = attackerRadius + range;
+        var hitboxEntity = world.CreateEntity();
+        
+        // Position the hitbox at offset from owner
+        var hitboxPosition = ownerPosition + config.HitboxOffset;
+        world.SetComponent(hitboxEntity, new Position(hitboxPosition));
 
-        world.ForEach<Position, Hitbox, Faction>(
-            (Entity target, ref Position targetPosition, ref Hitbox targetHitbox, ref Faction targetFaction) =>
-            {
-                if (targetFaction == attackerFaction)
-                {
-                    return;
-                }
+        // Create attack hitbox component
+        world.SetComponent(hitboxEntity, new AttackHitbox(owner, damage, ownerFaction, config.Duration));
 
-                var reach = reachBase + targetHitbox.Radius;
-                if (Vector2.DistanceSquared(origin, targetPosition.Value) > reach * reach)
-                {
-                    return;
-                }
+        // Determine collision layer based on faction
+        var hitboxLayer = ownerFaction == Faction.Player ? CollisionLayer.Projectile : CollisionLayer.Enemy;
+        var targetLayer = ownerFaction == Faction.Player ? CollisionLayer.Enemy : CollisionLayer.Player;
 
-                if (!world.TryGetComponent(target, out Health health))
-                {
-                    return;
-                }
-
-                if (health.IsDead)
-                {
-                    return;
-                }
-
-                var damageApplied = MathF.Min(health.Current, damage);
-                if (damageApplied <= 0f)
-                {
-                    return;
-                }
-
-                world.EventBus.Publish(new EntityDamagedEvent(target, damageApplied, origin, attackerFaction));
-
-                hit = true;
-            });
-
-        return hit;
+        // Create trigger collider for the hitbox
+        world.SetComponent(
+            hitboxEntity,
+            Collider.CreateCircle(
+                config.HitboxRadius,
+                hitboxLayer,
+                targetLayer,
+                isTrigger: true
+            )
+        );
     }
 }
-
