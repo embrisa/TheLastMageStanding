@@ -11,6 +11,20 @@ internal sealed class InputSystem : IUpdateSystem
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
+        // Check session state - disable input if game over
+        var sessionActive = false;
+        world.ForEach<GameSession>((Entity _, ref GameSession session) =>
+        {
+            if (session.State == GameState.Playing)
+            {
+                sessionActive = true;
+            }
+        });
+        if (!sessionActive)
+        {
+            return;
+        }
+
         var input = context.Input;
         world.ForEach<PlayerTag, InputIntent>(
             (Entity entity, ref PlayerTag player, ref InputIntent intent) =>

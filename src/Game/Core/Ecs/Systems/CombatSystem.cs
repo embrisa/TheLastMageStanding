@@ -16,6 +16,20 @@ internal sealed class CombatSystem : IUpdateSystem
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
+        // Check session state - halt combat if game over
+        var sessionActive = false;
+        world.ForEach<GameSession>((Entity _, ref GameSession session) =>
+        {
+            if (session.State == GameState.Playing)
+            {
+                sessionActive = true;
+            }
+        });
+        if (!sessionActive)
+        {
+            return;
+        }
+
         var deltaSeconds = context.DeltaSeconds;
         world.ForEach<AttackStats>(
             (Entity _, ref AttackStats attack) =>

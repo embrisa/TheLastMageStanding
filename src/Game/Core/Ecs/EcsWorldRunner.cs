@@ -21,6 +21,7 @@ internal sealed class EcsWorldRunner
     private readonly EnemyWaveConfig _waveConfig;
     private readonly List<IUpdateSystem> _updateSystems;
     private readonly List<IDrawSystem> _drawSystems;
+    private readonly List<IDrawSystem> _uiDrawSystems;
     private readonly List<ILoadContentSystem> _loadSystems;
     private readonly Camera2D _camera;
 
@@ -40,6 +41,7 @@ internal sealed class EcsWorldRunner
         var damageNumberSystem = new DamageNumberSystem();
         _updateSystems =
         [
+            new GameSessionSystem(),
             new InputSystem(),
             new WaveSchedulerSystem(_waveConfig),
             new SpawnSystem(_enemyFactory),
@@ -65,9 +67,15 @@ internal sealed class EcsWorldRunner
             damageNumberSystem,
         ];
 
+        _uiDrawSystems =
+        [
+            new HudRenderSystem(),
+        ];
+
         _loadSystems =
             _updateSystems.OfType<ILoadContentSystem>()
                 .Concat(_drawSystems.OfType<ILoadContentSystem>())
+                .Concat(_uiDrawSystems.OfType<ILoadContentSystem>())
                 .ToList();
 
         foreach (var system in _updateSystems)
@@ -79,6 +87,15 @@ internal sealed class EcsWorldRunner
         {
             system.Initialize(_world);
         }
+
+        foreach (var system in _uiDrawSystems)
+        {
+            system.Initialize(_world);
+        }
+
+        // Create session entity with initial state
+        var sessionEntity = _world.CreateEntity();
+        _world.SetComponent(sessionEntity, new GameSession(_waveConfig.WaveIntervalSeconds));
     }
 
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
@@ -125,6 +142,15 @@ internal sealed class EcsWorldRunner
     {
         var context = new EcsDrawContext(spriteBatch, _camera);
         foreach (var system in _drawSystems)
+        {
+            system.Draw(_world, context);
+        }
+    }
+
+    public void DrawUI(SpriteBatch spriteBatch)
+    {
+        var context = new EcsDrawContext(spriteBatch, _camera);
+        foreach (var system in _uiDrawSystems)
         {
             system.Draw(_world, context);
         }

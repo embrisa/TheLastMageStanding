@@ -26,10 +26,14 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 5. If handing off, leave next steps, open questions, and any gotchas in the task file.
 
 ## Active tasks
-- [018 - Game over & wave HUD](tasks/018-game-over-and-wave-hud.md)
-- [017 - Directional TakeDamage animation](tasks/017-directional-takedamage-animation.md)
+- [020 - Pause and settings overlay](tasks/020-pause-and-settings-overlay.md)
+- [021 - Ranged enemy and projectiles](tasks/021-ranged-enemy-and-projectiles.md)
+- [022 - XP orbs and level-ups](tasks/022-xp-orbs-and-level-ups.md)
 
 ## Done
+- [019 - Session stats and run summary](tasks/019-session-stats-and-run-summary.md)
+- [018 - Game over & wave HUD](tasks/018-game-over-and-wave-hud.md)
+- [017 - Directional TakeDamage animation](tasks/017-directional-takedamage-animation.md)
 - [016 - Game State Events](tasks/016-game-state-events.md)
 - [015 - Migrate Player Actions to Event Bus](tasks/015-migrate-player-actions.md)
 - [014 - Migrate Combat Events to Event Bus](tasks/014-migrate-combat-events.md)

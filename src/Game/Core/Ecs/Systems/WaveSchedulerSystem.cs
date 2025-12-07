@@ -24,6 +24,20 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
+        // Check session state - halt wave spawning if game over
+        var sessionActive = false;
+        world.ForEach<GameSession>((Entity _, ref GameSession session) =>
+        {
+            if (session.State == GameState.Playing)
+            {
+                sessionActive = true;
+            }
+        });
+        if (!sessionActive)
+        {
+            return;
+        }
+
         _waveTimer += context.DeltaSeconds;
         if (_waveTimer < _config.WaveIntervalSeconds)
         {

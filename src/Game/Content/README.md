@@ -26,3 +26,9 @@
 - Use folder hierarchy for categories (e.g., `Sprites/ui`, `Sprites/icons/abilities`, `Sprites/abilities/Frost/GlacialSpike/Animation.png`).
 - Asset-specific folders are also PascalCase to match the asset name (`BoneHexer`, `ArcanePulse`, `GlacialSpike`).
 
+### Placeholder sprites imported
+
+- Enemies: `BoneLich`, `CryptScuttler`, `GraveMage`, `PlagueWarg`
+- NPCs: `AbilityLoadoutNpc`, `ArchivistNpc`, `ArenaMasterNpc`, `TomeScribeNpc`, `VendorNpc`
+- Stored under `Sprites/enemies` and `Sprites/npcs` and registered in `Content.mgcb` for builds.
+

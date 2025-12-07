@@ -140,4 +140,5 @@ Copy and rename selected assets from the old project (`/Users/philippetillheden/
 - Watch for pipeline processing settings differences (e.g., sprite fonts, audio formats).
 - Placeholder assets are sourced from `/Users/philippetillheden/untitledGame/assets` for early prototypes and will need replacement with final art/audio later.
 - `gameplay_on_player_death.wav` was re-encoded to standard PCM 16-bit so the pipeline can consume it.
+- Additional placeholder sprite sets pulled in after initial import: enemies (`BoneLich`, `CryptScuttler`, `GraveMage`, `PlagueWarg`) and NPCs (`AbilityLoadoutNpc`, `ArchivistNpc`, `ArenaMasterNpc`, `TomeScribeNpc`, `VendorNpc`).
 

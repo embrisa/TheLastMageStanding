@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TheLastMageStanding.Game.Core.Ecs.Components;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -31,7 +32,15 @@ internal sealed class CleanupSystem : IUpdateSystem
             {
                 if (health.IsDead)
                 {
-                    toRemove.Add(entity);
+                    // Skip player entities - they shouldn't be removed on death
+                    if (!world.TryGetComponent<PlayerTag>(entity, out _))
+                    {
+                        if (world.TryGetComponent<Faction>(entity, out var faction) && faction == Faction.Enemy)
+                        {
+                            world.EventBus.Publish(new EnemyDiedEvent(entity));
+                        }
+                        toRemove.Add(entity);
+                    }
                 }
             });
 

@@ -90,6 +90,11 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _ecs.Draw(_spriteBatch);
         _spriteBatch.End();
 
+        // Draw UI to render target (screen space relative to virtual resolution)
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        _ecs.DrawUI(_spriteBatch);
+        _spriteBatch.End();
+
         GraphicsDevice.SetRenderTarget(null);
         GraphicsDevice.Clear(Color.Black);
 

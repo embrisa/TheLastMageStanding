@@ -19,3 +19,9 @@ internal readonly struct EntityDamagedEvent
         SourceFaction = sourceFaction;
     }
 }
+
+internal readonly struct EnemyDiedEvent
+{
+    public Entity Enemy { get; }
+    public EnemyDiedEvent(Entity enemy) => Enemy = enemy;
+}

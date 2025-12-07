@@ -463,6 +463,996 @@
 /processor:TextureProcessor
 /build:Sprites/enemies/BoneHexer/Walk.png
 
+#begin Sprites/enemies/BoneLich/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Attack1.png
+
+#begin Sprites/enemies/BoneLich/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Attack2.png
+
+#begin Sprites/enemies/BoneLich/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Attack3.png
+
+#begin Sprites/enemies/BoneLich/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Attack4.png
+
+#begin Sprites/enemies/BoneLich/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Attack5.png
+
+#begin Sprites/enemies/BoneLich/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/AttackRun.png
+
+#begin Sprites/enemies/BoneLich/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/AttackRun2.png
+
+#begin Sprites/enemies/BoneLich/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/CrouchIdle.png
+
+#begin Sprites/enemies/BoneLich/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/CrouchRun.png
+
+#begin Sprites/enemies/BoneLich/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Die.png
+
+#begin Sprites/enemies/BoneLich/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Idle.png
+
+#begin Sprites/enemies/BoneLich/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Idle2.png
+
+#begin Sprites/enemies/BoneLich/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Idle3.png
+
+#begin Sprites/enemies/BoneLich/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Idle4.png
+
+#begin Sprites/enemies/BoneLich/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Run.png
+
+#begin Sprites/enemies/BoneLich/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/RunBackwards.png
+
+#begin Sprites/enemies/BoneLich/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Special1.png
+
+#begin Sprites/enemies/BoneLich/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/StrafeLeft.png
+
+#begin Sprites/enemies/BoneLich/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/StrafeRight.png
+
+#begin Sprites/enemies/BoneLich/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/TakeDamage.png
+
+#begin Sprites/enemies/BoneLich/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Taunt.png
+
+#begin Sprites/enemies/BoneLich/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneLich/Walk.png
+
+#begin Sprites/enemies/CryptScuttler/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Attack1.png
+
+#begin Sprites/enemies/CryptScuttler/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Attack2.png
+
+#begin Sprites/enemies/CryptScuttler/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Attack3.png
+
+#begin Sprites/enemies/CryptScuttler/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Attack4.png
+
+#begin Sprites/enemies/CryptScuttler/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Attack5.png
+
+#begin Sprites/enemies/CryptScuttler/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/AttackRun.png
+
+#begin Sprites/enemies/CryptScuttler/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/AttackRun2.png
+
+#begin Sprites/enemies/CryptScuttler/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/CrouchIdle.png
+
+#begin Sprites/enemies/CryptScuttler/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/CrouchRun.png
+
+#begin Sprites/enemies/CryptScuttler/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Die.png
+
+#begin Sprites/enemies/CryptScuttler/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Idle.png
+
+#begin Sprites/enemies/CryptScuttler/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Idle2.png
+
+#begin Sprites/enemies/CryptScuttler/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Idle3.png
+
+#begin Sprites/enemies/CryptScuttler/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Idle4.png
+
+#begin Sprites/enemies/CryptScuttler/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Run.png
+
+#begin Sprites/enemies/CryptScuttler/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/RunBackwards.png
+
+#begin Sprites/enemies/CryptScuttler/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Special1.png
+
+#begin Sprites/enemies/CryptScuttler/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/StrafeLeft.png
+
+#begin Sprites/enemies/CryptScuttler/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/StrafeRight.png
+
+#begin Sprites/enemies/CryptScuttler/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/TakeDamage.png
+
+#begin Sprites/enemies/CryptScuttler/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Taunt.png
+
+#begin Sprites/enemies/CryptScuttler/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/CryptScuttler/Walk.png
+
+#begin Sprites/enemies/GraveMage/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Attack1.png
+
+#begin Sprites/enemies/GraveMage/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Attack2.png
+
+#begin Sprites/enemies/GraveMage/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Attack3.png
+
+#begin Sprites/enemies/GraveMage/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Attack4.png
+
+#begin Sprites/enemies/GraveMage/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Attack5.png
+
+#begin Sprites/enemies/GraveMage/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/AttackRun.png
+
+#begin Sprites/enemies/GraveMage/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/AttackRun2.png
+
+#begin Sprites/enemies/GraveMage/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/CrouchIdle.png
+
+#begin Sprites/enemies/GraveMage/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/CrouchRun.png
+
+#begin Sprites/enemies/GraveMage/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Die.png
+
+#begin Sprites/enemies/GraveMage/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Idle.png
+
+#begin Sprites/enemies/GraveMage/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Idle2.png
+
+#begin Sprites/enemies/GraveMage/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Idle3.png
+
+#begin Sprites/enemies/GraveMage/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Idle4.png
+
+#begin Sprites/enemies/GraveMage/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Run.png
+
+#begin Sprites/enemies/GraveMage/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/RunBackwards.png
+
+#begin Sprites/enemies/GraveMage/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Special1.png
+
+#begin Sprites/enemies/GraveMage/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/StrafeLeft.png
+
+#begin Sprites/enemies/GraveMage/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/StrafeRight.png
+
+#begin Sprites/enemies/GraveMage/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/TakeDamage.png
+
+#begin Sprites/enemies/GraveMage/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Taunt.png
+
+#begin Sprites/enemies/GraveMage/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/GraveMage/Walk.png
+
+#begin Sprites/enemies/PlagueWarg/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Attack1.png
+
+#begin Sprites/enemies/PlagueWarg/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Attack2.png
+
+#begin Sprites/enemies/PlagueWarg/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Attack3.png
+
+#begin Sprites/enemies/PlagueWarg/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Attack4.png
+
+#begin Sprites/enemies/PlagueWarg/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Attack5.png
+
+#begin Sprites/enemies/PlagueWarg/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/AttackRun.png
+
+#begin Sprites/enemies/PlagueWarg/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/AttackRun2.png
+
+#begin Sprites/enemies/PlagueWarg/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/CrouchIdle.png
+
+#begin Sprites/enemies/PlagueWarg/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/CrouchRun.png
+
+#begin Sprites/enemies/PlagueWarg/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Die.png
+
+#begin Sprites/enemies/PlagueWarg/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Idle.png
+
+#begin Sprites/enemies/PlagueWarg/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Idle2.png
+
+#begin Sprites/enemies/PlagueWarg/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Idle3.png
+
+#begin Sprites/enemies/PlagueWarg/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Idle4.png
+
+#begin Sprites/enemies/PlagueWarg/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Run.png
+
+#begin Sprites/enemies/PlagueWarg/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/RunBackwards.png
+
+#begin Sprites/enemies/PlagueWarg/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Special1.png
+
+#begin Sprites/enemies/PlagueWarg/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/StrafeLeft.png
+
+#begin Sprites/enemies/PlagueWarg/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/StrafeRight.png
+
+#begin Sprites/enemies/PlagueWarg/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/TakeDamage.png
+
+#begin Sprites/enemies/PlagueWarg/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Taunt.png
+
+#begin Sprites/enemies/PlagueWarg/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/PlagueWarg/Walk.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Attack1.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Attack2.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Attack3.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Attack4.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Attack5.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/AttackRun.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/AttackRun2.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/CrouchIdle.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/CrouchRun.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Die.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Idle.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Idle2.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Idle3.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Idle4.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Run.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/RunBackwards.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Special1.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/StrafeLeft.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/StrafeRight.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/TakeDamage.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Taunt.png
+
+#begin Sprites/npcs/AbilityLoadoutNpc/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/AbilityLoadoutNpc/Walk.png
+
+#begin Sprites/npcs/ArchivistNpc/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Attack1.png
+
+#begin Sprites/npcs/ArchivistNpc/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Attack2.png
+
+#begin Sprites/npcs/ArchivistNpc/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Attack3.png
+
+#begin Sprites/npcs/ArchivistNpc/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Attack4.png
+
+#begin Sprites/npcs/ArchivistNpc/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Attack5.png
+
+#begin Sprites/npcs/ArchivistNpc/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/AttackRun.png
+
+#begin Sprites/npcs/ArchivistNpc/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/AttackRun2.png
+
+#begin Sprites/npcs/ArchivistNpc/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/CrouchIdle.png
+
+#begin Sprites/npcs/ArchivistNpc/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/CrouchRun.png
+
+#begin Sprites/npcs/ArchivistNpc/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Die.png
+
+#begin Sprites/npcs/ArchivistNpc/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Idle.png
+
+#begin Sprites/npcs/ArchivistNpc/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Idle2.png
+
+#begin Sprites/npcs/ArchivistNpc/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Idle3.png
+
+#begin Sprites/npcs/ArchivistNpc/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Idle4.png
+
+#begin Sprites/npcs/ArchivistNpc/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Run.png
+
+#begin Sprites/npcs/ArchivistNpc/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/RunBackwards.png
+
+#begin Sprites/npcs/ArchivistNpc/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Special1.png
+
+#begin Sprites/npcs/ArchivistNpc/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/StrafeLeft.png
+
+#begin Sprites/npcs/ArchivistNpc/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/StrafeRight.png
+
+#begin Sprites/npcs/ArchivistNpc/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/TakeDamage.png
+
+#begin Sprites/npcs/ArchivistNpc/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Taunt.png
+
+#begin Sprites/npcs/ArchivistNpc/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArchivistNpc/Walk.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Attack1.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Attack2.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Attack3.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Attack4.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Attack5.png
+
+#begin Sprites/npcs/ArenaMasterNpc/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/AttackRun.png
+
+#begin Sprites/npcs/ArenaMasterNpc/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/AttackRun2.png
+
+#begin Sprites/npcs/ArenaMasterNpc/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/CrouchIdle.png
+
+#begin Sprites/npcs/ArenaMasterNpc/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/CrouchRun.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Die.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Idle.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Idle2.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Idle3.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Idle4.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Run.png
+
+#begin Sprites/npcs/ArenaMasterNpc/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/RunBackwards.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Special1.png
+
+#begin Sprites/npcs/ArenaMasterNpc/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/StrafeLeft.png
+
+#begin Sprites/npcs/ArenaMasterNpc/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/StrafeRight.png
+
+#begin Sprites/npcs/ArenaMasterNpc/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/TakeDamage.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Taunt.png
+
+#begin Sprites/npcs/ArenaMasterNpc/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/ArenaMasterNpc/Walk.png
+
+#begin Sprites/npcs/TomeScribeNpc/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Attack1.png
+
+#begin Sprites/npcs/TomeScribeNpc/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Attack2.png
+
+#begin Sprites/npcs/TomeScribeNpc/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Attack3.png
+
+#begin Sprites/npcs/TomeScribeNpc/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Attack4.png
+
+#begin Sprites/npcs/TomeScribeNpc/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Attack5.png
+
+#begin Sprites/npcs/TomeScribeNpc/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/AttackRun.png
+
+#begin Sprites/npcs/TomeScribeNpc/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/AttackRun2.png
+
+#begin Sprites/npcs/TomeScribeNpc/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/CrouchIdle.png
+
+#begin Sprites/npcs/TomeScribeNpc/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/CrouchRun.png
+
+#begin Sprites/npcs/TomeScribeNpc/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Die.png
+
+#begin Sprites/npcs/TomeScribeNpc/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Idle.png
+
+#begin Sprites/npcs/TomeScribeNpc/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Idle2.png
+
+#begin Sprites/npcs/TomeScribeNpc/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Idle3.png
+
+#begin Sprites/npcs/TomeScribeNpc/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Idle4.png
+
+#begin Sprites/npcs/TomeScribeNpc/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Run.png
+
+#begin Sprites/npcs/TomeScribeNpc/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/RunBackwards.png
+
+#begin Sprites/npcs/TomeScribeNpc/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Special1.png
+
+#begin Sprites/npcs/TomeScribeNpc/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/StrafeLeft.png
+
+#begin Sprites/npcs/TomeScribeNpc/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/StrafeRight.png
+
+#begin Sprites/npcs/TomeScribeNpc/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/TakeDamage.png
+
+#begin Sprites/npcs/TomeScribeNpc/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Taunt.png
+
+#begin Sprites/npcs/TomeScribeNpc/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/TomeScribeNpc/Walk.png
+
+#begin Sprites/npcs/VendorNpc/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Attack1.png
+
+#begin Sprites/npcs/VendorNpc/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Attack2.png
+
+#begin Sprites/npcs/VendorNpc/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Attack3.png
+
+#begin Sprites/npcs/VendorNpc/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Attack4.png
+
+#begin Sprites/npcs/VendorNpc/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Attack5.png
+
+#begin Sprites/npcs/VendorNpc/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/AttackRun.png
+
+#begin Sprites/npcs/VendorNpc/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/AttackRun2.png
+
+#begin Sprites/npcs/VendorNpc/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/CrouchIdle.png
+
+#begin Sprites/npcs/VendorNpc/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/CrouchRun.png
+
+#begin Sprites/npcs/VendorNpc/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Die.png
+
+#begin Sprites/npcs/VendorNpc/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Idle.png
+
+#begin Sprites/npcs/VendorNpc/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Idle2.png
+
+#begin Sprites/npcs/VendorNpc/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Idle3.png
+
+#begin Sprites/npcs/VendorNpc/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Idle4.png
+
+#begin Sprites/npcs/VendorNpc/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Run.png
+
+#begin Sprites/npcs/VendorNpc/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/RunBackwards.png
+
+#begin Sprites/npcs/VendorNpc/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Special1.png
+
+#begin Sprites/npcs/VendorNpc/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/StrafeLeft.png
+
+#begin Sprites/npcs/VendorNpc/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/StrafeRight.png
+
+#begin Sprites/npcs/VendorNpc/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/TakeDamage.png
+
+#begin Sprites/npcs/VendorNpc/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Taunt.png
+
+#begin Sprites/npcs/VendorNpc/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/npcs/VendorNpc/Walk.png
+
 #begin Tiles/HubAtlas.png
 /importer:TextureImporter
 /processor:TextureProcessor
