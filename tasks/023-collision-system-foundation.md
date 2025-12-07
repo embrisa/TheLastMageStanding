@@ -84,4 +84,5 @@ Created comprehensive test suite in new `Game.Tests` project:
 - **Insight:** Cache collision pairs in a `HashSet<(int entityA, int entityB)>` between frames to track Enter/Stay/Exit efficiently. Ensure lower entity ID is always first in the pair to avoid duplicate keys like (1,2) vs (2,1).
 - **Insight:** For Enter/Exit events, only emit when the collision state actually changes. Store the previous frame's collision set and diff against current frame to avoid spamming Stay events every frame.
 - **Insight:** Add early-exit checks in the narrow phase: if layer masks don't overlap (`(layerA & maskB) == 0 && (layerB & maskA) == 0`), skip the expensive shape intersection test entirely.
+- Release build analyzers flagged CA1707 on underscore-heavy test names; suppressed via `.editorconfig` for `Game.Tests` so release builds stay warning-free.
 

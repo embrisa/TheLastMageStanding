@@ -49,17 +49,21 @@ internal sealed class EcsWorldRunner
         var damageNumberSystem = new DamageNumberSystem();
         var xpOrbRenderSystem = new XpOrbRenderSystem();
         var collisionSystem = new CollisionSystem();
+        var collisionResolutionSystem = new CollisionResolutionSystem();
         var collisionDebugRenderSystem = new CollisionDebugRenderSystem();
+        var debugInputSystem = new DebugInputSystem(collisionDebugRenderSystem);
         
         _updateSystems =
         [
             _gameSessionSystem,
+            debugInputSystem,  // Handle debug input early
             new InputSystem(),
             new WaveSchedulerSystem(_waveConfig),
             new SpawnSystem(_enemyFactory),
             new AiSeekSystem(),
             new MovementIntentSystem(),
-            collisionSystem,  // Run collision detection after movement intent
+            collisionResolutionSystem,  // Resolve collisions before applying movement
+            collisionSystem,  // Detect collisions after resolution
             new CombatSystem(),
             hitReactionSystem,
             hitEffectSystem,
@@ -117,6 +121,11 @@ internal sealed class EcsWorldRunner
     }
 
     public bool ExitRequested => _gameSessionSystem.ExitRequested;
+    
+    /// <summary>
+    /// Exposes the ECS world for map collision loading and other external integrations.
+    /// </summary>
+    public EcsWorld World => _world;
 
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {

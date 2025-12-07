@@ -36,11 +36,16 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
         }
 
         var spriteBatch = context.SpriteBatch;
+        var staticPool = world.GetPool<StaticCollider>();
 
         // Draw all colliders
         world.ForEach<Position, Collider>((Entity entity, ref Position pos, ref Collider col) =>
         {
-            var color = col.IsTrigger ? Color.Yellow * 0.3f : Color.Lime * 0.3f;
+            // Color code: Static = Cyan, Trigger = Yellow, Dynamic Solid = Lime
+            var isStatic = staticPool.TryGet(entity, out _);
+            var color = isStatic ? Color.Cyan * 0.4f : 
+                        col.IsTrigger ? Color.Yellow * 0.3f : 
+                        Color.Lime * 0.3f;
             var worldCenter = col.GetWorldCenter(pos.Value);
 
             if (col.Shape == ColliderShape.Circle)
@@ -53,8 +58,8 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
                 DrawRectangle(spriteBatch, bounds, color);
             }
 
-            // Draw center point
-            DrawPoint(spriteBatch, worldCenter, Color.Red);
+            // Draw center point (red for static, otherwise original color)
+            DrawPoint(spriteBatch, worldCenter, isStatic ? Color.Blue : Color.Red);
         });
     }
 

@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoGame.Extended;
 using MonoGame.Extended.Tiled;
 using MonoGame.Extended.Tiled.Renderers;
+using TheLastMageStanding.Game.Core.Ecs;
 
 namespace TheLastMageStanding.Game.Core.World.Map;
 
@@ -26,6 +27,15 @@ internal sealed class TiledMapService : IDisposable
         var renderer = new TiledMapRenderer(graphicsDevice, map);
 
         return new TiledMapService(map, renderer);
+    }
+
+    /// <summary>
+    /// Loads static collision regions from the TMX map into the ECS world.
+    /// Call this after creating the map service to populate world colliders.
+    /// </summary>
+    public void LoadCollisionRegions(EcsWorld world)
+    {
+        StaticColliderLoader.LoadCollisionRegions(_map, world);
     }
 
     public void Update(GameTime gameTime)

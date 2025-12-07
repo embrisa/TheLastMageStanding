@@ -66,6 +66,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _camera.LookAt(playerSpawn);
 
         _ecs.LoadContent(GraphicsDevice, Content);
+        
+        // Load collision regions from the map into the ECS world
+        _mapService.LoadCollisionRegions(_ecs.World);
 
         _backgroundSong = Content.Load<Song>("Audio/Stage1Music");
         MediaPlayer.IsRepeating = true;

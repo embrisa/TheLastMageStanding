@@ -12,6 +12,7 @@ internal sealed class InputState
     public bool MenuConfirmPressed { get; private set; }
     public bool RestartPressed { get; private set; }
     public bool AttackPressed { get; private set; }
+    public bool DebugTogglePressed { get; private set; }
 
     private KeyboardState _previousKeyboard;
     private KeyboardState _currentKeyboard;
@@ -52,6 +53,7 @@ internal sealed class InputState
         MenuConfirmPressed = IsNewKeyPress(Keys.Enter) || IsNewKeyPress(Keys.Space);
         RestartPressed = IsNewKeyPress(Keys.R);
         AttackPressed = _currentKeyboard.IsKeyDown(Keys.Space) || _currentMouse.LeftButton == ButtonState.Pressed;
+        DebugTogglePressed = IsNewKeyPress(Keys.F3);
     }
 
     private bool IsNewKeyPress(Keys key) =>

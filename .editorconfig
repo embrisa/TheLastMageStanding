@@ -20,3 +20,7 @@ dotnet_style_collection_initializer = true:suggestion
 end_of_line = lf
 insert_final_newline = true
 
+[src/Game.Tests/**/*.cs]
+# Allow descriptive test names with underscores
+dotnet_diagnostic.CA1707.severity = none
+
