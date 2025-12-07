@@ -25,6 +25,9 @@ dotnet mgcb /@Content.mgcb /platform:DesktopGL /output:bin/Content
 ```
 Open the pipeline editor (macOS): `dotnet mgcb-editor-mac ./Content.mgcb` (use `mgcb-editor` on Windows/Linux). See `src/Game/Content/README.md`.
 
+## Placeholder assets
+- Imported temporary sprites, audio, and fonts from the prior prototype at `/Users/philippetillheden/untitledGame/assets` into `src/Game/Content`; entries are registered in `Content.mgcb` for early builds and can be replaced with final art later.
+
 ## Project layout
 - `TheLastMageStanding.sln` — solution
 - `src/Game/` — MonoGame DesktopGL project

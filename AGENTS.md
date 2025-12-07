@@ -29,8 +29,10 @@
 - Build + basic play check required before PR; add repro steps for bugs.
 - Keep changelog in PR body; small, frequent merges preferred.
 
+**End-of-work rule:** Always finish by running `dotnet build`, fix any errors, and then update the task status. This sequence must be the final step before handing off or stopping work.
+
 ## Task workflow (agents)
-- Use `TASKS.md` to track state; start by duplicating `TASK_TEMPLATE.md`.
+- Tasks live as individual files under `tasks/` created from `TASK_TEMPLATE.md`. Index and links are in `TASKS.md`.
 - Update status and notes daily; mark blockers immediately with needs/asks.
 - When handing off, leave: current status, next steps, decisions, links to WIP branches/PRs.
 

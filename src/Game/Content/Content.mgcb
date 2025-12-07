@@ -13,3 +13,487 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin Fonts/FontRegularText.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/build:Fonts/FontRegularText.spritefont
+
+#begin Fonts/FontRegularTitle.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/build:Fonts/FontRegularTitle.spritefont
+
+#begin Fonts/FontStylizedTitle.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/build:Fonts/FontStylizedTitle.spritefont
+
+#begin Audio/GameplayOnPlayerDeath.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:Audio/GameplayOnPlayerDeath.wav
+
+#begin Audio/Stage1Music.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:Audio/Stage1Music.mp3
+
+#begin Audio/StartScreenMusic.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:Audio/StartScreenMusic.mp3
+
+#begin Audio/UserInterfaceOnClick.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:Audio/UserInterfaceOnClick.wav
+
+#begin Audio/UserInterfaceOnHover.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:Audio/UserInterfaceOnHover.wav
+
+#begin Sprites/ui/CursorClick.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/ui/CursorClick.png
+
+#begin Sprites/ui/CursorDefault.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/ui/CursorDefault.png
+
+#begin Sprites/ui/CursorHover.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/ui/CursorHover.png
+
+#begin Sprites/ui/ButtonBrown.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/ui/ButtonBrown.png
+
+#begin Sprites/ui/PanelBrown.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/ui/PanelBrown.png
+
+#begin Sprites/ui/PanelBrownDamagedDark.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/ui/PanelBrownDamagedDark.png
+
+#begin Sprites/ui/PanelBrownDarkCornersB.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/ui/PanelBrownDarkCornersB.png
+
+#begin Sprites/ui/MenuBackground.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/ui/MenuBackground.png
+
+#begin Sprites/icons/IconDashArcane.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconDashArcane.png
+
+#begin Sprites/icons/IconDashFire.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconDashFire.png
+
+#begin Sprites/icons/IconDashFrost.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconDashFrost.png
+
+#begin Sprites/icons/IconHealArcane.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconHealArcane.png
+
+#begin Sprites/icons/IconHealFire.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconHealFire.png
+
+#begin Sprites/icons/IconHealFrost.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconHealFrost.png
+
+#begin Sprites/icons/IconPlay.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconPlay.png
+
+#begin Sprites/icons/IconPlayerDash.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconPlayerDash.png
+
+#begin Sprites/icons/IconPlayerFireball.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconPlayerFireball.png
+
+#begin Sprites/icons/IconQuit.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconQuit.png
+
+#begin Sprites/icons/IconSettings.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconSettings.png
+
+#begin Sprites/icons/IconShieldGeneric.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/IconShieldGeneric.png
+
+#begin Sprites/icons/abilities/ArcanePulse.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/ArcanePulse.png
+
+#begin Sprites/icons/abilities/StarCascade.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/StarCascade.png
+
+#begin Sprites/icons/abilities/CinderBurst.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/CinderBurst.png
+
+#begin Sprites/icons/abilities/FlameWave.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/FlameWave.png
+
+#begin Sprites/icons/abilities/GlacialSpike.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/GlacialSpike.png
+
+#begin Sprites/icons/abilities/IceShards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/IceShards.png
+
+#begin Sprites/objects/ExperienceShard.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/objects/ExperienceShard.png
+
+#begin Sprites/abilities/Arcane/ArcanePulse/Animation.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Arcane/ArcanePulse/Animation.png
+
+#begin Sprites/abilities/Arcane/StarCascade/Animation.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Arcane/StarCascade/Animation.png
+
+#begin Sprites/abilities/Fire/CinderBurst/Animation.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Fire/CinderBurst/Animation.png
+
+#begin Sprites/abilities/Fire/FlameWave/Animation.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Fire/FlameWave/Animation.png
+
+#begin Sprites/abilities/Frost/FrostFocus/Explode.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Frost/FrostFocus/Explode.png
+
+#begin Sprites/abilities/Frost/FrostFocus/Forming.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Frost/FrostFocus/Forming.png
+
+#begin Sprites/abilities/Frost/FrostFocus/Moving.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Frost/FrostFocus/Moving.png
+
+#begin Sprites/abilities/Frost/GlacialSpike/Animation.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Frost/GlacialSpike/Animation.png
+
+#begin Sprites/abilities/Frost/IceShards/Animation.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/abilities/Frost/IceShards/Animation.png
+
+#begin Sprites/player/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Attack1.png
+
+#begin Sprites/player/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Attack2.png
+
+#begin Sprites/player/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Attack3.png
+
+#begin Sprites/player/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Attack4.png
+
+#begin Sprites/player/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Attack5.png
+
+#begin Sprites/player/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/AttackRun.png
+
+#begin Sprites/player/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/AttackRun2.png
+
+#begin Sprites/player/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/CrouchIdle.png
+
+#begin Sprites/player/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/CrouchRun.png
+
+#begin Sprites/player/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Die.png
+
+#begin Sprites/player/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Idle.png
+
+#begin Sprites/player/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Idle2.png
+
+#begin Sprites/player/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Idle3.png
+
+#begin Sprites/player/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Idle4.png
+
+#begin Sprites/player/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Run.png
+
+#begin Sprites/player/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/RunBackwards.png
+
+#begin Sprites/player/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Special1.png
+
+#begin Sprites/player/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/StrafeLeft.png
+
+#begin Sprites/player/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/StrafeRight.png
+
+#begin Sprites/player/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/TakeDamage.png
+
+#begin Sprites/player/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Taunt.png
+
+#begin Sprites/player/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Walk.png
+
+#begin Sprites/player/Projectile/Explode.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Projectile/Explode.png
+
+#begin Sprites/player/Projectile/Moving.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/player/Projectile/Moving.png
+
+#begin Sprites/enemies/BoneHexer/Attack1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Attack1.png
+
+#begin Sprites/enemies/BoneHexer/Attack2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Attack2.png
+
+#begin Sprites/enemies/BoneHexer/Attack3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Attack3.png
+
+#begin Sprites/enemies/BoneHexer/Attack4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Attack4.png
+
+#begin Sprites/enemies/BoneHexer/Attack5.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Attack5.png
+
+#begin Sprites/enemies/BoneHexer/AttackRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/AttackRun.png
+
+#begin Sprites/enemies/BoneHexer/AttackRun2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/AttackRun2.png
+
+#begin Sprites/enemies/BoneHexer/CrouchIdle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/CrouchIdle.png
+
+#begin Sprites/enemies/BoneHexer/CrouchRun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/CrouchRun.png
+
+#begin Sprites/enemies/BoneHexer/Die.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Die.png
+
+#begin Sprites/enemies/BoneHexer/Idle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Idle.png
+
+#begin Sprites/enemies/BoneHexer/Idle2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Idle2.png
+
+#begin Sprites/enemies/BoneHexer/Idle3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Idle3.png
+
+#begin Sprites/enemies/BoneHexer/Idle4.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Idle4.png
+
+#begin Sprites/enemies/BoneHexer/Run.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Run.png
+
+#begin Sprites/enemies/BoneHexer/RunBackwards.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/RunBackwards.png
+
+#begin Sprites/enemies/BoneHexer/Special1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Special1.png
+
+#begin Sprites/enemies/BoneHexer/StrafeLeft.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/StrafeLeft.png
+
+#begin Sprites/enemies/BoneHexer/StrafeRight.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/StrafeRight.png
+
+#begin Sprites/enemies/BoneHexer/TakeDamage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/TakeDamage.png
+
+#begin Sprites/enemies/BoneHexer/Taunt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Taunt.png
+
+#begin Sprites/enemies/BoneHexer/Walk.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/enemies/BoneHexer/Walk.png
+
+#begin Tiles/HubAtlas.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Tiles/HubAtlas.png
+
+#begin Tiles/Tilesets/AncientRuinsTerrain.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Tiles/Tilesets/AncientRuinsTerrain.png
+
+#begin Tiles/Tilesets/AnimatedTerrains8Frames.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Tiles/Tilesets/AnimatedTerrains8Frames.png
+
+#begin Tiles/Tilesets/AncientRuinsWall8.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Tiles/Tilesets/AncientRuinsWall8.png
+
+#begin Tiles/Tilesets/PrototypeTileset.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Tiles/Tilesets/PrototypeTileset.png
+
+#begin Tiles/Maps/HubMap.tmx
+/importer:TiledMapImporter
+/processor:TiledMapProcessor
+/build:Tiles/Maps/HubMap.tmx
+
+#begin Tiles/Maps/FirstMap.tmx
+/importer:TiledMapImporter
+/processor:TiledMapProcessor
+/build:Tiles/Maps/FirstMap.tmx

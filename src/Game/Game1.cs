@@ -1,9 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using TheLastMageStanding.Game.Core.Camera;
+using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Input;
-using TheLastMageStanding.Game.Core.World;
+using TheLastMageStanding.Game.Core.World.Map;
 
 namespace TheLastMageStanding.Game;
 
@@ -18,7 +20,12 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private RenderTarget2D _renderTarget = null!;
     private Camera2D _camera = null!;
     private InputState _input = null!;
-    private GameWorld _world = null!;
+    private EcsWorldRunner _ecs = null!;
+    private TiledMapService _mapService = null!;
+
+    private const string HubMapAsset = "Tiles/Maps/HubMap";
+    private const string FirstMapAsset = "Tiles/Maps/FirstMap";
+    private const string MapEnvVar = "TLMS_MAP";
 
     public Game1()
     {
@@ -37,7 +44,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     {
         _camera = new Camera2D(VirtualWidth, VirtualHeight);
         _input = new InputState();
-        _world = new GameWorld(_camera);
+        _ecs = new EcsWorldRunner(_camera);
 
         base.Initialize();
     }
@@ -47,7 +54,14 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _renderTarget = new RenderTarget2D(GraphicsDevice, VirtualWidth, VirtualHeight);
 
-        _world.LoadContent(GraphicsDevice);
+        var mapAsset = ResolveMapAsset();
+        _mapService = TiledMapService.Load(Content, GraphicsDevice, mapAsset);
+
+        var playerSpawn = _mapService.GetPlayerSpawnOrDefault(Vector2.Zero);
+        _ecs.SetPlayerPosition(playerSpawn);
+        _camera.LookAt(playerSpawn);
+
+        _ecs.LoadContent(GraphicsDevice, Content);
     }
 
     protected override void Update(GameTime gameTime)
@@ -59,7 +73,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
             Exit();
         }
 
-        _world.Update(gameTime, _input);
+        _mapService.Update(gameTime);
+        _ecs.Update(gameTime, _input);
 
         base.Update(gameTime);
     }
@@ -67,10 +82,12 @@ public class Game1 : Microsoft.Xna.Framework.Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.SetRenderTarget(_renderTarget);
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        GraphicsDevice.Clear(ClearOptions.Target, Color.CornflowerBlue, 1f, 0);
+
+        _mapService.Draw(_camera.Transform);
 
         _spriteBatch.Begin(transformMatrix: _camera.Transform, samplerState: SamplerState.PointClamp);
-        _world.Draw(_spriteBatch);
+        _ecs.Draw(_spriteBatch);
         _spriteBatch.End();
 
         GraphicsDevice.SetRenderTarget(null);
@@ -84,5 +101,26 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _spriteBatch.End();
 
         base.Draw(gameTime);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _mapService?.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
+    private static string ResolveMapAsset()
+    {
+        var envValue = Environment.GetEnvironmentVariable(MapEnvVar);
+        if (string.Equals(envValue, "first", StringComparison.OrdinalIgnoreCase))
+        {
+            return FirstMapAsset;
+        }
+
+        return HubMapAsset;
     }
 }

@@ -7,10 +7,12 @@ internal sealed class InputState
 {
     public Vector2 Movement { get; private set; }
     public bool QuitRequested { get; private set; }
+    public bool AttackPressed { get; private set; }
 
     public void Update()
     {
         var keyboard = Keyboard.GetState();
+        var mouse = Mouse.GetState();
         var movement = Vector2.Zero;
 
         if (keyboard.IsKeyDown(Keys.W) || keyboard.IsKeyDown(Keys.Up))
@@ -35,6 +37,7 @@ internal sealed class InputState
 
         Movement = movement == Vector2.Zero ? Vector2.Zero : Vector2.Normalize(movement);
         QuitRequested = keyboard.IsKeyDown(Keys.Escape);
+        AttackPressed = keyboard.IsKeyDown(Keys.Space) || mouse.LeftButton == ButtonState.Pressed;
     }
 }
 
