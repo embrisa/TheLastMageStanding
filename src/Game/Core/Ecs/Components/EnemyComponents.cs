@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using TheLastMageStanding.Game.Core.Ecs.Config;
@@ -39,7 +40,7 @@ internal struct EnemyAnimationState
     public bool IsMoving { get; set; }
 }
 
-internal readonly record struct EnemySpawnRequest(Vector2 Position, EnemyArchetype Archetype);
+internal readonly record struct EnemySpawnRequest(Vector2 Position, EnemyArchetype Archetype, IReadOnlyList<EliteModifierType>? Modifiers = null);
 
 /// <summary>
 /// Marks an enemy as a ranged attacker that fires projectiles.
@@ -86,4 +87,18 @@ internal struct RangedAttacker
     /// Whether the enemy is currently winding up to fire.
     /// </summary>
     public bool IsWindingUp { get; set; }
+}
+
+/// <summary>
+/// Tags an enemy as an elite for special behavior and rendering.
+/// </summary>
+internal struct EliteTag
+{
+}
+
+/// <summary>
+/// Tags an enemy as a boss for special behavior and rendering.
+/// </summary>
+internal struct BossTag
+{
 }

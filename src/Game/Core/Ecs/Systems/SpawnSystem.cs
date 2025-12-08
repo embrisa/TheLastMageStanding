@@ -20,7 +20,7 @@ internal sealed class SpawnSystem : IUpdateSystem
         world.ForEach<EnemySpawnRequest>(
             (Entity entity, ref EnemySpawnRequest request) =>
             {
-                _enemyFactory.CreateEnemy(request.Position, request.Archetype);
+                _enemyFactory.CreateEnemy(request.Position, request.Archetype, request.Modifiers);
                 world.DestroyEntity(entity);
             });
     }

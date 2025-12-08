@@ -1,5 +1,5 @@
 # Task: 039 - Mage skill system
-- Status: backlog
+- Status: completed
 
 ## Summary
 Build the first-class skill system for the Mage, covering fire/arcane/frost skills and their integration with input, stats, and perks/talents. Provide a skill interface/registry, casting/targeting pipeline, and baseline skills per element to support current gameplay and the talent tree (Task 031).
@@ -41,4 +41,75 @@ Build the first-class skill system for the Mage, covering fire/arcane/frost skil
 - Ensure modifier ordering is consistent across perks and loot to avoid double-scaling.
 - Keep VFX lightweight to avoid perf hits during horde scenarios; reuse existing telegraph pipeline where possible.
 - Input mapping should align with current controls; allow easy rebinding when additional skills are added later.
+
+## Implementation Notes (Completed 2025-12-08)
+
+### Components Added
+- **SkillData.cs**: `SkillId`, `SkillElement`, `SkillDeliveryType`, `SkillTargetType`, `SkillDefinition`, `SkillModifiers`, `ComputedSkillStats`
+- **SkillRegistry.cs**: Central registry with 9 default mage skills (3 per element)
+- **SkillComponents.cs**: `EquippedSkills`, `SkillCooldowns`, `PlayerSkillModifiers`, `SkillCasting`
+- **SkillEvents.cs**: `SkillCastRequestEvent`, `SkillCastStartedEvent`, `SkillCastCompletedEvent`, `SkillCastCancelledEvent`
+
+### Systems Added
+1. **PlayerSkillInputSystem**: Bridges `PlayerAttackIntentEvent` to skill system, reads equipped skills and targeting
+2. **SkillCastSystem**: Validates casts (cooldown/resource gating), manages cooldowns, handles cast timing
+3. **SkillExecutionSystem**: Spawns projectiles/AoE/hitboxes on cast completion, integrates with collision
+
+### Skills Implemented
+**Fire**: Firebolt (fast projectile), Fireball (AoE projectile), Flame Wave (self AoE)  
+**Arcane**: Arcane Missile (homing), Arcane Burst (quick AoE), Arcane Barrage (multi-shot)  
+**Frost**: Frost Bolt (slow projectile), Frost Nova (defensive AoE), Blizzard (ground AoE)
+
+### Integration
+- **PlayerEntityFactory**: Initialize skill components (`EquippedSkills`, `SkillCooldowns`, `PlayerSkillModifiers`)
+- **EcsWorldRunner**: Registered skill systems in correct order (after input, before stat recalc)
+- **Stat System**: Skills scale with `ComputedStats.EffectivePower` and global CDR
+- **Event Bus**: All skill logic event-driven via cast request → validation → execution
+- **Collision**: Reuses existing `Projectile`, `AttackHitbox`, `Collider` components
+
+### Modifier System
+Deterministic stacking order:
+1. Base skill definition
+2. Skill-specific modifiers (`PlayerSkillModifiers.SkillSpecificModifiers`)
+3. Element modifiers (`PlayerSkillModifiers.ElementModifiers`)
+4. Global modifiers (`PlayerSkillModifiers.GlobalModifiers`)
+5. Character CDR (`ComputedStats.EffectiveCooldownReduction`)
+6. Clamping (80% max CDR, 0.1s min cooldown)
+
+Modifiers support:
+- Cooldown reduction (additive/multiplicative)
+- Damage scaling (additive/multiplicative)
+- Range/AoE radius (additive/multiplicative)
+- Projectile count/speed/pierce/chain
+- Cast time reduction
+
+### Testing
+- **12 tests** covering modifier stacking, CDR clamping, stat calculation, registry lookup
+- **All tests pass** ✅
+- `dotnet build` succeeds with 0 warnings/errors ✅
+
+### Debug Tools
+- `SkillDebugHelper.cs`: Force cast, reset cooldowns, inspect skills, apply test modifiers, show effective stats
+
+### Documentation
+- **Design doc**: `docs/design/039-skill-system-implementation.md`
+- Comprehensive coverage of architecture, systems, integration, configuration, testing
+- Usage examples for custom skills, equipping, modifiers, casting
+
+### Known Limitations
+1. **Pierce**: Requires extending `Projectile` component with `PierceRemaining` field
+2. **Chain**: Needs target-tracking system (future)
+3. **Resource costs**: Mana/energy not yet implemented
+4. **Homing**: Arcane Missile marked but doesn't track yet
+5. **Status effects**: Frost chill/slow requires Task 034
+6. **Ground targeting**: Mouse input needed for `GroundTarget` skills
+7. **Skill UI**: No hotkey bar or cooldown display yet
+
+### Next Steps
+- Playtest damage scaling and cooldown values
+- Add skill unlock progression (tie to XP/levels)
+- Implement hotkey slots 1-4 (currently only primary works)
+- Add visual cooldown indicators to HUD
+- Consider pierce/chain implementation for advanced skill builds
+- Integrate with talent system for skill-specific perks
 

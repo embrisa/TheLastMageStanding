@@ -2,6 +2,7 @@ using System;
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Combat;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -52,7 +53,17 @@ internal sealed class CombatSystem : IUpdateSystem
             return;
         }
 
-        attack.CooldownTimer = attack.CooldownSeconds;
+        // Calculate effective cooldown using stats if available
+        var cooldown = attack.CooldownSeconds;
+        if (_world.TryGetComponent(entity, out ComputedStats computed))
+        {
+            cooldown = StatCalculator.CalculateEffectiveCooldown(
+                attack.CooldownSeconds,
+                computed.EffectiveAttackSpeed,
+                computed.EffectiveCooldownReduction);
+        }
+
+        attack.CooldownTimer = cooldown;
         _world.SetComponent(entity, attack);
 
         if (!_world.TryGetComponent(entity, out Position position) ||

@@ -122,8 +122,48 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
                     SpriteEffects.None,
                     0f);
 
+                // Draw elite/boss indicators
+                DrawTierIndicator(world, entity, spriteBatch, position.Value, visual);
+
                 DrawHealthBar(world, entity, spriteBatch, position.Value, visual);
             });
+    }
+
+    private void DrawTierIndicator(EcsWorld world, Entity entity, SpriteBatch spriteBatch, Vector2 position, EnemyVisual visual)
+    {
+        if (_pixel is null)
+        {
+            return;
+        }
+
+        var hasElite = world.TryGetComponent(entity, out EliteTag _);
+        var hasBoss = world.TryGetComponent(entity, out BossTag _);
+
+        if (!hasElite && !hasBoss)
+        {
+            return;
+        }
+
+        // Draw a ring around elite/boss enemies
+        var color = hasElite ? new Color(255, 200, 50, 180) : new Color(150, 50, 200, 200); // Gold for elite, purple for boss
+        var radius = visual.Scale * 20f;
+        var thickness = hasElite ? 2f : 3f;
+        var segments = 32;
+
+        for (var i = 0; i < segments; i++)
+        {
+            var angle1 = (float)i / segments * MathF.Tau;
+            var angle2 = (float)(i + 1) / segments * MathF.Tau;
+
+            var p1 = position + new Vector2(MathF.Cos(angle1), MathF.Sin(angle1)) * radius;
+            var p2 = position + new Vector2(MathF.Cos(angle2), MathF.Sin(angle2)) * radius;
+
+            var delta = p2 - p1;
+            var length = delta.Length();
+            var angle = MathF.Atan2(delta.Y, delta.X);
+
+            spriteBatch.Draw(_pixel, p1, null, color, angle, Vector2.Zero, new Vector2(length, thickness), SpriteEffects.None, 0f);
+        }
     }
 
     private void EnsureSpriteSet(EcsWorld world, Entity entity, EnemySpriteAssets assets, int frameSize)

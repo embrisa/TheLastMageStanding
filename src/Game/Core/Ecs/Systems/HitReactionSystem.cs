@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Xna.Framework;
+using TheLastMageStanding.Game.Core.Combat;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 
@@ -25,11 +26,27 @@ internal sealed class HitReactionSystem : IUpdateSystem
     private void OnEntityDamaged(EntityDamagedEvent evt)
     {
         var entity = evt.Target;
+        var isStatusTick = evt.DamageInfo.Source == DamageSource.StatusEffect;
+        var remainingDamage = evt.Amount;
+
+        if (_world.TryGetComponent(entity, out EliteShield shield))
+        {
+            var absorbed = MathF.Min(shield.Current, remainingDamage);
+            shield.Current -= absorbed;
+            remainingDamage -= absorbed;
+            shield.CooldownTimer = shield.RegenCooldown;
+            _world.SetComponent(entity, shield);
+
+            if (remainingDamage <= 0f)
+            {
+                return;
+            }
+        }
 
         if (_world.TryGetComponent(entity, out Health health))
         {
             var wasAlive = !health.IsDead;
-            health.Current = MathF.Max(0f, health.Current - evt.Amount);
+            health.Current = MathF.Max(0f, health.Current - remainingDamage);
             _world.SetComponent(entity, health);
 
             if (wasAlive && health.IsDead)
@@ -40,6 +57,11 @@ internal sealed class HitReactionSystem : IUpdateSystem
                     _world.EventBus.Publish(new PlayerDiedEvent(entity));
                 }
             }
+        }
+
+        if (isStatusTick)
+        {
+            return;
         }
 
         if (!_world.TryGetComponent(entity, out Position position))

@@ -77,6 +77,9 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
 
                 // Draw XP bar and level
                 DrawPlayerXpBar(world, spriteBatch, position);
+
+                // Draw dash indicator in bottom-right corner
+                DrawDashIndicator(world, spriteBatch);
             }
 
             // Draw game over overlay
@@ -408,6 +411,62 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
                 var xpTextSize = _regularFont.MeasureString(xpText);
                 var xpTextPosition = barPosition + new Vector2(barWidth + 10f, -4f);
                 spriteBatch.DrawString(_regularFont, xpText, xpTextPosition, Color.White);
+            });
+    }
+
+    private void DrawDashIndicator(EcsWorld world, SpriteBatch spriteBatch)
+    {
+        world.ForEach<PlayerTag, DashCooldown, DashConfig>(
+            (Entity entity, ref PlayerTag __, ref DashCooldown cooldown, ref DashConfig config) =>
+            {
+                var buffer = world.TryGetComponent(entity, out DashInputBuffer dashBuffer)
+                    ? dashBuffer
+                    : new DashInputBuffer();
+                var indicatorPosition = new Vector2(860f, 480f);
+                var indicatorSize = new Vector2(80f, 12f);
+                var cooldownRatio = config.Cooldown <= 0.0001f
+                    ? 1f
+                    : MathHelper.Clamp(1f - (cooldown.RemainingSeconds / config.Cooldown), 0f, 1f);
+
+                spriteBatch.Draw(
+                    _pixel,
+                    indicatorPosition,
+                    null,
+                    Color.DarkSlateGray * 0.9f,
+                    0f,
+                    Vector2.Zero,
+                    indicatorSize,
+                    SpriteEffects.None,
+                    0f);
+
+                var fillColor = cooldown.RemainingSeconds <= 0f ? Color.DeepSkyBlue : Color.SteelBlue;
+                spriteBatch.Draw(
+                    _pixel,
+                    indicatorPosition,
+                    null,
+                    fillColor,
+                    0f,
+                    Vector2.Zero,
+                    new Vector2(indicatorSize.X * cooldownRatio, indicatorSize.Y),
+                    SpriteEffects.None,
+                    0f);
+
+                var labelPosition = indicatorPosition + new Vector2(0f, -18f);
+                spriteBatch.DrawString(_regularFont, "Dash", labelPosition, Color.White);
+
+                if (buffer.HasBufferedInput)
+                {
+                    spriteBatch.Draw(
+                        _pixel,
+                        indicatorPosition + new Vector2(indicatorSize.X + 6f, 0f),
+                        null,
+                        Color.Gold,
+                        0f,
+                        Vector2.Zero,
+                        new Vector2(6f, indicatorSize.Y),
+                        SpriteEffects.None,
+                        0f);
+                }
             });
     }
 

@@ -131,7 +131,8 @@ internal sealed class DamageCalculator
             baseBeforeMultipliers: damageInfo.BaseDamage,
             isCritical: isCrit,
             damageReduction: damageReduction,
-            damageType: damageInfo.DamageType);
+            damageType: damageInfo.DamageType,
+            source: damageInfo.Source);
     }
 
     /// <summary>
@@ -149,6 +150,24 @@ internal sealed class DamageCalculator
 
         var reduction = armorOrResist / (armorOrResist + 100f);
         return Math.Clamp(reduction, 0f, 0.9f); // Max 90% reduction
+    }
+
+    /// <summary>
+    /// Calculate resistance multiplier for status effects based on defensive stats.
+    /// </summary>
+    public static float CalculateStatusEffectResistance(StatusEffectType type, in DefensiveStats defense)
+    {
+        float rawResist = type switch
+        {
+            StatusEffectType.Burn => defense.FireResist,
+            StatusEffectType.Freeze => defense.FrostResist,
+            StatusEffectType.Slow => defense.FrostResist,
+            StatusEffectType.Shock => defense.ArcaneResist,
+            StatusEffectType.Poison => defense.NatureResist > 0f ? defense.NatureResist : defense.ArcaneResist,
+            _ => 0f
+        };
+
+        return CalculateReduction(rawResist);
     }
 }
 
@@ -179,6 +198,9 @@ internal static class StatCalculator
         // Defensive stats
         computed.EffectiveArmor = Math.Max(0f, (baseDefense.Armor + modifiers.ArmorAdditive) * modifiers.ArmorMultiplicative);
         computed.EffectiveArcaneResist = Math.Max(0f, (baseDefense.ArcaneResist + modifiers.ArcaneResistAdditive) * modifiers.ArcaneResistMultiplicative);
+        computed.EffectiveFireResist = Math.Max(0f, (baseDefense.FireResist + modifiers.FireResistAdditive) * modifiers.FireResistMultiplicative);
+        computed.EffectiveFrostResist = Math.Max(0f, (baseDefense.FrostResist + modifiers.FrostResistAdditive) * modifiers.FrostResistMultiplicative);
+        computed.EffectiveNatureResist = Math.Max(0f, (baseDefense.NatureResist + modifiers.NatureResistAdditive) * modifiers.NatureResistMultiplicative);
 
         // Movement speed
         computed.EffectiveMoveSpeed = Math.Max(0f, (baseMoveSpeed + modifiers.MoveSpeedAdditive) * modifiers.MoveSpeedMultiplicative);

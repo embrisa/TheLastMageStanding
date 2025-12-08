@@ -42,8 +42,8 @@ internal sealed class PerkTreeUISystem : IUpdateSystem, IDrawSystem, ILoadConten
 
     public void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content)
     {
-        _font = content.Load<SpriteFont>("Fonts/Regular");
-        _titleFont = content.Load<SpriteFont>("Fonts/Title");
+        _font = content.Load<SpriteFont>("Fonts/FontRegularText");
+        _titleFont = content.Load<SpriteFont>("Fonts/FontRegularTitle");
         
         // Create white pixel for drawing rectangles
         _whitePixel = new Texture2D(graphicsDevice, 1, 1);
@@ -217,24 +217,30 @@ internal sealed class PerkTreeUISystem : IUpdateSystem, IDrawSystem, ILoadConten
             return;
 
         var spriteBatch = context.SpriteBatch;
-        var screenWidth = 1920; // Virtual resolution
-        var screenHeight = 1080;
+        var viewport = spriteBatch.GraphicsDevice.Viewport;
+        var screenWidth = viewport.Width;
+        var screenHeight = viewport.Height;
+        const int margin = 20;
+        var availableWidth = Math.Max(screenWidth - margin * 2, 100);
+        var availableHeight = Math.Max(screenHeight - margin * 2, 100);
+        var panelWidth = Math.Min(PanelWidth, Math.Min(availableWidth, screenWidth));
+        var panelHeight = Math.Min(PanelHeight, Math.Min(availableHeight, screenHeight));
 
         // Draw semi-transparent background
         var fullScreenRect = new Rectangle(0, 0, screenWidth, screenHeight);
         spriteBatch.Draw(_whitePixel, fullScreenRect, Color.Black * 0.7f);
 
         // Draw panel background
-        var panelX = (screenWidth - PanelWidth) / 2;
-        var panelY = (screenHeight - PanelHeight) / 2;
-        var panelRect = new Rectangle(panelX, panelY, PanelWidth, PanelHeight);
+        var panelX = (screenWidth - panelWidth) / 2;
+        var panelY = (screenHeight - panelHeight) / 2;
+        var panelRect = new Rectangle(panelX, panelY, panelWidth, panelHeight);
         spriteBatch.Draw(_whitePixel, panelRect, Color.Black * 0.9f);
         DrawBorder(spriteBatch, panelRect, 2, Color.Gold);
 
         // Draw title
         var titleText = "Perk Tree";
         var titleSize = _titleFont.MeasureString(titleText);
-        var titlePos = new Vector2(panelX + (PanelWidth - titleSize.X) / 2, panelY + 20);
+        var titlePos = new Vector2(panelX + (panelWidth - titleSize.X) / 2, panelY + 20);
         spriteBatch.DrawString(_titleFont, titleText, titlePos, Color.Gold);
 
         // Find player
@@ -276,13 +282,13 @@ internal sealed class PerkTreeUISystem : IUpdateSystem, IDrawSystem, ILoadConten
             var yPos = listY + i * lineHeight;
 
             // Skip if off-screen
-            if (yPos > panelY + PanelHeight - 100)
+            if (yPos > panelY + panelHeight - 100)
                 break;
 
             // Highlight selected
             if (isSelected)
             {
-                var highlightRect = new Rectangle(panelX + 10, (int)yPos - 2, PanelWidth - 20, lineHeight);
+                var highlightRect = new Rectangle(panelX + 10, (int)yPos - 2, panelWidth - 20, lineHeight);
                 spriteBatch.Draw(_whitePixel, highlightRect, Color.Gold * 0.3f);
             }
 
@@ -297,7 +303,7 @@ internal sealed class PerkTreeUISystem : IUpdateSystem, IDrawSystem, ILoadConten
 
             // Draw cost
             var costText = $"({perk.PointsPerRank} pts)";
-            var costPos = new Vector2(panelX + PanelWidth - 120, yPos);
+            var costPos = new Vector2(panelX + panelWidth - 120, yPos);
             spriteBatch.DrawString(_font, costText, costPos, Color.Yellow);
         }
 
@@ -307,7 +313,7 @@ internal sealed class PerkTreeUISystem : IUpdateSystem, IDrawSystem, ILoadConten
             var selectedPerk = _config.GetPerk(perkUI.HoveredPerkId);
             if (selectedPerk != null)
             {
-                var detailY = panelY + PanelHeight - 150;
+                var detailY = panelY + panelHeight - 150;
                 var detailX = panelX + 20;
 
                 spriteBatch.DrawString(_font, "Description:", new Vector2(detailX, detailY), Color.Gold);
@@ -332,17 +338,18 @@ internal sealed class PerkTreeUISystem : IUpdateSystem, IDrawSystem, ILoadConten
         {
             var messageSize = _font.MeasureString(perkUI.MessageText);
             var messagePos = new Vector2(
-                panelX + (PanelWidth - messageSize.X) / 2,
-                panelY + PanelHeight - 50);
+                panelX + (panelWidth - messageSize.X) / 2,
+                panelY + panelHeight - 50);
             spriteBatch.DrawString(_font, perkUI.MessageText, messagePos, Color.Yellow);
         }
 
         // Draw controls hint
-        var controlsText = "[↑↓] Navigate  [Enter] Allocate  [R] Respec All  [P] Close";
+        // Use ASCII-only characters to avoid SpriteFont glyph issues.
+        var controlsText = "[Up/Down] Navigate  [Enter] Allocate  [R] Respec All  [P] Close";
         var controlsSize = _font.MeasureString(controlsText);
         var controlsPos = new Vector2(
-            panelX + (PanelWidth - controlsSize.X) / 2,
-            panelY + PanelHeight - 25);
+            panelX + (panelWidth - controlsSize.X) / 2,
+            panelY + panelHeight - 25);
         spriteBatch.DrawString(_font, controlsText, controlsPos, Color.Gray);
     }
 

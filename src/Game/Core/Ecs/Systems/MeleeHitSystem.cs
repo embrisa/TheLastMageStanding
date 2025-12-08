@@ -87,7 +87,9 @@ internal sealed class MeleeHitSystem : IUpdateSystem
         var damageInfo = new DamageInfo(
             baseDamage: hitbox.Damage,
             damageType: DamageType.Physical,
-            flags: DamageFlags.CanCrit);
+            flags: DamageFlags.CanCrit,
+            source: DamageSource.Melee,
+            statusEffect: hitbox.StatusEffect);
 
         // Get owner position for event
         var ownerPos = world.TryGetComponent(hitbox.Owner, out Position pos) ? pos.Value : contactPoint;

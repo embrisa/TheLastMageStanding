@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 
@@ -35,9 +36,15 @@ internal sealed class CleanupSystem : IUpdateSystem
                     // Skip player entities - they shouldn't be removed on death
                     if (!world.TryGetComponent<PlayerTag>(entity, out _))
                     {
+                        var deathPosition = world.TryGetComponent(entity, out Position position) ? position.Value : Vector2.Zero;
+                        IReadOnlyList<EliteModifierType>? activeModifiers = null;
+                        if (world.TryGetComponent(entity, out EliteModifierData modifierData) && modifierData.ActiveModifiers != null)
+                        {
+                            activeModifiers = new List<EliteModifierType>(modifierData.ActiveModifiers);
+                        }
                         if (world.TryGetComponent<Faction>(entity, out var faction) && faction == Faction.Enemy)
                         {
-                            world.EventBus.Publish(new EnemyDiedEvent(entity));
+                            world.EventBus.Publish(new EnemyDiedEvent(entity, deathPosition, activeModifiers));
                         }
                         toRemove.Add(entity);
                     }

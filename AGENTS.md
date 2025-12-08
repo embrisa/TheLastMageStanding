@@ -35,4 +35,5 @@
 - Tasks live as individual files under `tasks/` created from `TASK_TEMPLATE.md`. Index and links are in `TASKS.md`.
 - Update status and notes daily; mark blockers immediately with needs/asks.
 - When handing off, leave: current status, next steps, decisions, links to WIP branches/PRs.
+- When changing or extending game design, update `docs/game-design-document.md` alongside the relevant task so the GDD stays current.
 

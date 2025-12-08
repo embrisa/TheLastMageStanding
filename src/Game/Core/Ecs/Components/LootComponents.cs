@@ -15,6 +15,11 @@ internal struct LootDropper
     public float DropChance { get; set; }
     
     /// <summary>
+    /// Multiplier applied when elite modifiers are present.
+    /// </summary>
+    public float ModifierRewardMultiplier { get; set; }
+    
+    /// <summary>
     /// Is this an elite enemy with higher drop rates?
     /// </summary>
     public bool IsElite { get; set; }
@@ -27,6 +32,7 @@ internal struct LootDropper
     public LootDropper()
     {
         DropChance = 0.15f; // 15% base drop chance
+        ModifierRewardMultiplier = 1f;
         IsElite = false;
         IsBoss = false;
     }

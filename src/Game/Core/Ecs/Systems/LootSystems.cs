@@ -28,7 +28,7 @@ internal sealed class LootDropSystem : IUpdateSystem
     {
         _world = world;
         // Subscribe to entity death events
-        world.EventBus.Subscribe<PlayerDiedEvent>(OnEntityDied);
+        world.EventBus.Subscribe<EnemyDiedEvent>(OnEnemyDied);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
@@ -36,15 +36,12 @@ internal sealed class LootDropSystem : IUpdateSystem
         // No per-frame logic, loot drops are event-driven
     }
 
-    private void OnEntityDied(PlayerDiedEvent evt)
+    private void OnEnemyDied(EnemyDiedEvent evt)
     {
         if (_world == null) return;
         
-        // For now, we hook into any death event to check for loot drops
-        // In a real implementation, this would be a generic EntityDiedEvent
-        
         // Check if entity can drop loot
-        if (!_world.TryGetComponent(evt.Player, out LootDropper dropper))
+        if (!_world.TryGetComponent(evt.Enemy, out LootDropper dropper))
             return;
 
         // Roll for drop
@@ -54,11 +51,10 @@ internal sealed class LootDropSystem : IUpdateSystem
         else if (dropper.IsElite)
             dropChance = _config.EliteDropChance;
 
-        if (_rng.NextDouble() > dropChance)
-            return;
+        dropChance *= MathF.Max(1f, dropper.ModifierRewardMultiplier);
+        dropChance = MathF.Min(dropChance, dropper.IsBoss ? 1f : 0.95f);
 
-        // Get death position
-        if (!_world.TryGetComponent(evt.Player, out Position position))
+        if (_rng.NextDouble() > dropChance)
             return;
 
         // Generate random item
@@ -67,7 +63,7 @@ internal sealed class LootDropSystem : IUpdateSystem
             return;
 
         // Spawn loot entity
-        SpawnLootEntity(item, position.Value);
+        SpawnLootEntity(item, evt.Position);
     }
 
     private void SpawnLootEntity(ItemInstance item, Vector2 position)
@@ -178,7 +174,7 @@ internal sealed class EquipmentStatSystem : IUpdateSystem
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
         // Check for dirty equipment and recalculate stats
-        world.ForEach<Equipment, StatModifiers, ComputedStats>((Entity entity, ref Equipment equipment, ref StatModifiers statMods, ref ComputedStats computed) =>
+        world.ForEach<Equipment, ComputedStats>((Entity entity, ref Equipment equipment, ref ComputedStats computed) =>
         {
             if (!equipment.ModifiersDirty)
                 return;
@@ -192,8 +188,8 @@ internal sealed class EquipmentStatSystem : IUpdateSystem
                 equipmentMods = CombineModifiers(equipmentMods, itemMods);
             }
 
-            // Update entity's stat modifiers (additive with other sources like perks)
-            statMods = equipmentMods; // For now, just set directly
+            // Update entity's equipment modifiers
+            world.SetComponent(entity, new EquipmentModifiers { Value = equipmentMods });
             
             // Mark computed stats as dirty so they get recalculated
             computed.IsDirty = true;

@@ -30,6 +30,8 @@ public class MeleeHitSystemTests
         world.SetComponent(enemy, new Position(new Vector2(110, 100)));
         world.SetComponent(enemy, new Health(50f, 50f));
         world.SetComponent(enemy, new Hurtbox { IsInvulnerable = false });
+        world.SetComponent(enemy, new ComputedStats { IsDirty = false });
+        world.SetComponent(enemy, new DefensiveStats { Armor = 0f, ArcaneResist = 0f });
 
         var hitbox = world.CreateEntity();
         world.SetComponent(hitbox, new Position(new Vector2(110, 100)));
@@ -40,7 +42,13 @@ public class MeleeHitSystemTests
         EntityDamagedEvent? damageEvent = null;
         eventBus.Subscribe<EntityDamagedEvent>(evt => damageEvent = evt);
 
-        // Act - simulate collision
+        // Act - update system to initialize damage service, then simulate collision
+        var camera = new Camera2D(1920, 1080);
+        var inputState = new InputState();
+        var gameTime = new Microsoft.Xna.Framework.GameTime();
+        var context = new EcsUpdateContext(gameTime, 0.016f, inputState, camera);
+        system.Update(world, context);
+        
         var collisionEvent = new CollisionEnterEvent(hitbox, enemy, new Vector2(110, 100), Vector2.UnitX);
         eventBus.Publish(collisionEvent);
         eventBus.ProcessEvents();
@@ -141,6 +149,8 @@ public class MeleeHitSystemTests
         world.SetComponent(enemy, new Position(new Vector2(110, 100)));
         world.SetComponent(enemy, new Health(50f, 50f));
         world.SetComponent(enemy, new Hurtbox { IsInvulnerable = false });
+        world.SetComponent(enemy, new ComputedStats { IsDirty = false });
+        world.SetComponent(enemy, new DefensiveStats { Armor = 0f, ArcaneResist = 0f });
 
         var hitbox = world.CreateEntity();
         world.SetComponent(hitbox, new Position(new Vector2(110, 100)));
@@ -150,7 +160,13 @@ public class MeleeHitSystemTests
         var damageCount = 0;
         eventBus.Subscribe<EntityDamagedEvent>(_ => damageCount++);
 
-        // Act - simulate multiple collisions with same target
+        // Act - update system to initialize damage service, then simulate multiple collisions with same target
+        var camera = new Camera2D(1920, 1080);
+        var inputState = new InputState();
+        var gameTime = new Microsoft.Xna.Framework.GameTime();
+        var context = new EcsUpdateContext(gameTime, 0.016f, inputState, camera);
+        system.Update(world, context);
+        
         var collisionEvent = new CollisionEnterEvent(hitbox, enemy, new Vector2(110, 100), Vector2.UnitX);
         eventBus.Publish(collisionEvent);
         eventBus.Publish(collisionEvent); // Second hit

@@ -44,9 +44,16 @@ internal static class StatInspector
             sb.AppendLine("\nBase Defensive Stats:");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Armor: {defense.Armor:F1}");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Arcane Resist: {defense.ArcaneResist:F1}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Fire Resist: {defense.FireResist:F1}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Frost Resist: {defense.FrostResist:F1}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Nature Resist: {defense.NatureResist:F1}");
         }
 
-        if (world.TryGetComponent(entity, out MoveSpeed moveSpeed))
+        if (world.TryGetComponent(entity, out BaseMoveSpeed baseMoveSpeed))
+        {
+            sb.AppendLine(CultureInfo.InvariantCulture, $"\nBase Move Speed: {baseMoveSpeed.Value:F1}");
+        }
+        else if (world.TryGetComponent(entity, out MoveSpeed moveSpeed))
         {
             sb.AppendLine(CultureInfo.InvariantCulture, $"\nBase Move Speed: {moveSpeed.Value:F1}");
         }
@@ -61,6 +68,12 @@ internal static class StatInspector
                 sb.AppendLine(CultureInfo.InvariantCulture, $"  Attack Speed: +{mods.AttackSpeedAdditive:F2} × {mods.AttackSpeedMultiplicative:F2}");
             if (mods.ArmorAdditive != 0f || mods.ArmorMultiplicative != 1f)
                 sb.AppendLine(CultureInfo.InvariantCulture, $"  Armor: +{mods.ArmorAdditive:F1} × {mods.ArmorMultiplicative:F2}");
+            if (mods.FireResistAdditive != 0f || mods.FireResistMultiplicative != 1f)
+                sb.AppendLine(CultureInfo.InvariantCulture, $"  Fire Resist: +{mods.FireResistAdditive:F1} × {mods.FireResistMultiplicative:F2}");
+            if (mods.FrostResistAdditive != 0f || mods.FrostResistMultiplicative != 1f)
+                sb.AppendLine(CultureInfo.InvariantCulture, $"  Frost Resist: +{mods.FrostResistAdditive:F1} × {mods.FrostResistMultiplicative:F2}");
+            if (mods.NatureResistAdditive != 0f || mods.NatureResistMultiplicative != 1f)
+                sb.AppendLine(CultureInfo.InvariantCulture, $"  Nature Resist: +{mods.NatureResistAdditive:F1} × {mods.NatureResistMultiplicative:F2}");
             if (mods.MoveSpeedAdditive != 0f || mods.MoveSpeedMultiplicative != 1f)
                 sb.AppendLine(CultureInfo.InvariantCulture, $"  Move Speed: +{mods.MoveSpeedAdditive:F1} × {mods.MoveSpeedMultiplicative:F2}");
         }
@@ -76,6 +89,9 @@ internal static class StatInspector
             sb.AppendLine(CultureInfo.InvariantCulture, $"  CDR: {computed.EffectiveCooldownReduction:P1}");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Armor: {computed.EffectiveArmor:F1} ({CalculateReductionPercent(computed.EffectiveArmor):P1})");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Arcane Resist: {computed.EffectiveArcaneResist:F1} ({CalculateReductionPercent(computed.EffectiveArcaneResist):P1})");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Fire Resist: {computed.EffectiveFireResist:F1} ({CalculateReductionPercent(computed.EffectiveFireResist):P1})");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Frost Resist: {computed.EffectiveFrostResist:F1} ({CalculateReductionPercent(computed.EffectiveFrostResist):P1})");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Nature Resist: {computed.EffectiveNatureResist:F1} ({CalculateReductionPercent(computed.EffectiveNatureResist):P1})");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Move Speed: {computed.EffectiveMoveSpeed:F1}");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  [Dirty: {computed.IsDirty}]");
         }

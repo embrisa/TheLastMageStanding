@@ -15,6 +15,7 @@ internal sealed class InputState
     public bool MenuBackPressed { get; private set; }
     public bool RestartPressed { get; private set; }
     public bool AttackPressed { get; private set; }
+    public bool DashPressed { get; private set; }
     public bool DebugTogglePressed { get; private set; }
     public bool PerkTreePressed { get; private set; }
     public bool RespecPressed { get; private set; }
@@ -60,7 +61,8 @@ internal sealed class InputState
         MenuRightPressed = IsNewKeyPress(Keys.Right) || IsNewKeyPress(Keys.D);
         MenuBackPressed = IsNewKeyPress(Keys.Escape) || IsNewKeyPress(Keys.Back);
         RestartPressed = IsNewKeyPress(Keys.R);
-        AttackPressed = _currentKeyboard.IsKeyDown(Keys.Space) || _currentMouse.LeftButton == ButtonState.Pressed;
+        AttackPressed = _currentKeyboard.IsKeyDown(Keys.J) || _currentMouse.LeftButton == ButtonState.Pressed;
+        DashPressed = IsNewKeyPress(Keys.LeftShift) || IsNewKeyPress(Keys.RightShift) || IsNewKeyPress(Keys.Space);
         DebugTogglePressed = IsNewKeyPress(Keys.F3);
         PerkTreePressed = IsNewKeyPress(Keys.P);
         RespecPressed = IsNewKeyPress(Keys.R) && (_currentKeyboard.IsKeyDown(Keys.LeftShift) || _currentKeyboard.IsKeyDown(Keys.RightShift));
@@ -68,5 +70,12 @@ internal sealed class InputState
 
     private bool IsNewKeyPress(Keys key) =>
         _currentKeyboard.IsKeyDown(key) && !_previousKeyboard.IsKeyDown(key);
+
+    internal void SetTestState(Vector2 movement, bool attackPressed = false, bool dashPressed = false)
+    {
+        Movement = movement == Vector2.Zero ? Vector2.Zero : Vector2.Normalize(movement);
+        AttackPressed = attackPressed;
+        DashPressed = dashPressed;
+    }
 }
 

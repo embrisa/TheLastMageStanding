@@ -3,6 +3,7 @@ using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Ecs.Systems;
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Combat;
 using Xunit;
 
 namespace TheLastMageStanding.Game.Tests.Combat;
@@ -22,11 +23,12 @@ public class HitStopSystemTests
 
         // Act - publish damage event
         eventBus.Publish(new EntityDamagedEvent(
+            Entity.None,
             new Entity(1),
             25f,
+            new DamageInfo(25f),
             Vector2.Zero,
-            Faction.Player
-        ));
+            Faction.Player));
         eventBus.ProcessEvents();
 
         // Assert
@@ -45,7 +47,7 @@ public class HitStopSystemTests
         system.Initialize(world);
 
         // Trigger hit-stop
-        eventBus.Publish(new EntityDamagedEvent(new Entity(1), 25f, Vector2.Zero, Faction.Player));
+        eventBus.Publish(new EntityDamagedEvent(Entity.None, new Entity(1), 25f, new DamageInfo(25f), Vector2.Zero, Faction.Player));
         eventBus.ProcessEvents();
         Assert.True(system.IsHitStopped());
 
@@ -74,7 +76,7 @@ public class HitStopSystemTests
         system.Initialize(world);
 
         // Act - low damage
-        eventBus.Publish(new EntityDamagedEvent(new Entity(1), 10f, Vector2.Zero, Faction.Player));
+        eventBus.Publish(new EntityDamagedEvent(Entity.None, new Entity(1), 10f, new DamageInfo(10f), Vector2.Zero, Faction.Player));
         eventBus.ProcessEvents();
         var lowDamageStopActive = system.IsHitStopped();
 
@@ -82,7 +84,7 @@ public class HitStopSystemTests
         system.Update(world, new EcsUpdateContext(null!, 0.2f, null!, null!));
 
         // High damage
-        eventBus.Publish(new EntityDamagedEvent(new Entity(2), 100f, Vector2.Zero, Faction.Player));
+        eventBus.Publish(new EntityDamagedEvent(Entity.None, new Entity(2), 100f, new DamageInfo(100f), Vector2.Zero, Faction.Player));
         eventBus.ProcessEvents();
         var highDamageStopActive = system.IsHitStopped();
 
@@ -103,7 +105,7 @@ public class HitStopSystemTests
         system.Initialize(world);
 
         // Act
-        eventBus.Publish(new EntityDamagedEvent(new Entity(1), 50f, Vector2.Zero, Faction.Player));
+        eventBus.Publish(new EntityDamagedEvent(Entity.None, new Entity(1), 50f, new DamageInfo(50f), Vector2.Zero, Faction.Player));
         eventBus.ProcessEvents();
 
         // Assert
@@ -122,7 +124,7 @@ public class HitStopSystemTests
         system.Initialize(world);
 
         // Act
-        eventBus.Publish(new EntityDamagedEvent(new Entity(1), 30f, Vector2.Zero, Faction.Player));
+        eventBus.Publish(new EntityDamagedEvent(Entity.None, new Entity(1), 30f, new DamageInfo(30f), Vector2.Zero, Faction.Player));
         eventBus.ProcessEvents();
         
         // Update system to generate shake offset
@@ -145,7 +147,7 @@ public class HitStopSystemTests
         system.Initialize(world);
 
         // Act
-        eventBus.Publish(new EntityDamagedEvent(new Entity(1), 50f, Vector2.Zero, Faction.Player));
+        eventBus.Publish(new EntityDamagedEvent(Entity.None, new Entity(1), 50f, new DamageInfo(50f), Vector2.Zero, Faction.Player));
         eventBus.ProcessEvents();
 
         // Assert

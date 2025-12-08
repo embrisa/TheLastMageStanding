@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Ecs.Config;
+using TheLastMageStanding.Game.Core.Skills;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
@@ -25,12 +26,23 @@ internal sealed class PlayerEntityFactory
         _world.SetComponent(entity, new Position(spawnPosition));
         _world.SetComponent(entity, new Velocity(Vector2.Zero));
         _world.SetComponent(entity, new MoveSpeed(220f));
+        _world.SetComponent(entity, new BaseMoveSpeed(220f));
         _world.SetComponent(entity, new InputIntent());
+        _world.SetComponent(entity, new DashConfig
+        {
+            Distance = DashConfig.DefaultDistance,
+            Duration = DashConfig.DefaultDuration,
+            Cooldown = DashConfig.DefaultCooldown,
+            IFrameWindow = DashConfig.DefaultIFrameWindow,
+            InputBufferWindow = DashConfig.DefaultInputBufferWindow
+        });
+        _world.SetComponent(entity, new DashCooldown(0f));
+        _world.SetComponent(entity, new DashInputBuffer());
         _world.SetComponent(entity, new AttackStats(damage: 20f, cooldownSeconds: 0.35f, range: 42f));
         _world.SetComponent(entity, new Health(current: 100f, max: 100f));
         _world.SetComponent(entity, new Hitbox(radius: 6f));
         _world.SetComponent(entity, new Mass(1.0f)); // Standard player mass
-        
+
         // Stat components for unified damage model
         _world.SetComponent(entity, new OffensiveStats
         {
@@ -43,11 +55,14 @@ internal sealed class PlayerEntityFactory
         _world.SetComponent(entity, new DefensiveStats
         {
             Armor = 0f,
-            ArcaneResist = 0f
+            ArcaneResist = 0f,
+            FireResist = 0f,
+            FrostResist = 0f,
+            NatureResist = 0f
         });
         _world.SetComponent(entity, StatModifiers.Zero);
         _world.SetComponent(entity, new ComputedStats { IsDirty = true });
-        
+
         _world.SetComponent(entity, Collider.CreateCircle(6f, CollisionLayer.Player, CollisionLayer.Enemy | CollisionLayer.Pickup | CollisionLayer.WorldStatic, isTrigger: false));
 
         // Combat hitbox/hurtbox components
@@ -73,6 +88,11 @@ internal sealed class PlayerEntityFactory
         _world.SetComponent(entity, new Inventory());
         _world.SetComponent(entity, new Equipment());
         _world.SetComponent(entity, new LootPickupRadius());
+
+        // Skill system components
+        _world.SetComponent(entity, new EquippedSkills()); // Starts with Firebolt as primary
+        _world.SetComponent(entity, new SkillCooldowns());
+        _world.SetComponent(entity, new PlayerSkillModifiers());
 
         return entity;
     }

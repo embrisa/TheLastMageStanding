@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Xna.Framework;
+using TheLastMageStanding.Game.Core.Config;
 using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
@@ -31,6 +32,8 @@ internal sealed class DamageApplicationService
         DamageInfo damageInfo,
         Vector2 sourcePosition)
     {
+        damageInfo = ApplyShockIfNeeded(target, damageInfo);
+
         // Get attacker's offensive stats
         var attackerOffense = _world.TryGetComponent(attacker, out ComputedStats attackerComputed)
             ? new OffensiveStats
@@ -48,7 +51,10 @@ internal sealed class DamageApplicationService
             ? new DefensiveStats
             {
                 Armor = targetComputed.EffectiveArmor,
-                ArcaneResist = targetComputed.EffectiveArcaneResist
+                ArcaneResist = targetComputed.EffectiveArcaneResist,
+                FireResist = targetComputed.EffectiveFireResist,
+                FrostResist = targetComputed.EffectiveFrostResist,
+                NatureResist = targetComputed.EffectiveNatureResist
             }
             : DefensiveStats.Default;
 
@@ -65,12 +71,13 @@ internal sealed class DamageApplicationService
 
         // Publish damage event with full information
         _world.EventBus.Publish(new EntityDamagedEvent(
+            attacker,
             target,
             result.FinalDamage,
+            damageInfo,
             sourcePosition,
             attackerFaction,
-            result.IsCritical,
-            result.DamageType));
+            result.IsCritical));
 
         return result.FinalDamage;
     }
@@ -84,6 +91,8 @@ internal sealed class DamageApplicationService
         Vector2 sourcePosition,
         Faction sourceFaction = Faction.Neutral)
     {
+        damageInfo = ApplyShockIfNeeded(target, damageInfo);
+
         // No attacker stats, use defaults
         var attackerOffense = OffensiveStats.Default;
 
@@ -92,7 +101,10 @@ internal sealed class DamageApplicationService
             ? new DefensiveStats
             {
                 Armor = targetComputed.EffectiveArmor,
-                ArcaneResist = targetComputed.EffectiveArcaneResist
+                ArcaneResist = targetComputed.EffectiveArcaneResist,
+                FireResist = targetComputed.EffectiveFireResist,
+                FrostResist = targetComputed.EffectiveFrostResist,
+                NatureResist = targetComputed.EffectiveNatureResist
             }
             : DefensiveStats.Default;
 
@@ -104,13 +116,40 @@ internal sealed class DamageApplicationService
 
         // Publish damage event
         _world.EventBus.Publish(new EntityDamagedEvent(
+            Entity.None,
             target,
             result.FinalDamage,
+            damageInfo,
             sourcePosition,
             sourceFaction,
-            result.IsCritical,
-            result.DamageType));
+            result.IsCritical));
 
         return result.FinalDamage;
+    }
+
+    private DamageInfo ApplyShockIfNeeded(Entity target, DamageInfo damageInfo)
+    {
+        if (!_world.TryGetComponent(target, out ActiveStatusEffects effects) || effects.Effects == null)
+        {
+            return damageInfo;
+        }
+
+        foreach (var effect in effects.Effects)
+        {
+            if (effect.Data.Type != StatusEffectType.Shock || effect.CurrentStacks <= 0)
+            {
+                continue;
+            }
+
+            var multiplier = 1f + (StatusEffectConfig.ShockDamageAmp * effect.CurrentStacks);
+            return new DamageInfo(
+                damageInfo.BaseDamage * multiplier,
+                damageInfo.DamageType,
+                damageInfo.Flags,
+                damageInfo.Source,
+                damageInfo.StatusEffect);
+        }
+
+        return damageInfo;
     }
 }

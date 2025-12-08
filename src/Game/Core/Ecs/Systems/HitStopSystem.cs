@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using TheLastMageStanding.Game.Core.Combat;
 using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
@@ -43,7 +44,7 @@ internal sealed class HitStopSystem : IUpdateSystem
         if (_shakeTimer > 0f)
         {
             _shakeTimer -= deltaSeconds;
-            
+
             if (_shakeTimer <= 0f)
             {
                 _cameraShakeOffset = Vector2.Zero;
@@ -54,7 +55,7 @@ internal sealed class HitStopSystem : IUpdateSystem
                 // Simple random shake
                 var progress = 1f - (_shakeTimer / _shakeDuration);
                 var currentIntensity = _shakeIntensity * (1f - progress); // Fade out
-                
+
                 _cameraShakeOffset = new Vector2(
                     (Random.Shared.NextSingle() - 0.5f) * 2f * currentIntensity,
                     (Random.Shared.NextSingle() - 0.5f) * 2f * currentIntensity
@@ -67,6 +68,11 @@ internal sealed class HitStopSystem : IUpdateSystem
 
     private void OnEntityDamaged(EntityDamagedEvent evt)
     {
+        if (evt.DamageInfo.Source == DamageSource.StatusEffect)
+        {
+            return;
+        }
+
         // Apply hit-stop based on damage amount
         var hitStopDuration = CalculateHitStopDuration(evt.Amount);
         if (hitStopDuration > 0f && EnableHitStop)
@@ -100,6 +106,21 @@ internal sealed class HitStopSystem : IUpdateSystem
     {
         // Don't reset shake if already active, just update if new is stronger
         if (intensity > _shakeIntensity)
+        {
+            _shakeIntensity = intensity;
+            _shakeDuration = duration;
+            _shakeTimer = duration;
+        }
+    }
+
+    public void TriggerCameraNudge(float intensity, float duration)
+    {
+        if (!EnableCameraShake || intensity <= 0f || duration <= 0f)
+        {
+            return;
+        }
+
+        if (intensity >= _shakeIntensity)
         {
             _shakeIntensity = intensity;
             _shakeDuration = duration;

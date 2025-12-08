@@ -26,7 +26,7 @@ internal sealed class ContactDamageSystem : IUpdateSystem
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
         _gameTime += context.DeltaSeconds;
-        
+
         // Lazily initialize damage service
         _damageService ??= new DamageApplicationService(
             world,
@@ -56,6 +56,10 @@ internal sealed class ContactDamageSystem : IUpdateSystem
         if (attackerFaction == targetFaction)
             return;
 
+        // Dash/temporary invulnerability
+        if (world.TryGetComponent(target, out Invulnerable _))
+            return;
+
         // Skip if target is dead
         if (health.IsDead)
             return;
@@ -80,7 +84,8 @@ internal sealed class ContactDamageSystem : IUpdateSystem
         var damageInfo = new DamageInfo(
             baseDamage: attackStats.Damage,
             damageType: DamageType.Physical,
-            flags: DamageFlags.CanCrit);
+            flags: DamageFlags.CanCrit,
+            source: DamageSource.ContactDamage);
 
         // Get attacker position for event
         var attackerPos = world.TryGetComponent(attacker, out Position pos) ? pos.Value : Vector2.Zero;

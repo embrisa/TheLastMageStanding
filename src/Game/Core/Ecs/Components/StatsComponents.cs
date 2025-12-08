@@ -78,17 +78,48 @@ internal struct DefensiveStats
     /// </summary>
     public float ArcaneResist { get; set; }
 
+    /// <summary>
+    /// Fire damage/status resistance. Uses diminishing returns.
+    /// </summary>
+    public float FireResist { get; set; }
+
+    /// <summary>
+    /// Frost damage/status resistance. Uses diminishing returns.
+    /// </summary>
+    public float FrostResist { get; set; }
+
+    /// <summary>
+    /// Nature/poison resistance. Uses diminishing returns.
+    /// </summary>
+    public float NatureResist { get; set; }
+
     public static DefensiveStats Default => new()
     {
         Armor = 0.0f,
-        ArcaneResist = 0.0f
+        ArcaneResist = 0.0f,
+        FireResist = 0.0f,
+        FrostResist = 0.0f,
+        NatureResist = 0.0f
     };
 
     public DefensiveStats()
     {
         Armor = 0.0f;
         ArcaneResist = 0.0f;
+        FireResist = 0.0f;
+        FrostResist = 0.0f;
+        NatureResist = 0.0f;
     }
+}
+
+/// <summary>
+/// Base movement speed (unmodified). Used to ensure recalculations
+/// can restore move speed after temporary modifiers.
+/// </summary>
+internal struct BaseMoveSpeed
+{
+    public BaseMoveSpeed(float value) => Value = value;
+    public float Value { get; set; }
 }
 
 /// <summary>
@@ -111,6 +142,12 @@ internal struct StatModifiers
     public float ArmorMultiplicative { get; set; }
     public float ArcaneResistAdditive { get; set; }
     public float ArcaneResistMultiplicative { get; set; }
+    public float FireResistAdditive { get; set; }
+    public float FireResistMultiplicative { get; set; }
+    public float FrostResistAdditive { get; set; }
+    public float FrostResistMultiplicative { get; set; }
+    public float NatureResistAdditive { get; set; }
+    public float NatureResistMultiplicative { get; set; }
 
     // Movement modifiers
     public float MoveSpeedAdditive { get; set; }
@@ -129,6 +166,12 @@ internal struct StatModifiers
         ArmorMultiplicative = 1f,
         ArcaneResistAdditive = 0f,
         ArcaneResistMultiplicative = 1f,
+        FireResistAdditive = 0f,
+        FireResistMultiplicative = 1f,
+        FrostResistAdditive = 0f,
+        FrostResistMultiplicative = 1f,
+        NatureResistAdditive = 0f,
+        NatureResistMultiplicative = 1f,
         MoveSpeedAdditive = 0f,
         MoveSpeedMultiplicative = 1f
     };
@@ -146,6 +189,12 @@ internal struct StatModifiers
         ArmorMultiplicative = 1f;
         ArcaneResistAdditive = 0f;
         ArcaneResistMultiplicative = 1f;
+        FireResistAdditive = 0f;
+        FireResistMultiplicative = 1f;
+        FrostResistAdditive = 0f;
+        FrostResistMultiplicative = 1f;
+        NatureResistAdditive = 0f;
+        NatureResistMultiplicative = 1f;
         MoveSpeedAdditive = 0f;
         MoveSpeedMultiplicative = 1f;
     }
@@ -166,6 +215,9 @@ internal struct StatModifiers
             result.CooldownReductionAdditive += mod.CooldownReductionAdditive;
             result.ArmorAdditive += mod.ArmorAdditive;
             result.ArcaneResistAdditive += mod.ArcaneResistAdditive;
+            result.FireResistAdditive += mod.FireResistAdditive;
+            result.FrostResistAdditive += mod.FrostResistAdditive;
+            result.NatureResistAdditive += mod.NatureResistAdditive;
             result.MoveSpeedAdditive += mod.MoveSpeedAdditive;
 
             // Multiplicative bonuses stack multiplicatively
@@ -173,6 +225,9 @@ internal struct StatModifiers
             result.AttackSpeedMultiplicative *= mod.AttackSpeedMultiplicative;
             result.ArmorMultiplicative *= mod.ArmorMultiplicative;
             result.ArcaneResistMultiplicative *= mod.ArcaneResistMultiplicative;
+            result.FireResistMultiplicative *= mod.FireResistMultiplicative;
+            result.FrostResistMultiplicative *= mod.FrostResistMultiplicative;
+            result.NatureResistMultiplicative *= mod.NatureResistMultiplicative;
             result.MoveSpeedMultiplicative *= mod.MoveSpeedMultiplicative;
         }
         return result;
@@ -192,6 +247,9 @@ internal struct ComputedStats
     public float EffectiveCooldownReduction { get; set; }
     public float EffectiveArmor { get; set; }
     public float EffectiveArcaneResist { get; set; }
+    public float EffectiveFireResist { get; set; }
+    public float EffectiveFrostResist { get; set; }
+    public float EffectiveNatureResist { get; set; }
     public float EffectiveMoveSpeed { get; set; }
 
     /// <summary>
@@ -208,6 +266,9 @@ internal struct ComputedStats
         EffectiveCooldownReduction = 0.0f;
         EffectiveArmor = 0.0f;
         EffectiveArcaneResist = 0.0f;
+        EffectiveFireResist = 0.0f;
+        EffectiveFrostResist = 0.0f;
+        EffectiveNatureResist = 0.0f;
         EffectiveMoveSpeed = 0.0f;
         IsDirty = true;
     }
@@ -216,4 +277,28 @@ internal struct ComputedStats
     {
         stats.IsDirty = true;
     }
+}
+
+/// <summary>
+/// Component holding stat modifiers from perks.
+/// </summary>
+internal struct PerkModifiers
+{
+    public StatModifiers Value { get; set; }
+}
+
+/// <summary>
+/// Component holding stat modifiers from equipment.
+/// </summary>
+internal struct EquipmentModifiers
+{
+    public StatModifiers Value { get; set; }
+}
+
+/// <summary>
+/// Component storing modifiers derived from status effects (burn/slow/etc).
+/// </summary>
+internal struct StatusEffectModifiers
+{
+    public StatModifiers Value { get; set; }
 }

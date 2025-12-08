@@ -11,8 +11,13 @@ internal sealed class MovementIntentSystem : IUpdateSystem
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
         world.ForEach<InputIntent, MoveSpeed, Velocity>(
-            (Entity _, ref InputIntent intent, ref MoveSpeed moveSpeed, ref Velocity velocity) =>
+            (Entity entity, ref InputIntent intent, ref MoveSpeed moveSpeed, ref Velocity velocity) =>
             {
+                if (world.TryGetComponent(entity, out DashState dashState) && dashState.IsActive)
+                {
+                    return;
+                }
+
                 velocity.Value = intent.Movement * moveSpeed.Value;
             });
     }

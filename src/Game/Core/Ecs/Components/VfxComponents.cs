@@ -29,7 +29,9 @@ internal enum VfxType
     Impact,
     WindupFlash,
     ProjectileTrail,
-    MuzzleFlash
+    MuzzleFlash,
+    DashTrail,
+    DashEnd
 }
 
 /// <summary>

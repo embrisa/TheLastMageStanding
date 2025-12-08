@@ -12,11 +12,18 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
 {
     private Texture2D? _pixelTexture;
     private bool _enabled;
+    private bool _showDashDebug;
 
     public bool Enabled
     {
         get => _enabled;
         set => _enabled = value;
+    }
+
+    public bool ShowDashDebug
+    {
+        get => _showDashDebug;
+        set => _showDashDebug = value;
     }
 
     public void Initialize(EcsWorld world)
@@ -43,8 +50,8 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
         {
             // Color code: Static = Cyan, Trigger = Yellow, Dynamic Solid = Lime
             var isStatic = staticPool.TryGet(entity, out _);
-            var color = isStatic ? Color.Cyan * 0.4f : 
-                        col.IsTrigger ? Color.Yellow * 0.3f : 
+            var color = isStatic ? Color.Cyan * 0.4f :
+                        col.IsTrigger ? Color.Yellow * 0.3f :
                         Color.Lime * 0.3f;
             var worldCenter = col.GetWorldCenter(pos.Value);
 
@@ -99,7 +106,7 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
                 // Draw center cross
                 DrawLine(spriteBatch, worldCenter - new Vector2(4, 0), worldCenter + new Vector2(4, 0), hitboxColor, 2f);
                 DrawLine(spriteBatch, worldCenter - new Vector2(0, 4), worldCenter + new Vector2(0, 4), hitboxColor, 2f);
-                
+
                 // Draw line to owner to show which entity owns this hitbox
                 if (world.TryGetComponent(hitbox.Owner, out Position ownerPos))
                 {
@@ -116,10 +123,33 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
                 var offset = dirConfig.GetOffsetForFacing(animState.Facing);
                 var targetPos = pos.Value + offset;
                 DrawArrow(spriteBatch, pos.Value, targetPos, Color.HotPink * 0.8f, 2f);
-                
+
                 // Draw a small circle at the offset position
                 DrawCircle(spriteBatch, targetPos, 4f, Color.HotPink * 0.6f, 8);
             });
+
+        if (_showDashDebug)
+        {
+            world.ForEach<Position, Invulnerable>((Entity _, ref Position pos, ref Invulnerable _) =>
+            {
+                DrawCircle(spriteBatch, pos.Value, 12f, Color.Cyan * 0.65f, 24);
+            });
+
+            world.ForEach<Position, DashState, DashConfig>(
+                (Entity _, ref Position pos, ref DashState dash, ref DashConfig config) =>
+                {
+                    if (!dash.IsActive)
+                        return;
+
+                    var direction = dash.Direction.LengthSquared() > 0.0001f
+                        ? Vector2.Normalize(dash.Direction)
+                        : Vector2.UnitX;
+                    var progress = MathHelper.Clamp(dash.Elapsed / MathF.Max(config.Duration, 0.0001f), 0f, 1f);
+                    var remaining = config.Distance * (1f - progress);
+                    var endPos = pos.Value + direction * remaining;
+                    DrawArrow(spriteBatch, pos.Value, endPos, Color.Yellow * 0.8f, 2f);
+                });
+        }
     }
 
     private void DrawArrow(SpriteBatch spriteBatch, Vector2 start, Vector2 end, Color color, float thickness)

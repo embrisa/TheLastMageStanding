@@ -47,6 +47,12 @@ internal sealed class LevelUpSystem : IUpdateSystem
         {
             moveSpeed.Value += _config.MoveSpeedBonusPerLevel;
             _world.SetComponent(player, moveSpeed);
+
+            if (_world.TryGetComponent(player, out BaseMoveSpeed baseMove))
+            {
+                baseMove.Value += _config.MoveSpeedBonusPerLevel;
+                _world.SetComponent(player, baseMove);
+            }
         }
 
         // Apply health bonus
@@ -57,6 +63,12 @@ internal sealed class LevelUpSystem : IUpdateSystem
             // Maintain health ratio when increasing max
             health.Current = health.Max * ratio;
             _world.SetComponent(player, health);
+        }
+
+        if (_world.TryGetComponent(player, out ComputedStats computed))
+        {
+            computed.IsDirty = true;
+            _world.SetComponent(player, computed);
         }
 
         // Create level-up notification

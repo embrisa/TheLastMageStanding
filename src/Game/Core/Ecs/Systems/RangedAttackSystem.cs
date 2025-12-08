@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -133,6 +134,27 @@ internal sealed class RangedAttackSystem : IUpdateSystem
             direction = Vector2.Normalize(direction);
         }
 
+        var hasExtraProjectiles = world.TryGetComponent(source, out EliteModifierData modifierData) &&
+                                  modifierData.HasModifier(EliteModifierType.ExtraProjectiles);
+
+        if (hasExtraProjectiles)
+        {
+            var spread = MathF.PI / 9f; // ~20 degrees
+            SpawnProjectile(world, source, sourcePosition, direction, ranged);
+            SpawnProjectile(world, source, sourcePosition, Rotate(direction, spread), ranged);
+            SpawnProjectile(world, source, sourcePosition, Rotate(direction, -spread), ranged);
+            world.EventBus.Publish(new VfxSpawnEvent("elite_extra_projectiles_muzzle", sourcePosition, VfxType.MuzzleFlash, new Color(255, 170, 80)));
+        }
+        else
+        {
+            SpawnProjectile(world, source, sourcePosition, direction, ranged);
+        }
+    }
+
+    private static void SpawnProjectile(EcsWorld world, Entity source, Vector2 sourcePosition, Vector2 direction, RangedAttacker ranged)
+    {
+        var normalized = direction.LengthSquared() < 0.0001f ? new Vector2(1f, 0f) : Vector2.Normalize(direction);
+
         // Get source faction
         var sourceFaction = world.TryGetComponent(source, out Faction faction) ? faction : Faction.Neutral;
 
@@ -140,11 +162,11 @@ internal sealed class RangedAttackSystem : IUpdateSystem
         var projectileEntity = world.CreateEntity();
 
         // Position (slightly offset from source to avoid self-collision)
-        var spawnOffset = direction * 10f;
+        var spawnOffset = normalized * 10f;
         world.SetComponent(projectileEntity, new Position(sourcePosition + spawnOffset));
 
         // Velocity
-        var velocity = direction * ranged.ProjectileSpeed;
+        var velocity = normalized * ranged.ProjectileSpeed;
         world.SetComponent(projectileEntity, new Velocity(velocity));
 
         // Projectile component
@@ -168,6 +190,14 @@ internal sealed class RangedAttackSystem : IUpdateSystem
                 isTrigger: true));
     }
 
+    private static Vector2 Rotate(Vector2 vector, float radians)
+    {
+        var cos = MathF.Cos(radians);
+        var sin = MathF.Sin(radians);
+        return new Vector2(
+            (vector.X * cos) - (vector.Y * sin),
+            (vector.X * sin) + (vector.Y * cos));
+    }
     private static bool TryGetNearestTarget(
         Vector2 origin,
         Faction targetFaction,

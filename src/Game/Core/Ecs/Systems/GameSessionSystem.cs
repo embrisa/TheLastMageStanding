@@ -582,11 +582,24 @@ internal sealed class GameSessionSystem : IUpdateSystem
             (Entity entity, ref PlayerTag _, ref MoveSpeed moveSpeed, ref AttackStats attackStats) =>
             {
                 moveSpeed.Value = 220f;
+                if (world.TryGetComponent(entity, out BaseMoveSpeed baseMove))
+                {
+                    baseMove.Value = 220f;
+                    world.SetComponent(entity, baseMove);
+                }
                 attackStats.Damage = 20f;
                 attackStats.CooldownTimer = 0f;
 
                 world.SetComponent(entity, moveSpeed);
                 world.SetComponent(entity, attackStats);
+                world.RemoveComponent<ActiveStatusEffects>(entity);
+                world.RemoveComponent<StatusEffectModifiers>(entity);
+
+                if (world.TryGetComponent(entity, out ComputedStats computed))
+                {
+                    computed.IsDirty = true;
+                    world.SetComponent(entity, computed);
+                }
             });
 
         // Reset player health and XP to base values

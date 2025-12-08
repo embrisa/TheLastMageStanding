@@ -65,14 +65,8 @@ internal sealed class PerkEffectApplicationSystem : IUpdateSystem
         var totalEffects = _perkService.CalculateTotalEffects(playerPerks);
 
         // Apply stat modifiers
-        if (!_world.TryGetComponent<StatModifiers>(player, out var statMods))
-        {
-            statMods = new StatModifiers();
-        }
+        var statMods = new StatModifiers();
 
-        // Clear perk-related modifiers (we'll recalculate from scratch)
-        // Note: This assumes perks are the only source of these modifiers
-        // If equipment also provides modifiers, we need a better stacking system
         statMods.PowerAdditive = totalEffects.PowerAdditive;
         statMods.PowerMultiplicative = totalEffects.PowerMultiplicative;
         statMods.AttackSpeedAdditive = totalEffects.AttackSpeedAdditive;
@@ -85,7 +79,7 @@ internal sealed class PerkEffectApplicationSystem : IUpdateSystem
         statMods.MoveSpeedAdditive = totalEffects.MoveSpeedAdditive;
         statMods.MoveSpeedMultiplicative = totalEffects.MoveSpeedMultiplicative;
 
-        _world.SetComponent(player, statMods);
+        _world.SetComponent(player, new PerkModifiers { Value = statMods });
 
         // Apply health bonus (modify max health directly)
         if (_world.TryGetComponent<Health>(player, out var health))

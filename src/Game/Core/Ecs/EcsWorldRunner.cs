@@ -13,6 +13,9 @@ using TheLastMageStanding.Game.Core.Events;
 using TheLastMageStanding.Game.Core.Config;
 using TheLastMageStanding.Game.Core.Audio;
 using TheLastMageStanding.Game.Core.Perks;
+using TheLastMageStanding.Game.Core.Skills;
+using TheLastMageStanding.Game.Core.Loot;
+using TheLastMageStanding.Game.Core.MetaProgression;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
@@ -30,6 +33,7 @@ internal sealed class EcsWorldRunner
     private readonly SfxSystem _sfxSystem;
     private readonly GameSessionSystem _gameSessionSystem;
     private readonly HitStopSystem _hitStopSystem;
+    private readonly MetaProgressionManager _metaProgressionManager;
     private readonly List<IUpdateSystem> _updateSystems;
     private readonly List<IDrawSystem> _drawSystems;
     private readonly List<IDrawSystem> _uiDrawSystems;
@@ -55,6 +59,13 @@ internal sealed class EcsWorldRunner
         _enemyFactory = new EnemyEntityFactory(_world);
         _playerFactory.CreatePlayer(Vector2.Zero);
 
+        // Initialize meta progression system
+        _metaProgressionManager = new MetaProgressionManager(_eventBus);
+
+        var lootConfig = LootDropConfig.CreateDefault();
+        var itemRegistry = new ItemRegistry();
+        var itemFactory = new ItemFactory(itemRegistry.GetAllDefinitions(), lootConfig);
+
         _sfxSystem = new SfxSystem(_audioSettings);
         _gameSessionSystem = new GameSessionSystem(_audioSettings, _audioSettingsStore, _musicService, _sfxSystem);
         var enemyRenderSystem = new EnemyRenderSystem();
@@ -71,7 +82,9 @@ internal sealed class EcsWorldRunner
         var meleeHitSystem = new MeleeHitSystem();
         var projectileRenderSystem = new ProjectileRenderSystem();
         var collisionDebugRenderSystem = new CollisionDebugRenderSystem();
-        var debugInputSystem = new DebugInputSystem(collisionDebugRenderSystem);
+        var statusEffectDebugSystem = new StatusEffectDebugSystem();
+        var aiDebugRenderSystem = new AiDebugRenderSystem();
+        var debugInputSystem = new DebugInputSystem(collisionDebugRenderSystem, _enemyFactory, statusEffectDebugSystem, aiDebugRenderSystem);
         var animationEventSystem = new AnimationEventSystem();
         var hitStopSystem = new HitStopSystem();
         _hitStopSystem = hitStopSystem;  // Store reference for hit-stop checks
@@ -82,17 +95,50 @@ internal sealed class EcsWorldRunner
         var perkEffectApplicationSystem = new PerkEffectApplicationSystem(perkService);
         var perkAutoSaveSystem = new PerkAutoSaveSystem();
         var perkTreeUISystem = new PerkTreeUISystem(perkTreeConfig, perkService);
+        var statusEffectApplicationSystem = new StatusEffectApplicationSystem();
+        var statusEffectTickSystem = new StatusEffectTickSystem();
+        var statusEffectVfxSystem = new StatusEffectVfxSystem();
+        var eliteModifierSystem = new EliteModifierSystem();
+        var statRecalculationSystem = new StatRecalculationSystem();
+        var aiChargerSystem = new AiChargerSystem();
+        var aiProtectorSystem = new AiProtectorSystem();
+        var aiBufferSystem = new AiBufferSystem();
+        var buffTickSystem = new BuffTickSystem();
+        var lootDropSystem = new LootDropSystem(itemFactory, lootConfig);
+        var lootPickupSystem = new LootPickupSystem();
+
+        // Skill system
+        var skillRegistry = new SkillRegistry();
+        var playerSkillInputSystem = new PlayerSkillInputSystem();
+        var skillCastSystem = new SkillCastSystem(skillRegistry);
+        var skillExecutionSystem = new SkillExecutionSystem(skillRegistry);
+        var dashInputSystem = new DashInputSystem();
+        var dashExecutionSystem = new DashExecutionSystem(hitStopSystem);
+        var dashMovementSystem = new DashMovementSystem();
 
         _updateSystems =
         [
             _gameSessionSystem,
             debugInputSystem,  // Handle debug input early
             new InputSystem(),
-            new StatRecalculationSystem(),  // Recalculate stats before combat systems
+            dashInputSystem,
+            dashExecutionSystem,
+            dashMovementSystem,
+            playerSkillInputSystem,  // Convert attack input to skill cast requests
+            skillCastSystem,  // Validate and gate skill casts
+            skillExecutionSystem,  // Execute completed skill casts
+            statusEffectApplicationSystem,  // Apply statuses from hits
+            statusEffectTickSystem,  // Tick DoTs/debuffs
+            eliteModifierSystem, // Elite modifier runtime effects
+            statRecalculationSystem,  // Recalculate stats before combat systems
             new WaveSchedulerSystem(_waveConfig),
             new SpawnSystem(_enemyFactory),
-            new RangedAttackSystem(),  // Handle ranged enemy AI
             new AiSeekSystem(),
+            new RangedAttackSystem(),  // Handle ranged enemy AI
+            aiChargerSystem,
+            aiProtectorSystem,
+            aiBufferSystem,
+            buffTickSystem,
             new MovementIntentSystem(),
             new ProjectileUpdateSystem(),  // Update projectile lifetimes
             knockbackSystem,  // Apply knockback before collision resolution
@@ -107,6 +153,7 @@ internal sealed class EcsWorldRunner
             hitStopSystem,  // Handle hit-stop timing
             vfxSystem,  // Process VFX spawns
             _sfxSystem,  // Process SFX playback
+            statusEffectVfxSystem,  // Status VFX/SFX hooks
             telegraphSystem,  // Update telegraph lifetimes
             hitReactionSystem,
             hitEffectSystem,
@@ -117,6 +164,8 @@ internal sealed class EcsWorldRunner
             damageNumberSystem,
             new XpOrbSpawnSystem(_progressionConfig),
             new XpCollectionSystem(_progressionConfig),
+            lootDropSystem,
+            lootPickupSystem,
             new LevelUpSystem(_progressionConfig),
             perkPointGrantSystem,
             perkEffectApplicationSystem,
@@ -131,6 +180,8 @@ internal sealed class EcsWorldRunner
             enemyRenderSystem,
             playerRenderSystem,
             new RenderDebugSystem(),
+            statusEffectDebugSystem,
+            aiDebugRenderSystem,
             projectileRenderSystem,
             telegraphRenderSystem,  // Draw telegraphs and VFX
             damageNumberSystem,
@@ -168,6 +219,9 @@ internal sealed class EcsWorldRunner
         // Create session entity with initial state
         var sessionEntity = _world.CreateEntity();
         _world.SetComponent(sessionEntity, new GameSession(_waveConfig.WaveIntervalSeconds));
+
+        // Publish run started event for meta progression
+        _eventBus.Publish(new RunStartedEvent());
     }
 
     public bool ExitRequested => _gameSessionSystem.ExitRequested;

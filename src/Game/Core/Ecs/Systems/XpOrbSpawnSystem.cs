@@ -34,13 +34,9 @@ internal sealed class XpOrbSpawnSystem : IUpdateSystem
         if (_world == null)
             return;
 
-        // Get enemy position before entity is destroyed
-        if (!_world.TryGetComponent<Position>(evt.Enemy, out var enemyPosition))
-            return;
-
         // Spawn XP orb at enemy position
         var orbEntity = _world.CreateEntity();
-        _world.SetComponent(orbEntity, new Position(enemyPosition.Value));
+        _world.SetComponent(orbEntity, new Position(evt.Position));
         _world.SetComponent(orbEntity, new Velocity(Vector2.Zero));
         _world.SetComponent(orbEntity, new XpOrb(_config.XpPerEnemy));
         _world.SetComponent(orbEntity, new Lifetime(_config.OrbLifetimeSeconds));

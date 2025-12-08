@@ -66,16 +66,95 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
             return;
         }
 
+        // Count active elites and bosses to cap their spawns
+        var (activeElites, activeBosses) = CountElitesAndBosses(world);
+        var (activeChargers, activeProtectors, activeBuffers) = CountActiveRoles(world);
+        const int maxElites = 3; // At most 3 elites at once
+        const int maxBosses = 1; // At most 1 boss at once
+        const int maxChargers = 2;
+        const int maxProtectors = 1;
+        const int maxBuffers = 1;
+
         var requestedCount = _config.BaseEnemiesPerWave + (_waveIndex - 1) * _config.EnemiesPerWaveGrowth;
         var spawnCount = Math.Min(requestedCount, _config.MaxActiveEnemies - activeEnemies);
         for (var i = 0; i < spawnCount; i++)
         {
-            var offset = GetSpawnOffset(_config.SpawnRadiusMin, _config.SpawnRadiusMax);
+            var archetype = _config.ChooseArchetype(_waveIndex, _random);
+            IReadOnlyList<EliteModifierType>? modifiers = null;
+
+            // Enforce elite/boss caps - reroll if we hit the limit
+            var rerollAttempts = 0;
+            while (rerollAttempts < 5)
+            {
+                if (archetype.Tier == EnemyTier.Elite && activeElites >= maxElites)
+                {
+                    archetype = _config.ChooseArchetype(_waveIndex, _random);
+                    rerollAttempts++;
+                    continue;
+                }
+
+                if (archetype.Tier == EnemyTier.Boss && activeBosses >= maxBosses)
+                {
+                    archetype = _config.ChooseArchetype(_waveIndex, _random);
+                    rerollAttempts++;
+                    continue;
+                }
+
+                if (archetype.RoleConfig?.Role == EnemyRole.Charger && activeChargers >= maxChargers)
+                {
+                    archetype = _config.ChooseArchetype(_waveIndex, _random);
+                    rerollAttempts++;
+                    continue;
+                }
+
+                if (archetype.RoleConfig?.Role == EnemyRole.Protector && activeProtectors >= maxProtectors)
+                {
+                    archetype = _config.ChooseArchetype(_waveIndex, _random);
+                    rerollAttempts++;
+                    continue;
+                }
+
+                if (archetype.RoleConfig?.Role == EnemyRole.Buffer && activeBuffers >= maxBuffers)
+                {
+                    archetype = _config.ChooseArchetype(_waveIndex, _random);
+                    rerollAttempts++;
+                    continue;
+                }
+
+                break;
+            }
+
+            // Track spawned elites/bosses for this wave
+            if (archetype.Tier == EnemyTier.Elite)
+            {
+                activeElites++;
+                modifiers = _config.ModifierConfig.RollModifiers(_waveIndex, _random);
+            }
+            else if (archetype.Tier == EnemyTier.Boss)
+            {
+                activeBosses++;
+                modifiers = _config.ModifierConfig.RollModifiers(_waveIndex, _random);
+            }
+
+            // Track role caps for this wave
+            if (archetype.RoleConfig?.Role == EnemyRole.Charger)
+            {
+                activeChargers++;
+            }
+            else if (archetype.RoleConfig?.Role == EnemyRole.Protector)
+            {
+                activeProtectors++;
+            }
+            else if (archetype.RoleConfig?.Role == EnemyRole.Buffer)
+            {
+                activeBuffers++;
+            }
+
+            var offset = GetSpawnOffsetForRole(archetype.RoleConfig);
             var spawnPosition = playerPosition + offset;
 
-            var archetype = _config.ChooseArchetype(_waveIndex, _random);
             var request = world.CreateEntity();
-            world.SetComponent(request, new EnemySpawnRequest(spawnPosition, archetype));
+            world.SetComponent(request, new EnemySpawnRequest(spawnPosition, archetype, modifiers));
         }
     }
 
@@ -84,6 +163,33 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
         var angle = _random.NextSingle() * MathF.Tau;
         var distance = MathHelper.Lerp(minRadius, maxRadius, _random.NextSingle());
         return new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * distance;
+    }
+
+    private Vector2 GetSpawnOffsetForRole(AiRoleConfig? roleConfig)
+    {
+        var minRadius = _config.SpawnRadiusMin;
+        var maxRadius = _config.SpawnRadiusMax;
+
+        if (roleConfig.HasValue)
+        {
+            switch (roleConfig.Value.Role)
+            {
+                case EnemyRole.Protector:
+                    minRadius = 250f;
+                    maxRadius = 380f;
+                    break;
+                case EnemyRole.Buffer:
+                    minRadius = 240f;
+                    maxRadius = 360f;
+                    break;
+                case EnemyRole.Charger:
+                    minRadius = _config.SpawnRadiusMin;
+                    maxRadius = _config.SpawnRadiusMax;
+                    break;
+            }
+        }
+
+        return GetSpawnOffset(minRadius, maxRadius);
     }
 
     private static bool TryGetPlayerPosition(EcsWorld world, out Vector2 position)
@@ -115,6 +221,63 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
             });
 
         return count;
+    }
+
+    private static (int elites, int bosses) CountElitesAndBosses(EcsWorld world)
+    {
+        var eliteCount = 0;
+        var bossCount = 0;
+
+        world.ForEach<Health, EliteTag>(
+            (Entity _, ref Health health, ref EliteTag _) =>
+            {
+                if (!health.IsDead)
+                {
+                    eliteCount++;
+                }
+            });
+
+        world.ForEach<Health, BossTag>(
+            (Entity _, ref Health health, ref BossTag _) =>
+            {
+                if (!health.IsDead)
+                {
+                    bossCount++;
+                }
+            });
+
+        return (eliteCount, bossCount);
+    }
+
+    private static (int chargers, int protectors, int buffers) CountActiveRoles(EcsWorld world)
+    {
+        var chargers = 0;
+        var protectors = 0;
+        var buffers = 0;
+
+        world.ForEach<AiRoleConfig, Health>(
+            (Entity _, ref AiRoleConfig role, ref Health health) =>
+            {
+                if (health.IsDead)
+                {
+                    return;
+                }
+
+                switch (role.Role)
+                {
+                    case EnemyRole.Charger:
+                        chargers++;
+                        break;
+                    case EnemyRole.Protector:
+                        protectors++;
+                        break;
+                    case EnemyRole.Buffer:
+                        buffers++;
+                        break;
+                }
+            });
+
+        return (chargers, protectors, buffers);
     }
 
     private void Reset()

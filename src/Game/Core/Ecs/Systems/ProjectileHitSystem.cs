@@ -1,3 +1,5 @@
+using System;
+using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 using TheLastMageStanding.Game.Core.Combat;
@@ -34,7 +36,7 @@ internal sealed class ProjectileHitSystem : IUpdateSystem
         {
             return;
         }
-        
+
         TryHandleProjectileHit(evt.EntityB, evt.EntityA, evt.ContactPoint);
     }
 
@@ -70,6 +72,12 @@ internal sealed class ProjectileHitSystem : IUpdateSystem
             return false;
         }
 
+        // Dash/temporary invulnerability
+        if (_world.TryGetComponent(targetEntity, out Invulnerable _))
+        {
+            return false;
+        }
+
         // Check if target can take damage (has health and hurtbox)
         if (!_world.TryGetComponent(targetEntity, out Health health) || health.IsDead)
         {
@@ -79,6 +87,27 @@ internal sealed class ProjectileHitSystem : IUpdateSystem
         if (!_world.TryGetComponent(targetEntity, out Hurtbox hurtbox))
         {
             return false;
+        }
+
+        // Check projectile shields (protector support)
+        if (_world.TryGetComponent(targetEntity, out ShieldActive shield) && shield.IsActive && shield.BlocksRemaining > 0)
+        {
+            projectile.HasHit = true;
+            _world.SetComponent(projectileEntity, projectile);
+
+            shield.BlocksRemaining -= 1;
+            if (shield.BlocksRemaining <= 0 || shield.RemainingDuration <= 0f)
+            {
+                _world.RemoveComponent<ShieldActive>(targetEntity);
+            }
+            else
+            {
+                _world.SetComponent(targetEntity, shield);
+            }
+
+            _world.EventBus.Publish(new VfxSpawnEvent("projectile_block", contactPoint, VfxType.Impact, new Color(80, 140, 255)));
+            _world.EventBus.Publish(new SfxPlayEvent("shield_block", SfxCategory.Impact, contactPoint));
+            return true;
         }
 
         // Check invulnerability
@@ -106,7 +135,9 @@ internal sealed class ProjectileHitSystem : IUpdateSystem
         var damageInfo = new DamageInfo(
             baseDamage: projectile.Damage,
             damageType: DamageType.Arcane, // Projectiles are arcane damage
-            flags: DamageFlags.CanCrit);
+            flags: DamageFlags.CanCrit,
+            source: DamageSource.Projectile,
+            statusEffect: projectile.StatusEffect);
 
         _damageService.ApplyDamage(projectile.Source, targetEntity, damageInfo, projectilePosition.Value);
 

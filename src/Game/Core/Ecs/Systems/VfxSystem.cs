@@ -70,13 +70,15 @@ internal sealed class VfxSystem : IUpdateSystem
     {
         var entity = _world.CreateEntity();
         _world.SetComponent(entity, new Position(position));
-        
+
         var lifetime = type switch
         {
             VfxType.Impact => 0.2f,
             VfxType.WindupFlash => 0.15f,
             VfxType.ProjectileTrail => 0.3f,
             VfxType.MuzzleFlash => 0.1f,
+            VfxType.DashTrail => 0.3f,
+            VfxType.DashEnd => 0.2f,
             _ => 0.2f
         };
 

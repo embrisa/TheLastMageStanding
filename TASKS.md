@@ -28,19 +28,28 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 Context: Tasks 031 and above assume the Mage is the first class with fire/arcane/frost skill & talent trees; future classes are out of scope for now.
 
 ## Active tasks
-- [029 - Unified stat and damage model](tasks/029-unified-stat-and-damage-model.md)
-- [030 - Loot and equipment foundations](tasks/030-loot-and-equipment-foundations.md)
-- [031 - Talent/perk tree](tasks/031-talent-perk-tree.md)
-- [032 - Elites/boss waves & rewards](tasks/032-elites-boss-waves-and-rewards.md)
-- [033 - Dash/defense moves & i-frames](tasks/033-dash-defense-moves-and-i-frames.md)
-- [034 - Status effects & elemental interactions](tasks/034-status-effects-and-elemental-interactions.md)
-- [035 - Enemy AI variants & squad behaviors](tasks/035-enemy-ai-variants-and-squad-behaviors.md)
-- [036 - Elite modifiers & mutators](tasks/036-elite-modifiers-and-mutators.md)
 - [037 - Meta progression & run tracking (MVP)](tasks/037-meta-progression-and-run-tracking.md)
 - [038 - Extended sound settings & volume controls](tasks/038-extended-sound-settings-and-volume-controls.md)
-- [039 - Mage skill system](tasks/039-skill-system.md)
+
+## Backlog - Skill System UI/UX Arc (Post-039)
+**Context:** Task 039 implemented the skill system backend. This arc completes the player-facing experience with UI, input, progression, and balance tuning.
+
+- [040 - Skill hotbar UI](tasks/040-skill-hotbar-ui.md) — Visual skill bar showing equipped skills, cooldowns, cast progress
+- [041 - Skill hotkey input (keys 1-4)](tasks/041-skill-hotkey-input.md) — Bind keys 1-4 to cast skills from hotbar slots
+- [042 - Skill selection & equipping UI](tasks/042-skill-selection-ui.md) — Overlay for browsing/equipping skills to hotbar
+- [043 - Skill unlock progression](tasks/043-skill-unlock-progression.md) — Gate skills behind level requirements with unlock notifications
+- [044 - Skill balance & feel pass](tasks/044-skill-balance-and-feel-pass.md) — Playtest and tune damage/cooldowns/VFX/SFX for all skills
 
 ## Done
+- [036 - Elite modifiers & mutators](tasks/036-elite-modifiers-and-mutators.md)
+- [035 - Enemy AI variants & squad behaviors](tasks/035-enemy-ai-variants-and-squad-behaviors.md)
+- [034 - Status effects & elemental interactions](tasks/034-status-effects-and-elemental-interactions.md)
+- [033 - Dash/defense moves & i-frames](tasks/033-dash-defense-moves-and-i-frames.md)
+- [039 - Mage skill system](tasks/039-skill-system.md)
+- [032 - Elites/boss waves & rewards](tasks/032-elites-boss-waves-and-rewards.md)
+- [031 - Talent/perk tree](tasks/031-talent-perk-tree.md)
+- [030 - Loot and equipment foundations](tasks/030-loot-and-equipment-foundations.md)
+- [029 - Unified stat and damage model](tasks/029-unified-stat-and-damage-model.md)
 - [028 - Telegraphs, VFX/SFX, and hit-stop](tasks/028-telegraphs-vfx-sfx-hit-stop.md)
 - [027 - Animation events & directional hitboxes](tasks/027-animation-events-and-directional-hitboxes.md)
 - [021 - Ranged enemy and projectiles](tasks/021-ranged-enemy-and-projectiles.md)
@@ -67,6 +76,5 @@ Context: Tasks 031 and above assume the Mage is the first class with fire/arcane
 - [005 - ECS enemy waves & combat](tasks/005-ecs-enemy-waves-combat.md)
 - [004 - Player ECS migration](tasks/004-player-ecs-migration.md)
 - [003 - ECS foundation bootstrap](tasks/003-ecs-foundation-bootstrap.md)
-- [001 - Placeholder assets import](tasks/001-placeholder-assets-import.md)
 - [002 - Basic enemy wave prototype](tasks/002-basic-enemy-wave-prototype.md)
-
+- [001 - Placeholder assets import](tasks/001-placeholder-assets-import.md)

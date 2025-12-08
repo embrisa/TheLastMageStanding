@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Xna.Framework;
+using TheLastMageStanding.Game.Core.Combat;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 
@@ -20,6 +21,11 @@ internal sealed class HitEffectSystem : IUpdateSystem
 
     private void OnEntityDamaged(EntityDamagedEvent evt)
     {
+        if (evt.DamageInfo.Source == DamageSource.StatusEffect)
+        {
+            return;
+        }
+
         var flashDuration = 0.12f;
         ApplyFlash(_world, evt.Target, flashDuration);
     }

@@ -7,7 +7,12 @@ namespace TheLastMageStanding.Game.Core.Ecs.Components;
 /// </summary>
 internal struct Projectile
 {
-    public Projectile(Entity source, float damage, Faction sourceFaction, float lifetimeSeconds = 5f)
+    public Projectile(
+        Entity source,
+        float damage,
+        Faction sourceFaction,
+        float lifetimeSeconds = 5f,
+        StatusEffectData? statusEffect = null)
     {
         Source = source;
         Damage = damage;
@@ -15,6 +20,7 @@ internal struct Projectile
         MaxLifetime = lifetimeSeconds;
         LifetimeRemaining = lifetimeSeconds;
         HasHit = false;
+        StatusEffect = statusEffect;
     }
 
     /// <summary>
@@ -48,6 +54,11 @@ internal struct Projectile
     /// Once true, the projectile should be destroyed.
     /// </summary>
     public bool HasHit { get; set; }
+
+    /// <summary>
+    /// Optional status effect applied when the projectile hits.
+    /// </summary>
+    public StatusEffectData? StatusEffect { get; set; }
 }
 
 /// <summary>

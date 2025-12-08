@@ -9,13 +9,19 @@ namespace TheLastMageStanding.Game.Core.Ecs.Components;
 /// </summary>
 internal struct AttackHitbox
 {
-    public AttackHitbox(Entity owner, float damage, Faction ownerFaction, float lifetimeSeconds = 0.1f)
+    public AttackHitbox(
+        Entity owner,
+        float damage,
+        Faction ownerFaction,
+        float lifetimeSeconds = 0.1f,
+        StatusEffectData? statusEffect = null)
     {
         Owner = owner;
         Damage = damage;
         OwnerFaction = ownerFaction;
         LifetimeRemaining = lifetimeSeconds;
         AlreadyHit = new HashSet<int>();
+        StatusEffect = statusEffect;
     }
 
     /// <summary>
@@ -43,6 +49,11 @@ internal struct AttackHitbox
     /// to prevent multi-hitting the same target.
     /// </summary>
     public HashSet<int> AlreadyHit { get; set; }
+
+    /// <summary>
+    /// Optional status effect to apply when this hitbox deals damage.
+    /// </summary>
+    public StatusEffectData? StatusEffect { get; set; }
 }
 
 /// <summary>
@@ -88,4 +99,23 @@ internal struct MeleeAttackConfig
     /// How long the hitbox stays active.
     /// </summary>
     public float Duration { get; set; }
+}
+
+/// <summary>
+/// Temporary projectile shield applied by protector enemies.
+/// </summary>
+internal struct ShieldActive
+{
+    public ShieldActive(bool isActive, int blocksRemaining, float durationSeconds, Entity source)
+    {
+        IsActive = isActive;
+        BlocksRemaining = blocksRemaining;
+        RemainingDuration = durationSeconds;
+        Source = source;
+    }
+
+    public bool IsActive { get; set; }
+    public int BlocksRemaining { get; set; }
+    public float RemainingDuration { get; set; }
+    public Entity Source { get; set; }
 }
