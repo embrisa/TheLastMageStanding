@@ -26,18 +26,24 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 5. If handing off, leave next steps, open questions, and any gotchas in the task file.
 
 ## Active tasks
-- [021 - Ranged enemy and projectiles](tasks/021-ranged-enemy-and-projectiles.md)
-- [024 - Static world collision](tasks/024-static-world-collision.md)
-- [025 - Dynamic actor separation & knockback](tasks/025-dynamic-actor-separation-and-knockback.md)
-- [026 - Collider-driven combat hits](tasks/026-collider-driven-combat-hits.md)
-- [027 - Animation events & directional hitboxes](tasks/027-animation-events-and-directional-hitboxes.md)
-- [028 - Telegraphs, VFX/SFX, and hit-stop](tasks/028-telegraphs-vfx-sfx-hit-stop.md)
 - [029 - Unified stat and damage model](tasks/029-unified-stat-and-damage-model.md)
 - [030 - Loot and equipment foundations](tasks/030-loot-and-equipment-foundations.md)
 - [031 - Talent/perk tree](tasks/031-talent-perk-tree.md)
 - [032 - Elites/boss waves & rewards](tasks/032-elites-boss-waves-and-rewards.md)
+- [033 - Dash/defense moves & i-frames](tasks/033-dash-defense-moves-and-i-frames.md)
+- [034 - Status effects & elemental interactions](tasks/034-status-effects-and-elemental-interactions.md)
+- [035 - Enemy AI variants & squad behaviors](tasks/035-enemy-ai-variants-and-squad-behaviors.md)
+- [036 - Elite modifiers & mutators](tasks/036-elite-modifiers-and-mutators.md)
+- [037 - Meta progression & run tracking (MVP)](tasks/037-meta-progression-and-run-tracking.md)
+- [038 - Extended sound settings & volume controls](tasks/038-extended-sound-settings-and-volume-controls.md)
 
 ## Done
+- [028 - Telegraphs, VFX/SFX, and hit-stop](tasks/028-telegraphs-vfx-sfx-hit-stop.md)
+- [027 - Animation events & directional hitboxes](tasks/027-animation-events-and-directional-hitboxes.md)
+- [021 - Ranged enemy and projectiles](tasks/021-ranged-enemy-and-projectiles.md)
+- [024 - Static world collision](tasks/024-static-world-collision.md)
+- [025 - Dynamic actor separation & knockback](tasks/025-dynamic-actor-separation-and-knockback.md)
+- [026 - Collider-driven combat hits](tasks/026-collider-driven-combat-hits.md)
 - [022 - XP orbs and level-ups](tasks/022-xp-orbs-and-level-ups.md)
 - [023 - Collision system foundation](tasks/023-collision-system-foundation.md)
 - [020 - Pause and settings overlay](tasks/020-pause-and-settings-overlay.md)

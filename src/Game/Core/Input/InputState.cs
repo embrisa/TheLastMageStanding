@@ -10,6 +10,9 @@ internal sealed class InputState
     public bool MenuUpPressed { get; private set; }
     public bool MenuDownPressed { get; private set; }
     public bool MenuConfirmPressed { get; private set; }
+    public bool MenuLeftPressed { get; private set; }
+    public bool MenuRightPressed { get; private set; }
+    public bool MenuBackPressed { get; private set; }
     public bool RestartPressed { get; private set; }
     public bool AttackPressed { get; private set; }
     public bool DebugTogglePressed { get; private set; }
@@ -51,6 +54,9 @@ internal sealed class InputState
         MenuUpPressed = IsNewKeyPress(Keys.Up) || IsNewKeyPress(Keys.W);
         MenuDownPressed = IsNewKeyPress(Keys.Down) || IsNewKeyPress(Keys.S);
         MenuConfirmPressed = IsNewKeyPress(Keys.Enter) || IsNewKeyPress(Keys.Space);
+        MenuLeftPressed = IsNewKeyPress(Keys.Left) || IsNewKeyPress(Keys.A);
+        MenuRightPressed = IsNewKeyPress(Keys.Right) || IsNewKeyPress(Keys.D);
+        MenuBackPressed = IsNewKeyPress(Keys.Escape) || IsNewKeyPress(Keys.Back);
         RestartPressed = IsNewKeyPress(Keys.R);
         AttackPressed = _currentKeyboard.IsKeyDown(Keys.Space) || _currentMouse.LeftButton == ButtonState.Pressed;
         DebugTogglePressed = IsNewKeyPress(Keys.F3);

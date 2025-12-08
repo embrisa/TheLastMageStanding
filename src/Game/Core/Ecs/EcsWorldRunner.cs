@@ -11,6 +11,7 @@ using TheLastMageStanding.Game.Core.Ecs.Systems.Collision;
 using TheLastMageStanding.Game.Core.Input;
 using TheLastMageStanding.Game.Core.Events;
 using TheLastMageStanding.Game.Core.Config;
+using TheLastMageStanding.Game.Core.Audio;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
@@ -23,25 +24,36 @@ internal sealed class EcsWorldRunner
     private readonly EnemyWaveConfig _waveConfig;
     private readonly ProgressionConfig _progressionConfig;
     private readonly AudioSettingsConfig _audioSettings;
+    private readonly AudioSettingsStore _audioSettingsStore;
+    private readonly MusicService _musicService;
+    private readonly SfxSystem _sfxSystem;
     private readonly GameSessionSystem _gameSessionSystem;
+    private readonly HitStopSystem _hitStopSystem;
     private readonly List<IUpdateSystem> _updateSystems;
     private readonly List<IDrawSystem> _drawSystems;
     private readonly List<IDrawSystem> _uiDrawSystems;
     private readonly List<ILoadContentSystem> _loadSystems;
     private readonly Camera2D _camera;
 
-    public EcsWorldRunner(Camera2D camera, AudioSettingsConfig audioSettings)
+    public EcsWorldRunner(
+        Camera2D camera,
+        AudioSettingsConfig audioSettings,
+        AudioSettingsStore audioSettingsStore,
+        MusicService musicService)
     {
         _world.EventBus = _eventBus;
         _camera = camera;
         _audioSettings = audioSettings;
+        _audioSettingsStore = audioSettingsStore;
+        _musicService = musicService;
         _waveConfig = EnemyWaveConfig.Default;
         _progressionConfig = ProgressionConfig.Default;
         _playerFactory = new PlayerEntityFactory(_world, _progressionConfig);
         _enemyFactory = new EnemyEntityFactory(_world);
         _playerFactory.CreatePlayer(Vector2.Zero);
 
-        _gameSessionSystem = new GameSessionSystem(_audioSettings);
+        _sfxSystem = new SfxSystem(_audioSettings);
+        _gameSessionSystem = new GameSessionSystem(_audioSettings, _audioSettingsStore, _musicService, _sfxSystem);
         var enemyRenderSystem = new EnemyRenderSystem();
         var playerRenderSystem = new PlayerRenderSystem();
         var hitReactionSystem = new HitReactionSystem();
@@ -57,12 +69,19 @@ internal sealed class EcsWorldRunner
         var projectileRenderSystem = new ProjectileRenderSystem();
         var collisionDebugRenderSystem = new CollisionDebugRenderSystem();
         var debugInputSystem = new DebugInputSystem(collisionDebugRenderSystem);
+        var animationEventSystem = new AnimationEventSystem();
+        var hitStopSystem = new HitStopSystem();
+        _hitStopSystem = hitStopSystem;  // Store reference for hit-stop checks
+        var vfxSystem = new VfxSystem();
+        var telegraphSystem = new TelegraphSystem();
+        var telegraphRenderSystem = new TelegraphRenderSystem();
 
         _updateSystems =
         [
             _gameSessionSystem,
             debugInputSystem,  // Handle debug input early
             new InputSystem(),
+            new StatRecalculationSystem(),  // Recalculate stats before combat systems
             new WaveSchedulerSystem(_waveConfig),
             new SpawnSystem(_enemyFactory),
             new RangedAttackSystem(),  // Handle ranged enemy AI
@@ -76,7 +95,12 @@ internal sealed class EcsWorldRunner
             contactDamageSystem,  // Handle contact damage with cooldowns
             meleeHitSystem,  // Handle attack hitbox collisions
             new ProjectileHitSystem(),  // Handle projectile collisions
+            animationEventSystem,  // Process animation events and spawn hitboxes
             new CombatSystem(),
+            hitStopSystem,  // Handle hit-stop timing
+            vfxSystem,  // Process VFX spawns
+            _sfxSystem,  // Process SFX playback
+            telegraphSystem,  // Update telegraph lifetimes
             hitReactionSystem,
             hitEffectSystem,
             new MovementSystem(),
@@ -97,6 +121,7 @@ internal sealed class EcsWorldRunner
             playerRenderSystem,
             new RenderDebugSystem(),
             projectileRenderSystem,
+            telegraphRenderSystem,  // Draw telegraphs and VFX
             damageNumberSystem,
             xpOrbRenderSystem,
             collisionDebugRenderSystem,  // Draw collision debug last
@@ -178,9 +203,38 @@ internal sealed class EcsWorldRunner
         var sessionState = GetSessionState();
         if (sessionState == GameState.Playing)
         {
-            for (int i = 1; i < _updateSystems.Count; i++)
+            // Run hit-stop system first to track timing
+            _hitStopSystem.Update(_world, context);
+
+            // Apply camera shake from hit-stop system
+            _camera.ShakeOffset = _hitStopSystem.CameraShakeOffset;
+
+            // If hit-stopped, only update certain systems (VFX, SFX, visual feedback)
+            if (_hitStopSystem.IsHitStopped())
             {
-                _updateSystems[i].Update(_world, context);
+                // During hit-stop, only update visual/audio feedback systems
+                // Skip movement, combat logic, etc.
+                for (int i = 1; i < _updateSystems.Count; i++)
+                {
+                    var system = _updateSystems[i];
+                    // Allow VFX, SFX, visual effects to update during hit-stop
+                    if (system is VfxSystem || system is SfxSystem ||
+                        system is HitEffectSystem || system is TelegraphSystem)
+                    {
+                        system.Update(_world, context);
+                    }
+                }
+            }
+            else
+            {
+                // Normal update - skip hit-stop system as it's already run
+                for (int i = 1; i < _updateSystems.Count; i++)
+                {
+                    if (_updateSystems[i] != _hitStopSystem)
+                    {
+                        _updateSystems[i].Update(_world, context);
+                    }
+                }
             }
         }
 

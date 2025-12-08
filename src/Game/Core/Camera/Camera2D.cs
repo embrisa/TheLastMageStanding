@@ -9,6 +9,7 @@ internal sealed class Camera2D
 
     public Matrix Transform { get; private set; } = Matrix.Identity;
     public Vector2 Position { get; private set; } = Vector2.Zero;
+    public Vector2 ShakeOffset { get; set; } = Vector2.Zero;
     public float Zoom { get; set; } = 1f;
     public float Rotation { get; set; }
 
@@ -27,8 +28,11 @@ internal sealed class Camera2D
 
     private void UpdateTransform()
     {
+        // Apply shake offset to camera position
+        var effectivePosition = Position + ShakeOffset;
+        
         Transform =
-            Matrix.CreateTranslation(new Vector3(-Position, 0f)) *
+            Matrix.CreateTranslation(new Vector3(-effectivePosition, 0f)) *
             Matrix.CreateRotationZ(Rotation) *
             Matrix.CreateScale(Zoom, Zoom, 1f) *
             Matrix.CreateTranslation(_viewportWidth * 0.5f, _viewportHeight * 0.5f, 0f);

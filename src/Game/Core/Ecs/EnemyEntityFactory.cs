@@ -31,6 +31,24 @@ internal sealed class EnemyEntityFactory
         _world.SetComponent(entity, new AiSeekTarget(Faction.Player));
         _world.SetComponent(entity, new Lifetime(20f));
         _world.SetComponent(entity, new Mass(archetype.Mass));
+        
+        // Stat components for unified damage model
+        _world.SetComponent(entity, new OffensiveStats
+        {
+            Power = 1.0f,
+            AttackSpeed = 1.0f,
+            CritChance = 0.0f, // Enemies don't crit by default
+            CritMultiplier = 1.5f,
+            CooldownReduction = 0.0f
+        });
+        _world.SetComponent(entity, new DefensiveStats
+        {
+            Armor = 0f,
+            ArcaneResist = 0f
+        });
+        _world.SetComponent(entity, StatModifiers.Zero);
+        _world.SetComponent(entity, new ComputedStats { IsDirty = true });
+        
         _world.SetComponent(entity, Collider.CreateCircle(archetype.CollisionRadius, CollisionLayer.Enemy, CollisionLayer.Player | CollisionLayer.Enemy | CollisionLayer.WorldStatic, isTrigger: false));
 
         // Combat hitbox/hurtbox - enemies can be hit but don't spawn melee hitboxes (use contact damage)

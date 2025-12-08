@@ -1,5 +1,6 @@
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Combat;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -10,6 +11,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 internal sealed class ProjectileHitSystem : IUpdateSystem
 {
     private EcsWorld _world = null!;
+    private DamageApplicationService? _damageService;
 
     public void Initialize(EcsWorld world)
     {
@@ -19,7 +21,10 @@ internal sealed class ProjectileHitSystem : IUpdateSystem
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
-        // No per-frame logic needed - all work is done in collision event handler
+        // Lazily initialize damage service
+        _damageService ??= new DamageApplicationService(
+            world,
+            new DamageCalculator(new CombatRng()));
     }
 
     private void OnCollisionEnter(CollisionEnterEvent evt)
@@ -94,12 +99,16 @@ internal sealed class ProjectileHitSystem : IUpdateSystem
             projectilePosition = new Position(contactPoint);
         }
 
-        // Apply damage via event
-        _world.EventBus.Publish(new EntityDamagedEvent(
-            targetEntity,
-            projectile.Damage,
-            projectilePosition.Value,
-            projectile.SourceFaction));
+        // Apply damage using unified damage calculator
+        if (_damageService == null)
+            return false;
+
+        var damageInfo = new DamageInfo(
+            baseDamage: projectile.Damage,
+            damageType: DamageType.Arcane, // Projectiles are arcane damage
+            flags: DamageFlags.CanCrit);
+
+        _damageService.ApplyDamage(projectile.Source, targetEntity, damageInfo, projectilePosition.Value);
 
         // Mark projectile as having hit something
         projectile.HasHit = true;

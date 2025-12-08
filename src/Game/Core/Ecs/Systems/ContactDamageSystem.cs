@@ -2,6 +2,7 @@ using System;
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Combat;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -12,6 +13,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 internal sealed class ContactDamageSystem : IUpdateSystem
 {
     private float _gameTime;
+    private DamageApplicationService? _damageService;
 
     public void Initialize(EcsWorld world)
     {
@@ -24,6 +26,11 @@ internal sealed class ContactDamageSystem : IUpdateSystem
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
         _gameTime += context.DeltaSeconds;
+        
+        // Lazily initialize damage service
+        _damageService ??= new DamageApplicationService(
+            world,
+            new DamageCalculator(new CombatRng()));
     }
 
     private void OnCollision(EcsWorld world, Entity entityA, Entity entityB, Vector2 normal)
@@ -66,16 +73,20 @@ internal sealed class ContactDamageSystem : IUpdateSystem
         if (!cooldown.CanTakeDamageFrom(attacker.Id, _gameTime))
             return;
 
-        // Apply damage
-        var damageApplied = MathF.Min(health.Current, attackStats.Damage);
-        if (damageApplied <= 0f)
+        // Apply damage using unified damage calculator
+        if (_damageService == null)
             return;
+
+        var damageInfo = new DamageInfo(
+            baseDamage: attackStats.Damage,
+            damageType: DamageType.Physical,
+            flags: DamageFlags.CanCrit);
 
         // Get attacker position for event
         var attackerPos = world.TryGetComponent(attacker, out Position pos) ? pos.Value : Vector2.Zero;
 
-        // Publish damage event
-        world.EventBus.Publish(new EntityDamagedEvent(target, damageApplied, attackerPos, attackerFaction));
+        // Apply damage
+        _damageService.ApplyDamage(attacker, target, damageInfo, attackerPos);
 
         // Apply knockback if target can be knocked back
         if (world.TryGetComponent(target, out Velocity _))

@@ -57,6 +57,7 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
         {
             var hasPauseMenu = world.TryGetComponent(_sessionEntity.Value, out PauseMenu pauseMenu);
             var hasAudioSettings = world.TryGetComponent(_sessionEntity.Value, out AudioSettingsState audioSettings);
+            var hasAudioMenu = world.TryGetComponent(_sessionEntity.Value, out AudioSettingsMenu audioMenu);
 
             // Draw HUD in top-left corner (only if playing)
             if (session.State == GameState.Playing)
@@ -86,10 +87,20 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
 
             if (session.State == GameState.Paused)
             {
-                DrawPauseOverlay(
-                    spriteBatch,
-                    hasPauseMenu ? pauseMenu : new PauseMenu(0),
-                    hasAudioSettings ? audioSettings : new AudioSettingsState(false, false));
+                if (hasAudioMenu && audioMenu.IsOpen)
+                {
+                    DrawAudioSettingsOverlay(
+                        spriteBatch,
+                        hasAudioSettings ? audioSettings : new AudioSettingsState(),
+                        audioMenu);
+                }
+                else
+                {
+                    DrawPauseOverlay(
+                        spriteBatch,
+                        hasPauseMenu ? pauseMenu : new PauseMenu(0),
+                        hasAudioSettings ? audioSettings : new AudioSettingsState());
+                }
             }
         }
 
@@ -160,8 +171,7 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
         {
             "Resume",
             "Restart Run",
-            $"Music: {(audioSettings.MusicMuted ? "Muted" : "On")}",
-            $"SFX: {(audioSettings.SfxMuted ? "Muted" : "On")}",
+            $"Audio Settings (Master {(int)(audioSettings.MasterVolume * 100)}%)",
             "Quit",
         };
 
@@ -199,6 +209,134 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
             var color = isSelected ? Color.Gold : Color.White;
             spriteBatch.DrawString(_regularFont, text, position, color);
         }
+    }
+
+    private void DrawAudioSettingsOverlay(SpriteBatch spriteBatch, AudioSettingsState audioSettings, AudioSettingsMenu audioMenu)
+    {
+        var screenRect = new Rectangle(0, 0, 960, 540);
+        spriteBatch.Draw(_pixel, screenRect, Color.Black * 0.7f);
+
+        const float panelWidth = 520f;
+        const float panelHeight = 460f;
+        var panelRect = new Rectangle(
+            (int)((screenRect.Width - panelWidth) * 0.5f),
+            (int)((screenRect.Height - panelHeight) * 0.5f),
+            (int)panelWidth,
+            (int)panelHeight);
+        spriteBatch.Draw(_pixel, panelRect, Color.Black * 0.9f);
+
+        var title = "Audio Settings";
+        var titleSize = _titleFont.MeasureString(title);
+        var titlePosition = new Vector2(
+            panelRect.Center.X - titleSize.X / 2f,
+            panelRect.Top + 20f);
+        spriteBatch.DrawString(_titleFont, title, titlePosition, Color.White);
+
+        var items = new (string Label, float? Value, bool? Toggle)[]
+        {
+            ("Master Volume", audioSettings.MasterVolume, null),
+            ("Music Volume", audioSettings.MusicVolume, null),
+            ("SFX Volume", audioSettings.SfxVolume, null),
+            ("UI Volume", audioSettings.UiVolume, null),
+            ("Voice Volume", audioSettings.VoiceVolume, null),
+            ("Mute All", null, audioSettings.MuteAll),
+            ("Master Mute", null, audioSettings.MasterMuted),
+            ("Music Mute", null, audioSettings.MusicMuted),
+            ("SFX Mute", null, audioSettings.SfxMuted),
+            ("UI Mute", null, audioSettings.UiMuted),
+            ("Voice Mute", null, audioSettings.VoiceMuted),
+            ("Back", null, null),
+        };
+
+        var startY = titlePosition.Y + titleSize.Y + 24f;
+        var rowHeight = 30f;
+        var labelX = panelRect.Left + 28f;
+        var sliderX = panelRect.Left + 240f;
+        var sliderWidth = 200f;
+
+        for (var i = 0; i < items.Length; i++)
+        {
+            var isSelected = i == audioMenu.SelectedIndex;
+            var rowY = startY + rowHeight * i;
+            var highlightRect = new Rectangle(
+                (int)(labelX - 14f),
+                (int)(rowY - 6f),
+                (int)(panelWidth - 56f),
+                (int)(rowHeight + 10f));
+
+            if (isSelected)
+            {
+                spriteBatch.Draw(_pixel, highlightRect, Color.DarkSlateGray * 0.8f);
+            }
+
+            var label = items[i].Label;
+            spriteBatch.DrawString(_regularFont, label, new Vector2(labelX, rowY), Color.White);
+
+            if (items[i].Value is float sliderValue)
+            {
+                DrawSliderBar(spriteBatch, new Vector2(sliderX, rowY + 4f), sliderValue, sliderWidth);
+                var percentText = $"{(int)(sliderValue * 100)}%";
+                var percentSize = _regularFont.MeasureString(percentText);
+                spriteBatch.DrawString(
+                    _regularFont,
+                    percentText,
+                    new Vector2(sliderX + sliderWidth + 12f, rowY),
+                    isSelected ? Color.Gold : Color.LightGray);
+            }
+            else if (items[i].Toggle is bool toggle)
+            {
+                var toggleText = toggle ? "Muted" : "On";
+                spriteBatch.DrawString(
+                    _regularFont,
+                    toggleText,
+                    new Vector2(sliderX, rowY),
+                    toggle ? Color.OrangeRed : Color.LightGreen);
+            }
+        }
+
+        var hintText = "Up/Down: select    Left/Right: adjust    Enter: toggle    Esc: back";
+        var hintSize = _regularFont.MeasureString(hintText);
+        var hintPosition = new Vector2(
+            panelRect.Center.X - hintSize.X / 2f,
+            panelRect.Bottom - hintSize.Y - 12f);
+        spriteBatch.DrawString(_regularFont, hintText, hintPosition, Color.LightGray);
+
+        if (!string.IsNullOrEmpty(audioMenu.ConfirmationText))
+        {
+            var alpha = MathHelper.Clamp(audioMenu.ConfirmationTimerSeconds / 1.0f, 0f, 1f);
+            var textSize = _regularFont.MeasureString(audioMenu.ConfirmationText);
+            var textPosition = new Vector2(
+                panelRect.Center.X - textSize.X / 2f,
+                panelRect.Bottom - textSize.Y - 48f);
+            spriteBatch.DrawString(_regularFont, audioMenu.ConfirmationText, textPosition, Color.Gold * alpha);
+        }
+    }
+
+    private void DrawSliderBar(SpriteBatch spriteBatch, Vector2 position, float value, float width)
+    {
+        const float height = 8f;
+        spriteBatch.Draw(
+            _pixel,
+            position,
+            null,
+            Color.DimGray,
+            0f,
+            Vector2.Zero,
+            new Vector2(width, height),
+            SpriteEffects.None,
+            0f);
+
+        var fillColor = Color.Lerp(Color.DarkSeaGreen, Color.Gold, value);
+        spriteBatch.Draw(
+            _pixel,
+            position,
+            null,
+            fillColor,
+            0f,
+            Vector2.Zero,
+            new Vector2(width * MathHelper.Clamp(value, 0f, 1f), height),
+            SpriteEffects.None,
+            0f);
     }
 
     private void DrawNotification(SpriteBatch spriteBatch, WaveNotification notification)

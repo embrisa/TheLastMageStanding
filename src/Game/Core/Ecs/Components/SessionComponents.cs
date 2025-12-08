@@ -51,14 +51,43 @@ internal struct PauseMenu
 /// </summary>
 internal struct AudioSettingsState
 {
-    public AudioSettingsState(bool musicMuted, bool sfxMuted)
+    public AudioSettingsState(
+        float masterVolume,
+        float musicVolume,
+        float sfxVolume,
+        float uiVolume,
+        float voiceVolume,
+        bool masterMuted,
+        bool musicMuted,
+        bool sfxMuted,
+        bool uiMuted,
+        bool voiceMuted,
+        bool muteAll)
     {
+        MasterVolume = masterVolume;
+        MusicVolume = musicVolume;
+        SfxVolume = sfxVolume;
+        UiVolume = uiVolume;
+        VoiceVolume = voiceVolume;
+        MasterMuted = masterMuted;
         MusicMuted = musicMuted;
         SfxMuted = sfxMuted;
+        UiMuted = uiMuted;
+        VoiceMuted = voiceMuted;
+        MuteAll = muteAll;
     }
 
+    public float MasterVolume { get; set; } = 1f;
+    public float MusicVolume { get; set; } = 1f;
+    public float SfxVolume { get; set; } = 1f;
+    public float UiVolume { get; set; } = 1f;
+    public float VoiceVolume { get; set; } = 1f;
+    public bool MasterMuted { get; set; }
     public bool MusicMuted { get; set; }
     public bool SfxMuted { get; set; }
+    public bool UiMuted { get; set; }
+    public bool VoiceMuted { get; set; }
+    public bool MuteAll { get; set; }
 }
 
 /// <summary>
@@ -73,5 +102,26 @@ internal struct WaveNotification
     {
         Message = message;
         RemainingSeconds = duration;
+    }
+}
+
+/// <summary>
+/// Tracks the audio settings UI state within the pause menu.
+/// </summary>
+internal struct AudioSettingsMenu
+{
+    public bool IsOpen { get; set; }
+    public int SelectedIndex { get; set; }
+    public float SampleCooldownSeconds { get; set; }
+    public float ConfirmationTimerSeconds { get; set; }
+    public string ConfirmationText { get; set; }
+
+    public AudioSettingsMenu(bool isOpen)
+    {
+        IsOpen = isOpen;
+        SelectedIndex = 0;
+        SampleCooldownSeconds = 0f;
+        ConfirmationTimerSeconds = 0f;
+        ConfirmationText = string.Empty;
     }
 }

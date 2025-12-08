@@ -99,8 +99,27 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
                 // Draw center cross
                 DrawLine(spriteBatch, worldCenter - new Vector2(4, 0), worldCenter + new Vector2(4, 0), hitboxColor, 2f);
                 DrawLine(spriteBatch, worldCenter - new Vector2(0, 4), worldCenter + new Vector2(0, 4), hitboxColor, 2f);
+                
+                // Draw line to owner to show which entity owns this hitbox
+                if (world.TryGetComponent(hitbox.Owner, out Position ownerPos))
+                {
+                    DrawLine(spriteBatch, worldCenter, ownerPos.Value, hitboxColor * 0.5f, 1f);
+                }
             }
         });
+
+        // Draw directional hitbox offsets for entities with animation-driven attacks
+        world.ForEach<Position, DirectionalHitboxConfig, PlayerAnimationState>(
+            (Entity entity, ref Position pos, ref DirectionalHitboxConfig dirConfig, ref PlayerAnimationState animState) =>
+            {
+                // Show the current facing offset as a bright arrow
+                var offset = dirConfig.GetOffsetForFacing(animState.Facing);
+                var targetPos = pos.Value + offset;
+                DrawArrow(spriteBatch, pos.Value, targetPos, Color.HotPink * 0.8f, 2f);
+                
+                // Draw a small circle at the offset position
+                DrawCircle(spriteBatch, targetPos, 4f, Color.HotPink * 0.6f, 8);
+            });
     }
 
     private void DrawArrow(SpriteBatch spriteBatch, Vector2 start, Vector2 end, Color color, float thickness)

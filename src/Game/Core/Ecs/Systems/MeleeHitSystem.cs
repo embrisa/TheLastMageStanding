@@ -2,6 +2,7 @@ using System;
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Combat;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -12,6 +13,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 internal sealed class MeleeHitSystem : IUpdateSystem
 {
     private float _gameTime;
+    private DamageApplicationService? _damageService;
 
     public void Initialize(EcsWorld world)
     {
@@ -23,6 +25,11 @@ internal sealed class MeleeHitSystem : IUpdateSystem
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
         _gameTime += context.DeltaSeconds;
+
+        // Lazily initialize damage service
+        _damageService ??= new DamageApplicationService(
+            world,
+            new DamageCalculator(new CombatRng()));
 
         // Update hitbox lifetimes and remove expired ones
         UpdateHitboxLifetimes(world, context.DeltaSeconds);
@@ -73,16 +80,26 @@ internal sealed class MeleeHitSystem : IUpdateSystem
         if (hitbox.OwnerFaction == targetFaction)
             return;
 
-        // Apply damage
-        var damageApplied = MathF.Min(health.Current, hitbox.Damage);
-        if (damageApplied <= 0f)
+        // Apply damage using unified damage calculator
+        if (_damageService == null)
             return;
+
+        var damageInfo = new DamageInfo(
+            baseDamage: hitbox.Damage,
+            damageType: DamageType.Physical,
+            flags: DamageFlags.CanCrit);
 
         // Get owner position for event
         var ownerPos = world.TryGetComponent(hitbox.Owner, out Position pos) ? pos.Value : contactPoint;
 
-        // Publish damage event
-        world.EventBus.Publish(new EntityDamagedEvent(targetEntity, damageApplied, ownerPos, hitbox.OwnerFaction));
+        // Apply damage through unified system
+        _damageService.ApplyDamage(hitbox.Owner, targetEntity, damageInfo, ownerPos);
+
+        // Publish impact VFX
+        world.EventBus.Publish(new VfxSpawnEvent("melee_impact", contactPoint, VfxType.Impact, Color.Red));
+
+        // Publish impact SFX
+        world.EventBus.Publish(new SfxPlayEvent("melee_hit", SfxCategory.Impact, contactPoint));
 
         // Mark this target as already hit
         hitbox.AlreadyHit.Add(targetEntity.Id);

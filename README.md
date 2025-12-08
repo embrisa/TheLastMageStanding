@@ -38,6 +38,11 @@ Open the pipeline editor (macOS): `dotnet mgcb-editor-mac ./Content.mgcb` (use `
   - `Core/` — camera, input, player, world scaffolding
   - `Content/` — `Content.mgcb` and asset folders (Sprites, Tiles, Fonts, Audio, Effects)
 
+## Audio settings
+- Accessible from the pause menu via **Audio Settings**. Keyboard: Up/Down to focus, Left/Right to adjust sliders, Enter to toggle, Esc to go back.
+- Sliders: master, music, SFX, UI, voice; toggles: mute-all plus master/music/SFX/UI/voice mutes. Changes apply immediately and play a short sample.
+- Settings persist to JSON at `%LOCALAPPDATA%/TheLastMageStanding/audio-settings.json` (created on first run). Missing or corrupt files fall back to defaults.
+
 ## Tasks & agent docs
 - Task workflow: `TASKS.md` (use `TASK_TEMPLATE.md` to add work items)
 - Agent onboarding/expectations: `AGENTS.md`
