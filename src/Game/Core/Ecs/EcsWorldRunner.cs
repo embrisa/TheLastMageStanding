@@ -12,6 +12,7 @@ using TheLastMageStanding.Game.Core.Input;
 using TheLastMageStanding.Game.Core.Events;
 using TheLastMageStanding.Game.Core.Config;
 using TheLastMageStanding.Game.Core.Audio;
+using TheLastMageStanding.Game.Core.Perks;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
@@ -48,6 +49,8 @@ internal sealed class EcsWorldRunner
         _musicService = musicService;
         _waveConfig = EnemyWaveConfig.Default;
         _progressionConfig = ProgressionConfig.Default;
+        var perkTreeConfig = PerkTreeConfig.Default;
+        var perkService = new PerkService(perkTreeConfig);
         _playerFactory = new PlayerEntityFactory(_world, _progressionConfig);
         _enemyFactory = new EnemyEntityFactory(_world);
         _playerFactory.CreatePlayer(Vector2.Zero);
@@ -75,6 +78,10 @@ internal sealed class EcsWorldRunner
         var vfxSystem = new VfxSystem();
         var telegraphSystem = new TelegraphSystem();
         var telegraphRenderSystem = new TelegraphRenderSystem();
+        var perkPointGrantSystem = new PerkPointGrantSystem(perkTreeConfig);
+        var perkEffectApplicationSystem = new PerkEffectApplicationSystem(perkService);
+        var perkAutoSaveSystem = new PerkAutoSaveSystem();
+        var perkTreeUISystem = new PerkTreeUISystem(perkTreeConfig, perkService);
 
         _updateSystems =
         [
@@ -111,6 +118,10 @@ internal sealed class EcsWorldRunner
             new XpOrbSpawnSystem(_progressionConfig),
             new XpCollectionSystem(_progressionConfig),
             new LevelUpSystem(_progressionConfig),
+            perkPointGrantSystem,
+            perkEffectApplicationSystem,
+            perkAutoSaveSystem,
+            perkTreeUISystem,
             new CleanupSystem(),
             new IntentResetSystem(),
         ];
@@ -130,6 +141,7 @@ internal sealed class EcsWorldRunner
         _uiDrawSystems =
         [
             new HudRenderSystem(),
+            perkTreeUISystem,
         ];
 
         _loadSystems =

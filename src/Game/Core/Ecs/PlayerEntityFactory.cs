@@ -64,6 +64,11 @@ internal sealed class PlayerEntityFactory
         var xpToNextLevel = _progressionConfig.CalculateXpForLevel(startingLevel + 1);
         _world.SetComponent(entity, new PlayerXp(currentXp: 0, level: startingLevel, xpToNextLevel: xpToNextLevel));
 
+        // Initialize perk system
+        _world.SetComponent(entity, new PerkPoints(0, 0));
+        _world.SetComponent(entity, new PlayerPerks());
+        _world.SetComponent(entity, new PerkGameplayModifiers());
+
         // Loot/inventory components
         _world.SetComponent(entity, new Inventory());
         _world.SetComponent(entity, new Equipment());
