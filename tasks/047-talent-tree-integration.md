@@ -1,5 +1,7 @@
 # Task: 047 - Talent Tree Integration & Application
-- Status: backlog
+- Status: NEEDS UPDATE + BLOCKED by Task 051
+
+**NOTE:** This task assumes in-run talent access (P key in Goals section). Under new design, talents are hub-only configuration. Remove all mentions of in-run access; focus purely on hub integration after Task 051 is complete.
 
 ## Summary
 Integrate the talent-perk tree (Task 031) with the meta progression system. Apply talent unlock conditions (meta level, gold cost), allow players to unlock talents in the meta hub, and apply unlocked talent effects at run start.

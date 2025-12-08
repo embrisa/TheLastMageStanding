@@ -471,6 +471,20 @@ internal sealed class GameSessionSystem : IUpdateSystem
                 }
             }
         }
+
+        // Update locked feature message timer
+        if (_sessionEntity.HasValue && world.TryGetComponent(_sessionEntity.Value, out LockedFeatureMessage lockedMsg))
+        {
+            lockedMsg.RemainingSeconds -= deltaSeconds;
+            if (lockedMsg.RemainingSeconds <= 0f)
+            {
+                world.RemoveComponent<LockedFeatureMessage>(_sessionEntity.Value);
+            }
+            else
+            {
+                world.SetComponent(_sessionEntity.Value, lockedMsg);
+            }
+        }
     }
 
     private void OnWaveStarted(WaveStartedEvent evt)

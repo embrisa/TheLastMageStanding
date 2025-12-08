@@ -1,5 +1,26 @@
 # Task: 039 - Mage skill system
 - Status: completed
+- ⚠️ **NEEDS UPDATE**: See design clarification below
+
+## ⚠️ Design Clarification (Dec 8, 2025)
+
+**New Vision**: Skills are **hub-only** configuration; modifiers from level-up choices only.
+
+**Current Implementation**:
+- Skills can be equipped/modified (but unclear where UI is).
+- `PlayerSkillModifiers` component exists but modifier source unclear.
+
+**Required Changes**:
+1. **Skill selection UI** only in hub scene (Task 042: Skill Selection UI).
+2. **Skill unlocks** at specific meta levels (define unlock table).
+3. **Lock hotbar** when entering a stage.
+4. **Level-up choices** can add modifiers to `PlayerSkillModifiers` (in-run temporary boosts).
+5. Skills cannot be changed mid-run.
+6. Skill modifiers reset on stage restart (except those from talents/equipment).
+
+**See**: `/docs/DESIGN_CLARIFICATION.md` for full context.
+
+---
 
 ## Summary
 Build the first-class skill system for the Mage, covering fire/arcane/frost skills and their integration with input, stats, and perks/talents. Provide a skill interface/registry, casting/targeting pipeline, and baseline skills per element to support current gameplay and the talent tree (Task 031).

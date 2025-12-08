@@ -112,6 +112,7 @@ internal sealed class EcsWorldRunner
         var playerSkillInputSystem = new PlayerSkillInputSystem();
         var skillCastSystem = new SkillCastSystem(skillRegistry);
         var skillExecutionSystem = new SkillExecutionSystem(skillRegistry);
+        var skillHotbarRenderer = new Rendering.UI.SkillHotbarRenderer(skillRegistry);
         var dashInputSystem = new DashInputSystem();
         var dashExecutionSystem = new DashExecutionSystem(hitStopSystem);
         var dashMovementSystem = new DashMovementSystem();
@@ -192,6 +193,7 @@ internal sealed class EcsWorldRunner
         _uiDrawSystems =
         [
             new HudRenderSystem(),
+            skillHotbarRenderer,
             perkTreeUISystem,
         ];
 

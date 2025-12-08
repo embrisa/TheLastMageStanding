@@ -28,19 +28,43 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 Context: Tasks 031 and above assume the Mage is the first class with fire/arcane/frost skill & talent trees; future classes are out of scope for now.
 
 ## Active tasks
-- [037 - Meta progression & run tracking (MVP)](tasks/037-meta-progression-and-run-tracking.md)
-- [038 - Extended sound settings & volume controls](tasks/038-extended-sound-settings-and-volume-controls.md)
 
-## Backlog - Skill System UI/UX Arc (Post-039)
-**Context:** Task 039 implemented the skill system backend. This arc completes the player-facing experience with UI, input, progression, and balance tuning.
 
-- [040 - Skill hotbar UI](tasks/040-skill-hotbar-ui.md) — Visual skill bar showing equipped skills, cooldowns, cast progress
-- [041 - Skill hotkey input (keys 1-4)](tasks/041-skill-hotkey-input.md) — Bind keys 1-4 to cast skills from hotbar slots
-- [042 - Skill selection & equipping UI](tasks/042-skill-selection-ui.md) — Overlay for browsing/equipping skills to hotbar
-- [043 - Skill unlock progression](tasks/043-skill-unlock-progression.md) — Gate skills behind level requirements with unlock notifications
-- [044 - Skill balance & feel pass](tasks/044-skill-balance-and-feel-pass.md) — Playtest and tune damage/cooldowns/VFX/SFX for all skills
+## Backlog - Priority Order (Post-040)
+**Context:** Game vision updated to 4-act story-driven ARPG with hub-based configuration (see `/docs/DESIGN_CLARIFICATION.md`).
+
+### IMMEDIATE (Do First)
+- [053 - Remove mid-run configuration access](tasks/053-remove-mid-run-configuration.md) — Gate P/I/Shift+R behind hub; stop design conflicts
+
+### HIGH PRIORITY (Foundation)
+- [041 - Skill hotkey input (keys 1-4)](tasks/041-skill-hotkey-input.md) — Bind 1-4 to cast skills (still valid, independent)
+- [051 - Hub scene and scene management](tasks/051-hub-scene-and-scene-management.md) — Create hub scene, scene transitions (blocks 055, 056, 045-047)
+- [050 - Level-up choice system](tasks/050-level-up-choice-system.md) — Replace auto-stat-boost with choice UI
+
+### MEDIUM PRIORITY (Meta Progression)
+- [054 - Meta progression system updates](tasks/054-meta-progression-updates.md) — Enforce level 60 cap, unlock tables (blocks 055)
+- [055 - Skill selection hub UI](tasks/055-skill-selection-hub-ui.md) — Hub UI for skill equipping (**supersedes 042**)
+- [056 - Equipment management hub UI](tasks/056-equipment-management-hub-ui.md) — Hub UI for equipment (**supersedes parts of 046**)
+- [044 - Skill balance & feel pass](tasks/044-skill-balance-and-feel-pass.md) — Playtest and tune all skills
+
+### MEDIUM PRIORITY (Hub Features - Modified)
+- [045 - Meta hub main menu](tasks/045-meta-hub-ui-and-scene.md) — Main hub navigation (**BLOCKED by 051; merge with 051 or defer**)
+- [046 - Shop UI](tasks/046-shop-and-equipment-ui.md) — Shop for purchasing equipment (**NEEDS UPDATE: shop only, not equipment UI**)
+- [047 - Talent tree hub integration](tasks/047-talent-tree-integration.md) — Hub-based talent unlocking (**NEEDS UPDATE: hub-only, remove in-run mentions**)
+- [049 - Run history UI](tasks/049-run-history-stats-ui.md) — View past runs (independent, can do anytime)
+
+### MEDIUM PRIORITY (Campaign)
+- [052 - Stage/act campaign system](tasks/052-stage-act-campaign-system.md) — 4 acts, stages, bosses, progression
+
+### LOW PRIORITY / RECONSIDER
+- ~~[042 - Skill selection UI](tasks/042-skill-selection-ui.md)~~ — **SUPERSEDED by Task 055**
+- ~~[043 - Skill unlock progression](tasks/043-skill-unlock-progression.md)~~ — **SUPERSEDED by Task 054**
+- [048 - In-run inventory UI](tasks/048-in-run-inventory-ui.md) — **CONFLICTS with new design; needs complete rewrite or removal**
 
 ## Done
+- [040 - Skill hotbar UI](tasks/040-skill-hotbar-ui.md)
+- [038 - Extended sound settings & volume controls](tasks/038-extended-sound-settings-and-volume-controls.md)
+- [037 - Meta progression & run tracking (MVP)](tasks/037-meta-progression-and-run-tracking.md)
 - [036 - Elite modifiers & mutators](tasks/036-elite-modifiers-and-mutators.md)
 - [035 - Enemy AI variants & squad behaviors](tasks/035-enemy-ai-variants-and-squad-behaviors.md)
 - [034 - Status effects & elemental interactions](tasks/034-status-effects-and-elemental-interactions.md)

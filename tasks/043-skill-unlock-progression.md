@@ -1,9 +1,11 @@
 # Task 043 — Skill Unlock Progression
 
-**Status:** backlog  
-**Priority:** Medium  
-**Estimated effort:** 2-3 hours  
-**Dependencies:** Task 042 (Skill selection UI), Task 022 (XP/leveling)
+**Status:** SUPERSEDED by Task 054  
+**Priority:** ~~Medium~~ → **See Task 054**  
+**Estimated effort:** ~~2-3 hours~~ → **See Task 054**  
+**Dependencies:** ~~Task 042 (Skill selection UI), Task 022 (XP/leveling)~~ → **REPLACED by Task 054**
+
+**NOTE:** This task is fully replaced by Task 054 (Meta progression system updates), which implements meta level cap 60 and unlock tables for skills/talents/equipment.
 
 ## Summary
 

@@ -1,5 +1,7 @@
 # Task: 045 - Meta Hub UI & Scene
-- Status: backlog
+- Status: BLOCKED (overlaps with Task 051)
+
+**NOTE:** This task overlaps significantly with Task 051 (Hub scene and scene management). Should either be merged into 051 or deferred until 051 is complete to avoid duplication.
 
 ## Summary
 Create the meta hub game state and UI that serves as the central navigation point between runs. Display player meta level, XP, and gold. Provide navigation to shop, talent tree, run history, and the "Start Run" button.

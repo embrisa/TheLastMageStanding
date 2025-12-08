@@ -5,7 +5,8 @@ using TheLastMageStanding.Game.Core.Events;
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
 /// <summary>
-/// Grants perk points when the player levels up.
+/// Grants perk points when the player gains a meta level (hub-only progression).
+/// In-run level-ups no longer grant perk points.
 /// </summary>
 internal sealed class PerkPointGrantSystem : IUpdateSystem
 {
@@ -20,7 +21,8 @@ internal sealed class PerkPointGrantSystem : IUpdateSystem
     public void Initialize(EcsWorld world)
     {
         _world = world;
-        world.EventBus.Subscribe<PlayerLeveledUpEvent>(OnPlayerLeveledUp);
+        // Subscribe to meta level-up events instead of in-run level-ups
+        world.EventBus.Subscribe<MetaLevelUpEvent>(OnMetaLevelUp);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
@@ -28,12 +30,19 @@ internal sealed class PerkPointGrantSystem : IUpdateSystem
         // Event-driven system, no per-frame update needed
     }
 
-    private void OnPlayerLeveledUp(PlayerLeveledUpEvent evt)
+    private void OnMetaLevelUp(MetaLevelUpEvent evt)
     {
         if (_world == null)
             return;
 
-        var player = evt.Player;
+        // Find player entity
+        Entity? playerEntity = null;
+        _world.ForEach<PlayerTag>((Entity entity, ref PlayerTag _) => playerEntity = entity);
+
+        if (!playerEntity.HasValue)
+            return;
+
+        var player = playerEntity.Value;
 
         // Ensure player has PerkPoints component
         if (!_world.TryGetComponent<PerkPoints>(player, out var perkPoints))

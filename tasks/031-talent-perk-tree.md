@@ -1,5 +1,27 @@
 # Task: 031 - Talent/perk tree
 - Status: completed
+- ⚠️ **NEEDS UPDATE**: See design clarification below
+
+## ⚠️ Design Clarification (Dec 8, 2025)
+
+**New Vision**: Talents are **hub-only** configuration; no mid-run allocation or respec.
+
+**Current Implementation**: 
+- P key toggles perk tree during runs.
+- Perk points granted on in-run level-ups.
+- Shift+R respec available mid-run.
+
+**Required Changes**:
+1. **Remove P key** input during runs (only accessible in hub scene).
+2. **Remove perk point grants** from in-run level-ups (grant from meta level-ups instead).
+3. **Remove or gate respec** functionality (talents are permanent, or costly meta-hub action).
+4. **Move perk tree UI** to hub scene only.
+5. **Meta level cap**: Enforce level 60 cap; talent points at specific meta levels.
+6. Talents apply to all runs (persistent, not per-run).
+
+**See**: `/docs/DESIGN_CLARIFICATION.md` for full context.
+
+---
 
 ## Summary
 Create a branching perk tree powered by level-up points that modifies the unified stat model and select gameplay behaviors. Include prerequisite logic, rank caps, respec support, and persistence within a run.

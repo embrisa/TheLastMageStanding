@@ -112,6 +112,12 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
         {
             DrawNotification(spriteBatch, notification);
         }
+
+        // Draw locked feature message (top-center)
+        if (_sessionEntity.HasValue && world.TryGetComponent(_sessionEntity.Value, out LockedFeatureMessage lockedMsg))
+        {
+            DrawLockedFeatureMessage(spriteBatch, lockedMsg);
+        }
     }
 
     private void DrawGameOverOverlay(SpriteBatch spriteBatch, GameSession session)
@@ -359,6 +365,21 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
             100f
         );
         spriteBatch.DrawString(_titleFont, notification.Message, position, color);
+    }
+
+    private void DrawLockedFeatureMessage(SpriteBatch spriteBatch, LockedFeatureMessage message)
+    {
+        // Calculate fade based on remaining time
+        var alpha = MathHelper.Clamp(message.RemainingSeconds / 0.5f, 0f, 1f);
+        var color = Color.Orange * alpha;
+
+        // Draw centered below notifications
+        var size = _regularFont.MeasureString(message.Message);
+        var position = new Vector2(
+            960f / 2f - size.X / 2f,
+            160f
+        );
+        spriteBatch.DrawString(_regularFont, message.Message, position, color);
     }
 
     private void DrawPlayerXpBar(EcsWorld world, SpriteBatch spriteBatch, Vector2 position)

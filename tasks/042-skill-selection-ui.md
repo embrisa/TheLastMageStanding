@@ -1,9 +1,11 @@
 # Task 042 — Skill Selection & Equipping UI
 
-**Status:** backlog  
-**Priority:** Medium  
-**Estimated effort:** 3-4 hours  
-**Dependencies:** Task 040 (Skill hotbar UI), Task 041 (Hotkey input)
+**Status:** SUPERSEDED by Task 055  
+**Priority:** ~~Medium~~ → **See Task 055**  
+**Estimated effort:** ~~3-4 hours~~ → **See Task 055**  
+**Dependencies:** ~~Task 040 (Skill hotbar UI), Task 041 (Hotkey input)~~ → **REPLACED by Task 055**
+
+**NOTE:** This task is fully replaced by Task 055 (Skill selection hub UI), which implements skill browsing/equipping in the hub scene per the new game vision.
 
 ## Summary
 

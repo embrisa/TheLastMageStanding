@@ -1,10 +1,14 @@
 # The Last Mage Standing — Game Design Document
 
 ## 1. Vision & Pillars
-- 2D isometric horde-survivor meets ARPG: survive waves, grow power, feel tactical mastery.
-- Moment-to-moment readability: clear telegraphs, hit feedback, and camera stability.
-- Deterministic, event-driven ECS so combat, VFX/SFX, and UI remain decoupled and testable.
-- Scalable foundation: collision, hitboxes, projectiles, progression, and perks are additive.
+- **Story-driven ARPG**: 2D isometric action-RPG with 4-act narrative campaign through distinct biomes.
+- **Session-based runs**: Each run is a stage within an act, culminating in act boss fights.
+- **Meta hub progression**: Skills, talents, and equipment are configured in the meta hub before runs.
+- **Dual level caps**: Meta progression level cap of 60; in-run level cap of 60 per stage.
+- **In-run progression**: Level-ups grant choice between stat boosts OR skill modifiers (no new skills/talents mid-run).
+- **Moment-to-moment readability**: Clear telegraphs, hit feedback, and camera stability.
+- **Deterministic, event-driven ECS**: Combat, VFX/SFX, and UI remain decoupled and testable.
+- **Scalable foundation**: Collision, hitboxes, projectiles, progression, and perks are additive.
 
 ## 2. Platform & Tech Stack
 - .NET 9, MonoGame 3.8.4.1 (DesktopGL); fixed timestep 60 FPS.
@@ -12,11 +16,54 @@
 - Content pipeline via `Content.mgcb`; TMX maps built with MonoGame.Extended importer.
 - Namespaces: `TheLastMageStanding.Game.*`; nullable on, latest C# features.
 
-## 3. Core Loop
-- Spawn-timed waves chase the player; player attacks with collider-driven melee and ranged projectiles (from enemies).
-- Collisions drive combat: hitboxes/hurtboxes, contact damage, knockback, separation, and hit-stop.
-- Defeat enemies → XP orbs → level-ups → stat growth; perks and loot hooks exist for expansion.
-- Session flow: playing → death (game over overlay) → restart; pause/settings overlay available.
+## 3. Core Loop & Game Structure
+
+### Story & Acts
+- **4 Acts**: Each act tells part of the narrative and features unique biomes, enemies, and mechanics.
+  - **Act 1**: Tutorial biome - introduction to core mechanics, basic enemies.
+  - **Act 2**: Second biome - increased difficulty, new enemy types.
+  - **Act 3**: Third biome - advanced mechanics, elite variants.
+  - **Act 4**: Final biome - endgame content, ultimate challenges.
+- **Stages per Act**: Multiple stages (maps/levels) leading to the act boss.
+  - Each stage is a complete run with its own waves and difficulty curve.
+  - Completing a stage unlocks the next stage within the act.
+  - Final stage of each act culminates in a boss fight.
+- **Boss Fights**: Each act ends with a unique boss encounter.
+  - Bosses have multi-phase mechanics and unique attack patterns.
+  - Defeating the act boss unlocks the next act.
+  - Boss victories grant significant rewards (gold, equipment, meta XP).
+
+### Progression Systems
+#### Meta Progression (Hub)
+- **Meta Level**: Persistent account level, cap at 60.
+  - Earned through meta XP gained from completing stages and acts.
+  - Unlocks new skills, talent nodes, and equipment in the hub.
+  - **Talent Points**: Granted on meta level-ups (not in-run level-ups).
+- **Hub Activities**:
+  - **Skill Selection**: Equip skills to your hotbar (primary + 1-4 hotkeys).
+  - **Talent Tree**: Allocate talent points to permanent stat/ability improvements.
+  - **Equipment**: Equip weapons, armor, and accessories from your collection.
+  - **Shop**: Purchase new equipment and unlock options with gold.
+- **Currency**: Gold persists across runs; earned from stages, bosses, and milestones.
+- **Configuration Lock**: All build configuration (skills, talents, equipment) must be done in hub before entering a stage.
+
+#### In-Run Progression
+- **Run Level**: Starts at 1 each stage, cap at 60.
+  - Gain XP from defeating enemies (orbs drop on death).
+  - Level-ups grant **choice**: stat boost OR skill modifier.
+- **Stat Boosts** (on level-up):
+  - Choose one: +HP, +Damage, +Speed, +Armor, +Power, +Crit Chance, etc.
+  - Immediate effect, stacks with equipped talents and equipment.
+- **Skill Modifiers** (on level-up):
+  - Choose one modifier for an equipped skill: +Damage, -Cooldown, +AoE, +Pierce, +Projectiles, etc.
+  - Only applies to skills equipped in hub; cannot learn new skills mid-run.
+- **No Mid-Run Unlocks**: Skills, talents, and equipment can ONLY be changed in the hub.
+
+### Session Flow
+- **Hub → Select Stage → Run Stage → Boss (if final) → Rewards → Hub**
+- Defeat enemies → XP orbs → level-ups → make choice (stat or modifier).
+- Death → game over → meta XP/gold rewards → return to hub.
+- Stage completion → stage rewards → unlock next stage → return to hub.
 
 ## 4. Camera, World, Maps
 - **Camera**: `Camera2D` maintains view transform with optional shake offset; follows entity with `CameraTarget` component; shake applied as random offset during hit events.
@@ -31,18 +78,32 @@
 ### Core Gameplay (`Core/Input/InputState.cs`)
 - **Movement**: WASD/Arrow keys normalized to unit vector.
 - **Attack**: Left Mouse Button or **J** publishes `PlayerAttackIntentEvent`.
+- **Skills**: Number keys 1-4 cast equipped hotbar skills (configured in hub).
 - **Dash/Evade**: Left Shift or Space triggers dash (0.2s, 150u, 2s cooldown) with 0.15s i-frames; 50ms input buffer during cooldown.
 - **Pause**: Escape toggles pause overlay.
-- **Restart**: R key resets run; Game Over screen also accepts Enter/Confirm to restart.
+- **Restart**: R key resets current stage; Game Over screen also accepts Enter/Confirm to restart or return to hub.
 
 ### UI Navigation
 - **Menu Navigation**: Arrow keys/WASD + Enter/Space to confirm; Back/Escape to close submenus.
-- **Pause Menu**: Resume, Restart, Settings (opens audio submenu), Quit.
+- **Pause Menu**: Resume, Restart, Settings (opens audio submenu), Return to Hub, Quit.
+- **Level-Up UI**: Choose stat boost or skill modifier; arrow keys to select, Enter to confirm.
 
-### Progression & Debug
-- **Inventory**: I key toggles inventory/equipment overlay.
-- **Perk Tree**: P key toggles perk tree UI; arrow keys navigate perks; Enter allocates point.
-- **Respec**: Shift+R performs full perk respec (refunds all points).
+### Hub Controls (Meta Scene)
+- **P Key**: Open Talent Tree (hub only; disabled during stage runs with "Available in Hub" message).
+- **I Key**: Open Inventory (hub only; disabled during stage runs with "Available in Hub" message).
+- **Shift+R**: Respec talents (hub only; disabled during stage runs).
+- **Skill Selection**: Browse unlocked skills, equip to hotbar slots 0-4.
+- **Talent Tree**: Navigate talent nodes; allocate points; cannot respec (permanent choices).
+- **Equipment**: Browse collection; equip to 5 slots; view stat comparisons.
+- **Shop**: Browse items for sale; purchase with gold.
+- **Stage Select**: Choose act/stage; view requirements and rewards.
+
+### Stage Controls (Combat Scene)
+- All core gameplay controls active (movement, attack, skills, dash, pause).
+- **Locked Features**: Talent tree (P), Inventory (I), and Respec (Shift+R) are disabled.
+  - Attempting to access shows temporary "Available in Hub" message (2s duration).
+- **Build Configuration**: Skills, talents, and equipment locked to hub selection.
+- **In-Run Progression**: Level-ups offer stat boost or skill modifier choices only.
 
 ### Debug Toggles (Development)
 - **F3**: Toggle collision/hitbox debug overlay (collider shapes, ownership lines, separation/knockback vectors).
@@ -220,70 +281,163 @@
 - **Stat Helper**: `StatHelper.CalculateEffectiveCooldown` for display/logic; crit DPS formula `avgDPS × (1 + critChance × (critMultiplier - 1))`.
 
 ### Progression & Perks
-- **XP System**: Orbs spawn on `EnemyDiedEvent` (1 XP each); magnet radius 120px, collection radius 40px, lifetime 10s, lerp pull strength 3.0.
+
+#### Meta Progression - Hub Configuration Only
+- **Meta Level Cap**: 60 (unlocks via meta XP from completing stages/acts).
+- **Meta XP Sources**: Stage completion, boss kills, milestones, performance bonuses.
+- **Meta XP Formula**: 
+  ```
+  base_xp = stage_difficulty^1.5 * 100
+  boss_bonus = is_boss ? 500 : 0
+  performance_bonus = (wave_reached * 10 + kills * 5)
+  meta_xp = base_xp + boss_bonus + performance_bonus
+  ```
+- **Talent Points**: Granted at specific meta levels (e.g., every 2-3 levels).
+- **Talent Tree**: Permanent upgrades allocated in hub; cannot change mid-run.
+  - **Foundation**: Vitality (+HP), Arcane Mastery (+Power), Swift Casting (+Attack Speed).
+  - **Intermediate**: Critical Focus (+Crit), Arcane Armor (+Defenses), Fleet Footed (+Speed).
+  - **Advanced**: Piercing Projectiles (+Pierce), Temporal Flux (+CDR).
+  - **Capstone**: Archmage's Might (+50% Power multiplier).
+- **Skill Unlocks**: New skills unlock at specific meta levels; equipped in hub only.
+- **Equipment Collection**: All found/purchased equipment persists in profile; equipped in hub.
+
+#### In-Run Progression - Level-Up Choices
+- **Run Level Cap**: 60 per stage (starts at 1 each run).
+- **XP System**: Orbs spawn on enemy death; magnet radius 120px, collection radius 40px.
 - **Leveling Formula**: Base XP 10, growth 1.5×; requirement = `10 × (1.5 ^ (level - 1))`.
-- **Level-Up Bonuses**: +2 attack damage, +5 move speed, +10 max health (preserves health ratio); publishes `PlayerLeveledUpEvent`.
-- **Perk Points**: Granted on level-up (1 per level, configurable); tracked in `PerkPoints` component.
-- **Perk Allocations**: `PerkAllocations` component stores `Dictionary<perkId, currentRank>`; `PerkService` validates prerequisites and max ranks.
-- **Default Mage Tree** (10 perks, 4 tiers):
-  - **Foundation (Row 0)**: Vitality (+20 HP/rank, 3 ranks), Arcane Mastery (+0.2 power/rank, 5 ranks), Swift Casting (+0.1 attack speed/rank, 3 ranks).
-  - **Intermediate (Row 1)**: Critical Focus (+5% crit chance, +0.1 crit mult/rank, 3 ranks; req: Arcane 2), Arcane Armor (+10 armor, +10 arcane resist/rank, 3 ranks; req: Vitality 2), Fleet Footed (+10 move speed/rank, 3 ranks; req: Swift 1).
-  - **Advanced (Row 2)**: Piercing Projectiles (+1 pierce/rank, 2 ranks; 2 pts/rank; req: Critical Focus 2, Swift 2), Temporal Flux (+10% CDR/rank, 2 ranks; 2 pts/rank; req: Swift 3).
-  - **Capstone (Row 3)**: Archmage's Might (+50% power multiplier, 1 rank; 3 pts/rank; req: Critical Focus 3, Piercing Projectiles 1).
-- **Prerequisites**: Perk nodes require specific rank in parent perks; `PerkService` enforces graph validation.
-- **Respec**: Full respec (Shift+R) resets all allocations, refunds points, clears stat modifiers; single-perk deallocation checks dependents.
-- **Perk UI**: Toggled with P key; grid navigation with arrows/WASD; Enter allocates; displays requirements, current rank, effects.
-- **Gameplay Modifiers**: `PerkGameplayModifiers` component stores non-stat effects (projectile pierce, chain lightning, dash CDR) for system consumption.
-- **Persistence**: Auto-saves perk allocations every 30s to JSON; cleared on run restart (not meta-progression).
+- **Level-Up Choice**: Each level-up presents TWO options (player picks ONE):
+  1. **Stat Boost Option**:
+     - +15 Max Health, OR
+     - +3 Attack Damage, OR
+     - +8 Move Speed, OR
+     - +5 Armor, OR
+     - +0.15 Power Multiplier, OR
+     - +3% Crit Chance, OR
+     - Other stat variants
+  2. **Skill Modifier Option** (for equipped skills only):
+     - +15% Skill Damage, OR
+     - -10% Skill Cooldown, OR
+     - +20% AoE Radius, OR
+     - +1 Projectile Count, OR
+     - +1 Pierce, OR
+     - +10% Cast Speed, OR
+     - Other modifier variants specific to equipped skills
+- **Choice UI**: Pause on level-up, show 2 cards with clear descriptions, player selects one.
+- **No New Unlocks Mid-Run**: Cannot learn new skills, allocate talent points, or equip different gear during a run.
+- **Respec**: Not available mid-run; talent/equipment changes only in hub.
 
 ### Skill System (Mage)
 - **Skill Structure**: `SkillDefinition` (immutable metadata), `SkillModifiers` (stat scaling), `ComputedSkillStats` (effective values after modifiers).
 - **Skill Categories**: Fire (Firebolt, Fireball, Flame Wave), Arcane (Arcane Missile, Arcane Burst, Arcane Barrage), Frost (Frost Bolt, Frost Nova, Blizzard).
+- **Skill Unlocks**: Skills unlock at specific meta levels in the hub; cannot unlock mid-run.
+- **Equipping Skills**: Done in hub only; primary slot (slot 0) + hotkeys 1–4.
+- **Default Skills**: Firebolt equipped by default at game start.
 - **Delivery Types**: Projectile (travels to target), AreaOfEffect (radius burst), Melee (close-range hitbox), Beam (planned).
 - **Targeting Modes**: Direction (WASD), Nearest (auto-target), GroundTarget (mouse click, future), Self (centered on caster).
 - **Skill Components**:
-  - `EquippedSkills`: Primary (slot 0) + hotkeys 1–4; default primary is Firebolt.
+  - `EquippedSkills`: Primary (slot 0) + hotkeys 1–4; configured in hub.
   - `SkillCooldowns`: Per-skill cooldown tracking (seconds remaining).
-  - `PlayerSkillModifiers`: Hierarchical modifiers (global → element → skill-specific).
+  - `SkillModifiers`: Modified during runs via level-up choices only.
   - `SkillCasting`: Active cast state with progress (0–1).
 - **Cast Pipeline**:
   1. `PlayerSkillInputSystem`: Convert `PlayerAttackIntentEvent` to `SkillCastRequestEvent`.
   2. `SkillCastSystem`: Validate cooldown/resources → apply cooldown → start cast or execute immediately.
   3. `SkillExecutionSystem`: Spawn projectiles/AoE/hitboxes on `SkillCastCompletedEvent`.
-- **Modifier Stacking**: Base → skill-specific → element → global → character CDR → clamps (80% CDR max, 0.1s min cooldown).
+- **In-Run Modifiers**: Level-up choices can modify equipped skill stats (damage, cooldown, AoE, pierce, projectiles).
+  - Modifiers stack additively within category, then multiplicatively across categories.
+  - Base → skill-specific → element → global → character CDR → clamps (80% CDR max, 0.1s min cooldown).
 - **Damage Scaling**: `finalDamage = casterPower × skillDamageMultiplier × 10.0`; integrates with unified stat model (`ComputedStats.EffectivePower`).
 - **Skill Events**: `SkillCastRequestEvent`, `SkillCastStartedEvent`, `SkillCastCompletedEvent`, `SkillCastCancelledEvent` (all event-bus driven).
 - **Default Skills**:
   - Fire: Firebolt (fast, 0.5s CD, 1.0× dmg), Fireball (slow AoE, 2s CD, 3.5× dmg + 60 radius), Flame Wave (self AoE, 5s CD, 2.0× dmg).
   - Arcane: Arcane Missile (homing, 0.8s CD, 1.2× dmg), Arcane Burst (quick AoE, 3s CD, 2.5× dmg), Arcane Barrage (5 projectiles, 4s CD, 0.8× dmg each).
   - Frost: Frost Bolt (chill, 0.6s CD, 0.9× dmg), Frost Nova (freeze AoE, 8s CD, 1.5× dmg), Blizzard (ground AoE, 10s CD, 4.0× dmg).
-- **Modifiers**: Support damage, cooldown, range, AoE radius, projectile count/speed/pierce/chain, cast time reduction (additive/multiplicative).
 - **Integration**: Skills reuse `Projectile`, `AttackHitbox`, `Collider` components; damage flows through `DamageApplicationService` for crit/resist handling.
-- **Debug Tools**: `SkillDebugHelper` for force cast, cooldown reset, inspect skills, apply test modifiers.
+- **Hub vs Run**: Skills CANNOT be changed mid-run; hotbar is locked when entering a stage.
 
 ### Loot & Equipment
+- **Equipment System**: Configured in hub ONLY; cannot change during runs.
 - **Rarity System**: 5 tiers with color-coding and affix counts:
   - Common (white, 0–1 affixes)
   - Uncommon (green, 1–2 affixes)
   - Rare (blue, 2–3 affixes)
   - Epic (purple, 3–4 affixes)
   - Legendary (orange, 4–5 affixes)
-- **Equipment Slots**: Weapon, Armor, Amulet, Ring1, Ring2 (5 total); `Equipment` component maps slots to `ItemInstance`.
+- **Equipment Slots**: Weapon, Armor, Amulet, Ring1, Ring2 (5 total); equipped in hub.
 - **Item Structure**:
   - `ItemDefinition`: Base template with name, slot, affix pool, icon.
   - `ItemInstance`: Rolled item with GUID, definition reference, rolled affixes (type + value).
   - `ItemRegistry`: Singleton registry of all item definitions.
 - **Affixes**: 13 types mapping to stat modifiers (Health, AttackDamage, Power, AttackSpeed, Armor, ArcaneResist, MoveSpeed, CritChance, CritMultiplier, CDR, LifeSteal, Thorns, PickupRadius); both additive and multiplicative variants.
-- **Drop System**:
-  - `LootDropper` component: base 15% drop chance per enemy; elite/boss flags boost rarity.
-  - `LootSpawnSystem`: Subscribes to `EnemyDiedEvent`, rolls drop chance, selects rarity from weighted table, creates `DroppedLoot` entity.
-  - Weighted tables: Common 50%, Uncommon 30%, Rare 15%, Epic 4%, Legendary 1% (adjustable per enemy tier).
-- **Loot Pickup**: `LootPickupRadius` component (default 60px); `LootCollectionSystem` auto-collects on overlap, adds to `Inventory`.
-- **Inventory**: `Inventory` component with 50-item capacity; `InventoryService` manages add/remove/equip operations.
-- **Equipment System**: `EquipmentSystem` recalculates stat modifiers when equipment changes; publishes `EquipmentChangedEvent`.
-- **Visuals**: `LootVisuals` component with rarity-based sprite tint; world-space loot entities with lifetime (30s before despawn).
-- **UI**: Inventory overlay (I key) shows grid, equipment slots, stat comparisons; keyboard/controller navigation; drag-to-equip (planned).
-- **Persistence**: Auto-saves equipment every 30s to JSON; cleared on run restart (not meta-progression).
+- **Drop System** (during runs):
+  - Equipment drops from enemies and bosses.
+  - Dropped items are automatically added to profile collection.
+  - Cannot equip during run; must return to hub.
+- **Shop System** (hub only):
+  - Purchase equipment with gold.
+  - Shop inventory refreshes periodically or on player action.
+  - Purchased items added to profile collection.
+- **Profile Collection**: All equipment ever found/purchased persists; never lost.
+- **Equipment Selection**: In hub, browse collection and equip items to 5 slots.
+- **No Mid-Run Changes**: Equipment loadout is locked when entering a stage.
+
+### Meta Progression
+- **Two-Tier System**: Meta progression (hub) separate from in-run progression (stages).
+  - **Meta Progression**: Account-wide, persistent, unlocks content and builds power baseline.
+  - **In-Run Progression**: Temporary power spikes via level-up choices; resets each stage.
+- **Meta Level Cap**: 60 (total account progression).
+  - Calculated from total meta XP earned across all runs.
+  - Formula: `xp_for_level_n = 1000 * (n^1.8)` up to level 60.
+  - Examples: Level 2 = 1,000 XP, Level 5 = 9,549 XP, Level 10 = 39,811 XP, Level 60 = ~15.8M XP.
+- **Meta XP Sources**:
+  - Stage completion (base XP scales with act/stage difficulty).
+  - Boss kills (significant bonus).
+  - Wave milestones reached.
+  - Performance bonuses (kills, damage, efficiency).
+- **Meta XP Formula**:
+  ```
+  base_xp = stage_difficulty^1.5 * 100
+  boss_bonus = is_boss_stage ? 500 : 0
+  wave_bonus = waves_reached * 10
+  kill_bonus = total_kills * 5
+  gold_bonus = gold_collected * 2
+  damage_bonus = damage_dealt / 1000
+  time_multiplier = max(0, 1 - (run_duration_minutes / 60))
+  meta_xp = (base_xp + boss_bonus + wave_bonus + kill_bonus + gold_bonus + damage_bonus) * (1 + time_multiplier * 0.5)
+  ```
+- **Gold Currency**: Persistent across runs.
+  - **Sources**: Enemy kills, boss rewards, stage completion, milestones.
+  - **Sinks**: Shop purchases (equipment), cosmetics (future).
+  - **Formula**: `base = stage_completion * 50 + kills * 2 + boss_kill * 200 + milestone_bonus`.
+- **Meta Unlocks**:
+  - **Skills**: Unlock at specific meta levels (e.g., Fireball at level 3, Frost Nova at level 8, etc.).
+  - **Talents**: Gain talent points at meta levels (e.g., 1 point every 2-3 levels).
+  - **Equipment Access**: Higher meta level unlocks better shop items and drop pools.
+  - **Act/Stage Access**: Must complete previous acts/stages to unlock next.
+- **Profile Data**:
+  - Meta level, total meta XP, gold balance.
+  - Equipment collection (all items ever obtained).
+  - Equipped loadout (5 slots).
+  - Talent allocations (permanent, hub-only changes).
+  - Equipped skills (hotbar configuration).
+  - Act/stage progression (unlocked stages).
+  - Aggregate stats: total runs, best wave per stage, total kills, total damage, total playtime.
+  - Timestamps: created at, last played at.
+- **Run History**: Stores last 50 runs for stats/achievements.
+- **Persistence**: `PlayerProfileService` saves to JSON with atomic writes, backups, corruption recovery.
+  - **Save Location**:
+    - Windows: `%AppData%\TheLastMageStanding\player_profile.json`
+    - macOS: `~/Library/Application Support/TheLastMageStanding/player_profile.json`
+    - Linux: `~/.local/share/TheLastMageStanding/player_profile.json`
+  - **Backups**: Rolling window of last 3 backups; timestamped format.
+  - **Schema Versioning**: Profile includes `SchemaVersion` field for future migration support.
+- **Hub Scene**: Central location for all meta activities (Task 045).
+  - Skill selection UI.
+  - Talent tree allocation.
+  - Equipment management.
+  - Shop interface.
+  - Stage/act selection.
+  - Run history and stats display.
 
 ### Elite Modifiers
 - **Core Mods**: Extra Projectiles (3-shot fan), Vampiric (30% lifesteal), Explosive Death (1.5s telegraph → 72px AoE), Shielded (45 HP shield, 2.5s cooldown, 12/s regen). Aura telegraphs + sprite tints differentiate mods.

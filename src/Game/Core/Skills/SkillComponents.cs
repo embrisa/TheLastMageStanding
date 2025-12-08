@@ -17,6 +17,11 @@ internal struct EquippedSkills
     /// </summary>
     public Dictionary<int, SkillId> HotkeySkills { get; set; }
 
+    /// <summary>
+    /// When true, skill loadout is locked and cannot be changed (e.g., during Stage runs).
+    /// </summary>
+    public bool IsLocked { get; set; }
+
     public EquippedSkills()
     {
         PrimarySkill = SkillId.Firebolt; // Default starting skill
@@ -27,6 +32,7 @@ internal struct EquippedSkills
             [3] = SkillId.None,
             [4] = SkillId.None
         };
+        IsLocked = false;
     }
 
     public SkillId GetSkill(int slot)

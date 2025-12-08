@@ -8,6 +8,7 @@ using TheLastMageStanding.Game.Core.Config;
 using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Input;
 using TheLastMageStanding.Game.Core.World.Map;
+using TheLastMageStanding.Game.Core.SceneState;
 
 namespace TheLastMageStanding.Game;
 
@@ -21,6 +22,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private SpriteBatch _spriteBatch = null!;
     private RenderTarget2D _renderTarget = null!;
     private Camera2D _camera = null!;
+    private SceneStateService _sceneStateService = null!;
     private InputState _input = null!;
     private EcsWorldRunner _ecs = null!;
     private TiledMapService _mapService = null!;
@@ -52,7 +54,8 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _audioSettingsStore = new AudioSettingsStore();
         _audioSettings = _audioSettingsStore.LoadOrDefault();
         _musicService = new MusicService(_audioSettings);
-        _input = new InputState();
+        _sceneStateService = new SceneStateService();
+        _input = new InputState(_sceneStateService);
         _ecs = new EcsWorldRunner(_camera, _audioSettings, _audioSettingsStore, _musicService);
 
         base.Initialize();

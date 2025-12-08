@@ -125,3 +125,18 @@ internal struct AudioSettingsMenu
         ConfirmationText = string.Empty;
     }
 }
+
+/// <summary>
+/// Transient message shown when a player tries to access a hub-only feature during a stage run.
+/// </summary>
+internal struct LockedFeatureMessage
+{
+    public string Message { get; set; }
+    public float RemainingSeconds { get; set; }
+
+    public LockedFeatureMessage(string message, float duration = 2.0f)
+    {
+        Message = message;
+        RemainingSeconds = duration;
+    }
+}

@@ -1,5 +1,7 @@
 # Task: 046 - Shop & Equipment Purchase UI
-- Status: backlog
+- Status: NEEDS UPDATE (Task 056 covers equipment UI)
+
+**NOTE:** Task 056 (Equipment management hub UI) now covers the equipment browsing/equipping aspect. This task should focus ONLY on shop purchasing UI (buy items with gold/currency). Reassess scope after Task 056 is complete.
 
 ## Summary
 Create shop UI for browsing and purchasing equipment with gold, and equipment UI for viewing inventory and managing loadout. Integrate with `PlayerProfileService` to persist purchases and equipped items.

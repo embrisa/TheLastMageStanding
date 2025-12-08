@@ -183,6 +183,46 @@
 /processor:TextureProcessor
 /build:Sprites/icons/abilities/IceShards.png
 
+#begin Sprites/icons/abilities/Firebolt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/Firebolt.png
+
+#begin Sprites/icons/abilities/Fireball.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/Fireball.png
+
+#begin Sprites/icons/abilities/ArcaneMissile.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/ArcaneMissile.png
+
+#begin Sprites/icons/abilities/ArcaneBurst.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/ArcaneBurst.png
+
+#begin Sprites/icons/abilities/ArcaneBarrage.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/ArcaneBarrage.png
+
+#begin Sprites/icons/abilities/FrostBolt.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/FrostBolt.png
+
+#begin Sprites/icons/abilities/FrostNova.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/FrostNova.png
+
+#begin Sprites/icons/abilities/Blizzard.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/build:Sprites/icons/abilities/Blizzard.png
+
 #begin Sprites/objects/ExperienceShard.png
 /importer:TextureImporter
 /processor:TextureProcessor

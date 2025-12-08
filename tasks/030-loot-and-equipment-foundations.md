@@ -1,5 +1,26 @@
 # Task: 030 - Loot and equipment foundations
 - Status: completed
+- ⚠️ **NEEDS UPDATE**: See design clarification below
+
+## ⚠️ Design Clarification (Dec 8, 2025)
+
+**New Vision**: Equipment is **hub-only** configuration; cannot equip mid-run.
+
+**Current Implementation**:
+- I key toggles inventory to equip items mid-run.
+- Loot drops during runs and can be equipped immediately.
+
+**Required Changes**:
+1. **Remove I key** input during runs (only accessible in hub scene).
+2. **Keep loot drops** but auto-add to profile collection without equipping.
+3. **Move equipment UI** to hub scene only (Task 046: Shop & Equipment UI).
+4. **Lock equipment loadout** when entering a stage.
+5. All equipment persists in profile collection (correct, keep this).
+6. Equipment management only in hub.
+
+**See**: `/docs/DESIGN_CLARIFICATION.md` for full context.
+
+---
 
 ## Summary
 Introduce loot drops with rarity tiers, equip slots, and affixes that modify the unified stat model. Provide a minimal inventory/equipment UI and persist equipped items across a run. Keep scope tight but ready for later content expansion.

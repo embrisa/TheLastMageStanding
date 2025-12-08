@@ -1,7 +1,12 @@
 # The Last Mage Standing — Agent Guide
 
 ## Project context
-- Game: 2D isometric horde-survivor meets ARPG/Diablo (classes, skills, talents, loot, meta progression, story).
+- Game: 2D isometric story-driven ARPG with 4-act campaign structure.
+- Campaign: Each act has multiple stages leading to an act boss; distinct biomes per act.
+- Progression: Two-tier system:
+  - **Meta progression** (hub): Level cap 60, unlocks skills/talents/equipment, persistent across runs.
+  - **In-run progression** (stages): Level cap 60 per stage, level-ups grant choice between stat boost OR skill modifier.
+- Hub model: Skills, talents, and equipment are configured in the hub ONLY; cannot change mid-run.
 - Tech: .NET 9, MonoGame 3.8.4.1 (DesktopGL), C# with nullable + latest language features.
 - Entry point: `src/Game` (`Game1` bootstraps camera/input/world stubs); content pipeline via `Content.mgcb`.
 

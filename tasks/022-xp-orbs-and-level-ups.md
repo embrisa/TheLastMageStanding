@@ -1,5 +1,23 @@
 # Task: 022 - XP orbs and level-ups
 - Status: completed
+- ⚠️ **NEEDS UPDATE**: See design clarification below
+
+## ⚠️ Design Clarification (Dec 8, 2025)
+
+**New Vision**: Level-ups should present a **CHOICE** between stat boost OR skill modifier, not automatic fixed bonuses.
+
+**Current Implementation**: Grants fixed stat bonuses (+2 damage, +5 speed, +10 HP) automatically.
+
+**Required Changes**:
+1. Add level-up choice UI showing 2 options.
+2. Pause game when level-up occurs until player makes choice.
+3. Stat boost option: Choose from multiple stat types (+HP, +Damage, +Speed, +Armor, etc.).
+4. Skill modifier option: Choose modifier for an equipped skill (+Damage%, -Cooldown%, +AoE%, etc.).
+5. Choices are temporary (reset on stage restart).
+
+**See**: `/docs/DESIGN_CLARIFICATION.md` for full context.
+
+---
 
 ## Summary
 Runs end without progression feedback. Add lightweight XP orbs on enemy death, collection mechanics, and a basic level-up flow that boosts player stats, giving players a sense of growth across a run.

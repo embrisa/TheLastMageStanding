@@ -1,5 +1,7 @@
 # Task: 048 - In-Run Inventory & Equipment Swapping
-- Status: backlog
+- Status: CONFLICTS WITH NEW DESIGN - RECONSIDER
+
+**NOTE:** New game vision mandates hub-only equipment configuration; no mid-run swapping allowed. This task needs complete rewrite or removal. If inventory UI is needed in-run, it should be READ-ONLY stats display only.
 
 ## Summary
 Create in-game inventory UI accessible during runs that allows players to swap between owned equipment. Display all equipment from profile plus new drops from current run, and apply stat changes immediately when equipment is changed.
