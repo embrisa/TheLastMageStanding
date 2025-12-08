@@ -25,6 +25,8 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 4. On completion, verify acceptance criteria and testing notes, then mark `done`.
 5. If handing off, leave next steps, open questions, and any gotchas in the task file.
 
+Context: Tasks 031 and above assume the Mage is the first class with fire/arcane/frost skill & talent trees; future classes are out of scope for now.
+
 ## Active tasks
 - [029 - Unified stat and damage model](tasks/029-unified-stat-and-damage-model.md)
 - [030 - Loot and equipment foundations](tasks/030-loot-and-equipment-foundations.md)
@@ -36,6 +38,7 @@ This file indexes tasks. Each task lives in its own markdown file under `tasks/`
 - [036 - Elite modifiers & mutators](tasks/036-elite-modifiers-and-mutators.md)
 - [037 - Meta progression & run tracking (MVP)](tasks/037-meta-progression-and-run-tracking.md)
 - [038 - Extended sound settings & volume controls](tasks/038-extended-sound-settings-and-volume-controls.md)
+- [039 - Mage skill system](tasks/039-skill-system.md)
 
 ## Done
 - [028 - Telegraphs, VFX/SFX, and hit-stop](tasks/028-telegraphs-vfx-sfx-hit-stop.md)

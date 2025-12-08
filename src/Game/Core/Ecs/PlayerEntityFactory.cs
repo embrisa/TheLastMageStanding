@@ -64,6 +64,11 @@ internal sealed class PlayerEntityFactory
         var xpToNextLevel = _progressionConfig.CalculateXpForLevel(startingLevel + 1);
         _world.SetComponent(entity, new PlayerXp(currentXp: 0, level: startingLevel, xpToNextLevel: xpToNextLevel));
 
+        // Loot/inventory components
+        _world.SetComponent(entity, new Inventory());
+        _world.SetComponent(entity, new Equipment());
+        _world.SetComponent(entity, new LootPickupRadius());
+
         return entity;
     }
 }

@@ -37,6 +37,7 @@ Add lightweight meta progression by persisting run stats (best wave, kills, time
 - Step 4: Add tests for persistence, unlock application, and stat recomputation; run build/play check.
 
 ## Notes / Risks / Blockers
+- Context: Mage is the first class with fire/arcane/frost skill & talent trees; meta unlocks should target that class for now.
 - Persistence must be robust to schema changes; include versioning/defaults.
 - Avoid applying unlocks twice when reloading scenes; centralize apply-on-start.
 - Coordinate with perk/loot stacking to prevent runaway power; start with low values.

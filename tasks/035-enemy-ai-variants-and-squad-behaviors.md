@@ -40,6 +40,7 @@ Add differentiated enemy roles (charger, protector, buffer) with simple squad be
 - Step 4: Add tests for state transitions and wave parsing; run build/play check.
 
 ## Notes / Risks / Blockers
+- Context: Mage is the first class with fire/arcane/frost skill & talent trees; enemy roles should pressure that kit without requiring other classes.
 - Ensure protector blocking integrates with collision layers without breaking player projectiles.
 - Buff stacking must align with the unified stat model; avoid double-application.
 - Chargers must respect separation/knockback systems to prevent jitter.

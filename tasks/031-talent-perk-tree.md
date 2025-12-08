@@ -38,6 +38,7 @@ Create a branching perk tree powered by level-up points that modifies the unifie
 - Step 4: Add persistence for perk allocations within a run; add tests for prereqs, rank caps, and stat recomputation; run build/play check.
 
 ## Notes / Risks / Blockers
+- Context: Mage is the first class with fire/arcane/frost skill & talent trees; future classes are out of scope for now.
 - Must avoid stat double-application when respeccing; ensure clean rebuild on any change.
 - Perk effects touching behaviors (e.g., pierce) need deterministic ordering with item/affix effects.
 - UI readability in isometric view—keep text concise and ensure controller focus state is visible.

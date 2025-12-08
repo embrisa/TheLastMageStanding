@@ -37,6 +37,7 @@ Add a responsive defensive move (dash/evade/block) with brief invulnerability fr
 - Step 4: Add UI feedback and tests (gating, immunity, clamping); run build/play check.
 
 ## Notes / Risks / Blockers
+- Context: Mage is the first class with fire/arcane/frost skill & talent trees; dash tuning should align with mage pacing and readability.
 - Ensure deterministic i-frame timing at fixed timestep; avoid drift between animation speed and logic.
 - Prevent dash chaining exploits by enforcing cooldown/stamina and buffering rules.
 - Sliding along walls must not overshoot; reuse collision resolution to clamp displacement.

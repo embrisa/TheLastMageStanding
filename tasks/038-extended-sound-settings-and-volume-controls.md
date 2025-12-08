@@ -38,6 +38,7 @@ Expand the settings menu to support granular audio controls (master, music, SFX,
 - Step 4: Add tests for persistence, defaulting, and gain application; run build/play check.
 
 ## Notes / Risks / Blockers
+- Context: Mage is the first class with fire/arcane/frost skill & talent trees; ensure audio defaults and samples suit that class fantasy.
 - Ensure volume math clamps 0–1 and avoids double-multiplying master/category gains.
 - Sample playback should rate-limit to avoid stacking sounds while scrubbing sliders.
 - Controller navigation needs visible focus; consider larger hit targets for sliders on gamepad.

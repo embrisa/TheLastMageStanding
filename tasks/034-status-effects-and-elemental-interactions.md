@@ -37,6 +37,7 @@ Introduce reusable status effects (Burn, Freeze/Slow, Shock, Poison) that stack,
 - Step 4: Add tests for stacking, immunity, and tick cadence; run build/play check.
 
 ## Notes / Risks / Blockers
+- Context: Mage is the first class with fire/arcane/frost skill & talent trees; element interactions should prioritize those schools.
 - Ensure ticking is frame-rate independent and deterministic; store accumulated time.
 - Stacking rules must be explicit (additive vs refresh vs max stacks) to avoid ambiguity.
 - Avoid per-frame allocations when managing active status lists; consider pooled buffers.

@@ -41,6 +41,7 @@ Introduce stackable elite modifiers (mutators) that change enemy behavior and re
 - Step 4: Add tests for modifier application and reward scaling; run build/play check.
 
 ## Notes / Risks / Blockers
+- Context: Mage is the first class with fire/arcane/frost skill & talent trees; mod design and rewards should align with mage gameplay pacing.
 - Stacking must be idempotent; guard against duplicate application on respawn or refresh.
 - Explosive death must respect collision layers and static geometry; ensure telegraph timing is fair.
 - Vampiric should clamp healing to max HP and avoid multi-hit over-healing per frame.

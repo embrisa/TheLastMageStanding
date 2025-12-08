@@ -37,6 +37,7 @@ Add elite and boss archetypes with unique, telegraphed attacks that stress-test 
 - Step 4: Add tests for config parsing and reward drops; run build/play check and a focused playtest.
 
 ## Notes / Risks / Blockers
+- Context: Mage is the first class with fire/arcane/frost skill & talent trees; ensure elite rewards and pacing serve that class.
 - Larger colliders/hitboxes may pressure collision performance; watch broadphase cell sizes.
 - Telegraphed attacks must remain readable amid hordes; lean on Task 028 FX/telegraphs.
 - Reward tuning can destabilize economy; start conservative and iterate.
