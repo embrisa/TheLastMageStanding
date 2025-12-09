@@ -9,7 +9,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// Renders HUD elements in screen space: current wave info, transient notifications,
 /// and game over overlay.
 /// </summary>
-internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
+internal sealed class HudRenderSystem : IUiDrawSystem, ILoadContentSystem
 {
     private SpriteFont _regularFont = null!;
     private SpriteFont _titleFont = null!;
@@ -58,6 +58,7 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
             var hasPauseMenu = world.TryGetComponent(_sessionEntity.Value, out PauseMenu pauseMenu);
             var hasAudioSettings = world.TryGetComponent(_sessionEntity.Value, out AudioSettingsState audioSettings);
             var hasAudioMenu = world.TryGetComponent(_sessionEntity.Value, out AudioSettingsMenu audioMenu);
+            var levelUpOpen = HasOpenLevelUp(world);
 
             // Draw HUD in top-left corner (only if playing)
             if (session.State == GameState.Playing)
@@ -90,7 +91,11 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
 
             if (session.State == GameState.Paused)
             {
-                if (hasAudioMenu && audioMenu.IsOpen)
+                if (levelUpOpen)
+                {
+                    // Level-up overlay draws its own UI; suppress pause overlay.
+                }
+                else if (hasAudioMenu && audioMenu.IsOpen)
                 {
                     DrawAudioSettingsOverlay(
                         spriteBatch,
@@ -118,6 +123,19 @@ internal sealed class HudRenderSystem : IDrawSystem, ILoadContentSystem
         {
             DrawLockedFeatureMessage(spriteBatch, lockedMsg);
         }
+    }
+
+    private static bool HasOpenLevelUp(EcsWorld world)
+    {
+        var open = false;
+        world.ForEach<LevelUpChoiceState>((Entity _, ref LevelUpChoiceState state) =>
+        {
+            if (state.IsOpen)
+            {
+                open = true;
+            }
+        });
+        return open;
     }
 
     private void DrawGameOverOverlay(SpriteBatch spriteBatch, GameSession session)

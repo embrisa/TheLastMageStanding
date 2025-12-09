@@ -37,5 +37,11 @@ internal sealed class Camera2D
             Matrix.CreateScale(Zoom, Zoom, 1f) *
             Matrix.CreateTranslation(_viewportWidth * 0.5f, _viewportHeight * 0.5f, 0f);
     }
+
+    public Vector2 ScreenToWorld(Vector2 screenPosition)
+    {
+        // Transform screen coordinates to world coordinates by inverting the view matrix
+        return Vector2.Transform(screenPosition, Matrix.Invert(Transform));
+    }
 }
 

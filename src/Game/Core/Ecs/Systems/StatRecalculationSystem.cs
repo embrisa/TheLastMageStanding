@@ -56,6 +56,11 @@ internal sealed class StatRecalculationSystem : IUpdateSystem
                 modifiers = StatModifiers.Combine(modifiers, statusMods.Value);
             }
 
+            if (world.TryGetComponent(entity, out LevelUpStatModifiers levelUpMods))
+            {
+                modifiers = StatModifiers.Combine(modifiers, levelUpMods.Value);
+            }
+
             if (world.TryGetComponent(entity, out ActiveBuffs activeBuffs) && activeBuffs.Buffs != null)
             {
                 foreach (var buff in activeBuffs.Buffs)

@@ -70,9 +70,17 @@ internal sealed class GameSessionSystem : IUpdateSystem
 
         var audioState = EnsureAudioSettingsState(world, _sessionEntity.Value);
         var audioMenu = EnsureAudioSettingsMenu(world, _sessionEntity.Value);
+        var levelUpOpen = IsLevelUpChoiceOpen(world);
+
+        // Force paused while level-up choice UI is open
+        if (levelUpOpen && session.State != GameState.GameOver && session.State != GameState.Paused)
+        {
+            session.State = GameState.Paused;
+            world.SetComponent(_sessionEntity.Value, session);
+        }
 
         // Pause/resume toggle (Escape)
-        if (session.State != GameState.GameOver && context.Input.PausePressed)
+        if (!levelUpOpen && session.State != GameState.GameOver && context.Input.PausePressed)
         {
             if (session.State == GameState.Playing)
             {
@@ -103,10 +111,15 @@ internal sealed class GameSessionSystem : IUpdateSystem
             {
                 HandleAudioSettingsMenu(world, context.Input, context.DeltaSeconds, ref audioState, ref audioMenu);
             }
-            else
+            else if (!levelUpOpen)
             {
                 HandlePauseMenu(world, context.Input, ref session, ref audioState, ref audioMenu);
             }
+            return;
+        }
+
+        if (levelUpOpen)
+        {
             return;
         }
 
@@ -167,6 +180,19 @@ internal sealed class GameSessionSystem : IUpdateSystem
 
         SyncAudioSettings(ref audioState, persist: false);
         return audioState;
+    }
+
+    private static bool IsLevelUpChoiceOpen(EcsWorld world)
+    {
+        var open = false;
+        world.ForEach<LevelUpChoiceState>((Entity _, ref LevelUpChoiceState state) =>
+        {
+            if (state.IsOpen)
+            {
+                open = true;
+            }
+        });
+        return open;
     }
 
     private static PauseMenu EnsurePauseMenu(EcsWorld world, Entity sessionEntity)

@@ -46,7 +46,7 @@ public class MeleeHitSystemTests
         var camera = new Camera2D(1920, 1080);
         var inputState = new InputState();
         var gameTime = new Microsoft.Xna.Framework.GameTime();
-        var context = new EcsUpdateContext(gameTime, 0.016f, inputState, camera);
+        var context = new EcsUpdateContext(gameTime, 0.016f, inputState, camera, Vector2.Zero);
         system.Update(world, context);
         
         var collisionEvent = new CollisionEnterEvent(hitbox, enemy, new Vector2(110, 100), Vector2.UnitX);
@@ -164,7 +164,7 @@ public class MeleeHitSystemTests
         var camera = new Camera2D(1920, 1080);
         var inputState = new InputState();
         var gameTime = new Microsoft.Xna.Framework.GameTime();
-        var context = new EcsUpdateContext(gameTime, 0.016f, inputState, camera);
+        var context = new EcsUpdateContext(gameTime, 0.016f, inputState, camera, Vector2.Zero);
         system.Update(world, context);
         
         var collisionEvent = new CollisionEnterEvent(hitbox, enemy, new Vector2(110, 100), Vector2.UnitX);
@@ -267,7 +267,7 @@ public class MeleeHitSystemTests
         var gameTime = new GameTime();
         var input = new InputState();
         var camera = new Camera2D(800, 600);
-        system.Update(world, new EcsUpdateContext(gameTime, 0.15f, input, camera));
+        system.Update(world, new EcsUpdateContext(gameTime, 0.15f, input, camera, Vector2.Zero));
 
         // Assert - hitbox should be destroyed
         Assert.False(world.TryGetComponent(hitbox, out AttackHitbox _));
@@ -290,7 +290,7 @@ public class MeleeHitSystemTests
         var gameTime = new GameTime();
         var input = new InputState();
         var camera = new Camera2D(800, 600);
-        system.Update(world, new EcsUpdateContext(gameTime, 0.1f, input, camera));
+        system.Update(world, new EcsUpdateContext(gameTime, 0.1f, input, camera, Vector2.Zero));
 
         // Assert
         world.TryGetComponent(entity, out Hurtbox hurtbox);

@@ -105,7 +105,7 @@ public class DashSystemTests
         world.SetComponent(player, new Invulnerable());
 
         var input = new InputState();
-        var context = new EcsUpdateContext(new GameTime(), 0.25f, input, new Camera2D(800, 600));
+        var context = new EcsUpdateContext(new GameTime(), 0.25f, input, new Camera2D(800, 600), Vector2.Zero);
         system.Update(world, context);
 
         Assert.False(world.TryGetComponent(player, out DashState _));
@@ -142,7 +142,7 @@ public class DashSystemTests
         world.SetComponent(player, new Invulnerable());
 
         var input = new InputState();
-        var context = new EcsUpdateContext(new GameTime(), 0.06f, input, new Camera2D(800, 600));
+        var context = new EcsUpdateContext(new GameTime(), 0.06f, input, new Camera2D(800, 600), Vector2.Zero);
         system.Update(world, context);
 
         Assert.True(world.TryGetComponent(player, out DashState dashState));
@@ -184,7 +184,7 @@ public class DashSystemTests
 
         var input = new InputState();
         input.SetTestState(Vector2.Zero, dashPressed: true);
-        var context = new EcsUpdateContext(new GameTime(), 0.016f, input, new Camera2D(800, 600));
+        var context = new EcsUpdateContext(new GameTime(), 0.016f, input, new Camera2D(800, 600), Vector2.Zero);
 
         dashInputSystem.Update(world, context);
         eventBus.ProcessEvents();

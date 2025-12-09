@@ -1,20 +1,22 @@
+using System.Collections.Generic;
 using TheLastMageStanding.Game.Core.Ecs.Components;
-using TheLastMageStanding.Game.Core.Ecs.Config;
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Progression;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
 /// <summary>
-/// Applies stat bonuses when the player levels up and creates notifications.
+/// Creates level-up choice state when the player levels up and triggers notifications.
 /// </summary>
 internal sealed class LevelUpSystem : IUpdateSystem
 {
-    private readonly ProgressionConfig _config;
+    private readonly LevelUpChoiceGenerator _choiceGenerator;
     private EcsWorld? _world;
+    private Entity? _sessionEntity;
 
-    public LevelUpSystem(ProgressionConfig config)
+    public LevelUpSystem(LevelUpChoiceGenerator choiceGenerator)
     {
-        _config = config;
+        _choiceGenerator = choiceGenerator;
     }
 
     public void Initialize(EcsWorld world)
@@ -33,48 +35,71 @@ internal sealed class LevelUpSystem : IUpdateSystem
         if (_world == null)
             return;
 
-        var player = evt.Player;
+        var sessionEntity = EnsureSessionEntity(_world);
+        if (!sessionEntity.HasValue)
+            return;
 
-        // Apply damage bonus
-        if (_world.TryGetComponent<AttackStats>(player, out var attackStats))
-        {
-            attackStats.Damage += _config.DamageBonusPerLevel;
-            _world.SetComponent(player, attackStats);
-        }
-
-        // Apply move speed bonus
-        if (_world.TryGetComponent<MoveSpeed>(player, out var moveSpeed))
-        {
-            moveSpeed.Value += _config.MoveSpeedBonusPerLevel;
-            _world.SetComponent(player, moveSpeed);
-
-            if (_world.TryGetComponent(player, out BaseMoveSpeed baseMove))
+        var state = _world.TryGetComponent(sessionEntity.Value, out LevelUpChoiceState choiceState)
+            ? choiceState
+            : new LevelUpChoiceState
             {
-                baseMove.Value += _config.MoveSpeedBonusPerLevel;
-                _world.SetComponent(player, baseMove);
-            }
-        }
+                Player = evt.Player,
+                Choices = new List<LevelUpChoice>(),
+                SelectedIndex = 0,
+                PendingLevels = 0,
+                IsOpen = false
+            };
 
-        // Apply health bonus
-        if (_world.TryGetComponent<Health>(player, out var health))
+        if (state.IsOpen)
         {
-            var ratio = health.Ratio;
-            health.Max += _config.HealthBonusPerLevel;
-            // Maintain health ratio when increasing max
-            health.Current = health.Max * ratio;
-            _world.SetComponent(player, health);
+            state.PendingLevels++;
+            _world.SetComponent(sessionEntity.Value, state);
+            CreateLevelUpNotification(evt.NewLevel);
+            return;
         }
 
-        if (_world.TryGetComponent(player, out ComputedStats computed))
+        state.Player = evt.Player;
+        state.PendingLevels = 0;
+        state.SelectedIndex = 0;
+        state.IsOpen = true;
+        state.Choices = _choiceGenerator.GenerateChoices(_world, evt.Player);
+
+        _world.SetComponent(sessionEntity.Value, state);
+
+        // Pause gameplay while the player is choosing
+        if (_world.TryGetComponent(sessionEntity.Value, out GameSession session))
         {
-            computed.IsDirty = true;
-            _world.SetComponent(player, computed);
+            session.State = GameState.Paused;
+            _world.SetComponent(sessionEntity.Value, session);
         }
 
-        // Create level-up notification
+        CreateLevelUpNotification(evt.NewLevel);
+    }
+
+    private Entity? EnsureSessionEntity(EcsWorld world)
+    {
+        if (_sessionEntity is not null && world.IsAlive(_sessionEntity.Value))
+        {
+            return _sessionEntity;
+        }
+
+        _sessionEntity = null;
+        world.ForEach<GameSession>((Entity entity, ref GameSession _) =>
+        {
+            _sessionEntity = entity;
+        });
+
+        return _sessionEntity;
+    }
+
+    private void CreateLevelUpNotification(int level)
+    {
+        if (_world == null)
+            return;
+
         var notificationEntity = _world.CreateEntity();
         _world.SetComponent(notificationEntity, new WaveNotification(
-            $"LEVEL {evt.NewLevel}!",
+            $"LEVEL {level}!",
             duration: 2.0f));
         _world.SetComponent(notificationEntity, new Lifetime(2.0f));
     }

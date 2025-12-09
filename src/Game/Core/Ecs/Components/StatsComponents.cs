@@ -302,3 +302,11 @@ internal struct StatusEffectModifiers
 {
     public StatModifiers Value { get; set; }
 }
+
+/// <summary>
+/// Aggregate stat modifiers granted by in-run level-up choices.
+/// </summary>
+internal struct LevelUpStatModifiers
+{
+    public StatModifiers Value { get; set; }
+}

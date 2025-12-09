@@ -2,11 +2,11 @@
 - Status: backlog
 
 ## Summary
-Replace the current automatic stat bonus system on level-up with a choice-based system where players select between a stat boost OR a skill modifier. This is a core feature of the new game vision where in-run progression is choice-driven rather than fixed.
+Replace the current automatic stat bonus system on level-up with a choice-based system where players select from three random options pulled from stat boosts and skill modifiers (modifiers only for equipped skills). This is a core feature of the new game vision where in-run progression is choice-driven rather than fixed.
 
 ## Goals
 - Replace automatic stat grants with a pause-and-choose UI on level-up
-- Present two options: stat boost (e.g., +HP, +Damage, +Speed) or skill modifier (e.g., +15% damage, -10% cooldown)
+- Present three options per level-up, drawn from 1-3 stat boosts and/or 1-3 skill modifiers (modifiers only for equipped skills), with no duplicates in a single roll
 - Ensure choices are temporary (reset on stage restart) but persist through the current run
 - Integrate with existing XP/level system and skill modifier system
 - Provide clear UI feedback showing what each choice does
@@ -18,10 +18,11 @@ Replace the current automatic stat bonus system on level-up with a choice-based 
 - Respec or undo of choices mid-run
 
 ## Acceptance criteria
-- [ ] On level-up, game pauses and shows choice UI with 2 cards (stat boost vs. skill modifier)
-- [ ] Player can navigate between choices with arrow keys/WASD and confirm with Enter
-- [ ] Stat boost option offers multiple stat types (HP, Damage, Speed, Armor, Power, Crit)
-- [ ] Skill modifier option shows relevant modifiers for equipped skills only
+- [ ] On level-up, game pauses and shows choice UI with 3 cards (random mix of stat boosts and equipped-skill modifiers)
+- [ ] Options are sampled without duplicates from the available pools (stat boosts + modifiers for equipped skills); if fewer than 3 exist, show all available
+- [ ] Player can navigate between the 3 choices with arrow keys/WASD and confirm with Enter
+- [ ] Stat boost options cover multiple stat types (HP, Damage, Speed, Armor, Power, Crit)
+- [ ] Skill modifier options are limited to the player's equipped skills only
 - [ ] Chosen effect applies immediately and is visible in stats/HUD
 - [ ] Choices reset on stage restart (new run)
 - [ ] Choice history can be viewed during run (optional but nice to have)
@@ -47,8 +48,8 @@ Replace the current automatic stat bonus system on level-up with a choice-based 
   - Apply chosen effect
   
 - Step 3: Create `LevelUpChoiceUISystem`
-  - Render 2 cards side-by-side with descriptions
-  - Handle navigation (left/right arrows, A/D keys)
+  - Render 3 cards with descriptions
+  - Handle navigation (left/right arrows, A/D keys) across 3 slots
   - Handle confirmation (Enter/Space)
   - Show preview of stat changes
   

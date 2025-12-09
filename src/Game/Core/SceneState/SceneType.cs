@@ -3,7 +3,7 @@ namespace TheLastMageStanding.Game.Core.SceneState;
 /// <summary>
 /// Defines the types of scenes in the game.
 /// </summary>
-internal enum SceneType
+public enum SceneType
 {
     /// <summary>
     /// The hub scene where players configure their build (skills, talents, equipment).
@@ -13,5 +13,10 @@ internal enum SceneType
     /// <summary>
     /// The stage/combat scene where players fight through waves with a locked loadout.
     /// </summary>
-    Stage
+    Stage,
+    
+    /// <summary>
+    /// Cutscene or narrative scene (future use).
+    /// </summary>
+    Cutscene
 }

@@ -18,7 +18,8 @@ public class AiRoleSystemTests
             new GameTime(TimeSpan.Zero, TimeSpan.FromSeconds(deltaSeconds)),
             deltaSeconds,
             new InputState(),
-            new Camera2D(960, 540));
+            new Camera2D(960, 540),
+            Vector2.Zero);
 
     [Fact]
     public void Charger_CommitsAndTelegraphsWithinRange()

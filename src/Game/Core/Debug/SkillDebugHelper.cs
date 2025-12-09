@@ -90,7 +90,7 @@ internal static class SkillDebugHelper
         if (world.TryGetComponent(entity, out PlayerSkillModifiers modifiers))
         {
             result += "\n=== Global Modifiers ===\n";
-            result += $"Damage: +{modifiers.GlobalModifiers.DamageAdditive:F2} × {modifiers.GlobalModifiers.DamageMultiplicative:F2}\n";
+            result += $"Damage: +{modifiers.GlobalModifiers.DamageAdditive:F2} x {modifiers.GlobalModifiers.DamageMultiplicative:F2}\n";
             result += $"CDR: {modifiers.GlobalModifiers.CooldownReductionAdditive:P0}\n";
             result += $"Projectile Count: +{modifiers.GlobalModifiers.ProjectileCountAdditive}\n";
             result += $"Pierce: +{modifiers.GlobalModifiers.PierceCountAdditive}\n";

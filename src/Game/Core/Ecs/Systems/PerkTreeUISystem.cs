@@ -12,7 +12,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// <summary>
 /// Handles perk tree UI rendering and input.
 /// </summary>
-internal sealed class PerkTreeUISystem : IUpdateSystem, IDrawSystem, ILoadContentSystem, IDisposable
+internal sealed class PerkTreeUISystem : IUpdateSystem, IUiDrawSystem, ILoadContentSystem, IDisposable
 {
     private readonly PerkTreeConfig _config;
     private readonly PerkService _perkService;

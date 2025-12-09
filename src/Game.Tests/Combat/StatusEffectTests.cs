@@ -100,7 +100,7 @@ public class StatusEffectTests
         damageService.ApplyDamage(attacker, target, damageInfo, Vector2.Zero);
         bus.ProcessEvents();
 
-        tickSystem.Update(world, new EcsUpdateContext(null!, 1.0f, null!, null!));
+        tickSystem.Update(world, new EcsUpdateContext(null!, 1.0f, null!, null!, Vector2.Zero));
         bus.ProcessEvents();
 
         world.TryGetComponent(target, out Health health);
@@ -124,7 +124,7 @@ public class StatusEffectTests
         damageService.ApplyDamage(attacker, target, damageInfo, Vector2.Zero);
         bus.ProcessEvents();
 
-        tickSystem.Update(world, new EcsUpdateContext(null!, 1.0f, null!, null!));
+        tickSystem.Update(world, new EcsUpdateContext(null!, 1.0f, null!, null!, Vector2.Zero));
         bus.ProcessEvents();
 
         world.TryGetComponent(target, out Health health);
@@ -144,9 +144,9 @@ public class StatusEffectTests
         damageService.ApplyDamage(attacker, target, damageInfo, Vector2.Zero);
         bus.ProcessEvents();
 
-        tickSystem.Update(world, new EcsUpdateContext(null!, 0.1f, null!, null!));
+        tickSystem.Update(world, new EcsUpdateContext(null!, 0.1f, null!, null!, Vector2.Zero));
         bus.ProcessEvents();
-        statSystem.Update(world, new EcsUpdateContext(null!, 0.1f, null!, null!));
+        statSystem.Update(world, new EcsUpdateContext(null!, 0.1f, null!, null!, Vector2.Zero));
 
         world.TryGetComponent(target, out MoveSpeed moveSpeed);
         Assert.InRange(moveSpeed.Value, 99f, 101f); // 50% slow on 200 base
@@ -206,7 +206,7 @@ public class StatusEffectTests
             bus.ProcessEvents();
         }
 
-        tickSystem.Update(world, new EcsUpdateContext(null!, 1.0f, null!, null!));
+        tickSystem.Update(world, new EcsUpdateContext(null!, 1.0f, null!, null!, Vector2.Zero));
         bus.ProcessEvents();
 
         world.TryGetComponent(target, out Health health);

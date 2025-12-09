@@ -118,11 +118,11 @@ public class EliteModifierTests
         input.SetTestState(Vector2.Zero);
         var camera = new Camera2D(800, 600);
 
-        system.Update(world, new EcsUpdateContext(new GameTime(), 0.5f, input, camera));
+        system.Update(world, new EcsUpdateContext(new GameTime(), 0.5f, input, camera, Vector2.Zero));
         Assert.True(world.TryGetComponent(entity, out EliteShield shieldAfterHalfSecond));
         Assert.Equal(10f, shieldAfterHalfSecond.Current); // still on cooldown
 
-        system.Update(world, new EcsUpdateContext(new GameTime(), 1.0f, input, camera));
+        system.Update(world, new EcsUpdateContext(new GameTime(), 1.0f, input, camera, Vector2.Zero));
         Assert.True(world.TryGetComponent(entity, out EliteShield shieldAfterRegen));
         Assert.True(shieldAfterRegen.Current > 10f);
     }

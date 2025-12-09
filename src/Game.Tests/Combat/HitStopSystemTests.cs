@@ -56,7 +56,8 @@ public class HitStopSystemTests
             null!,
             0.2f, // 200ms should clear typical hit-stop
             null!,
-            null!
+            null!,
+            Vector2.Zero
         );
         system.Update(world, context);
 
@@ -81,7 +82,7 @@ public class HitStopSystemTests
         var lowDamageStopActive = system.IsHitStopped();
 
         // Update to clear
-        system.Update(world, new EcsUpdateContext(null!, 0.2f, null!, null!));
+        system.Update(world, new EcsUpdateContext(null!, 0.2f, null!, null!, Vector2.Zero));
 
         // High damage
         eventBus.Publish(new EntityDamagedEvent(Entity.None, new Entity(2), 100f, new DamageInfo(100f), Vector2.Zero, Faction.Player));
@@ -128,7 +129,7 @@ public class HitStopSystemTests
         eventBus.ProcessEvents();
         
         // Update system to generate shake offset
-        var context = new EcsUpdateContext(null!, 0.016f, null!, null!);
+        var context = new EcsUpdateContext(null!, 0.016f, null!, null!, Vector2.Zero);
         system.Update(world, context);
 
         // Assert - shake offset should be non-zero

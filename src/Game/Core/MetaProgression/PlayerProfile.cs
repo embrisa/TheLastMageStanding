@@ -57,6 +57,11 @@ public sealed class PlayerProfile
     public List<string> UnlockedSkillIds { get; set; } = new();
 
     /// <summary>
+    /// Completed stage IDs (for progression tracking).
+    /// </summary>
+    public List<string> CompletedStages { get; set; } = new();
+
+    /// <summary>
     /// Total number of runs completed.
     /// </summary>
     public int TotalRuns { get; set; }
@@ -105,6 +110,7 @@ public sealed class PlayerProfile
             EquipmentInventory = new(),
             UnlockedTalentNodes = new(),
             UnlockedSkillIds = new(),
+            CompletedStages = new(),
             CreatedAt = DateTime.UtcNow,
             LastPlayedAt = DateTime.UtcNow
         };

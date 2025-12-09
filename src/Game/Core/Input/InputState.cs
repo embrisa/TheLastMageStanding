@@ -9,6 +9,7 @@ internal sealed class InputState
     private readonly SceneStateService? _sceneStateService;
 
     public Vector2 Movement { get; private set; }
+    public Vector2 MouseScreenPosition { get; private set; }
     public bool PausePressed { get; private set; }
     public bool MenuUpPressed { get; private set; }
     public bool MenuDownPressed { get; private set; }
@@ -24,6 +25,10 @@ internal sealed class InputState
     public bool RespecPressed { get; private set; }
     public bool InventoryPressed { get; private set; }
     public string? LockedFeatureMessage { get; private set; }
+    public bool CastSkill1Pressed { get; private set; }
+    public bool CastSkill2Pressed { get; private set; }
+    public bool CastSkill3Pressed { get; private set; }
+    public bool CastSkill4Pressed { get; private set; }
 
     private KeyboardState _previousKeyboard;
     private KeyboardState _currentKeyboard;
@@ -40,6 +45,10 @@ internal sealed class InputState
 
         _currentKeyboard = Keyboard.GetState();
         _currentMouse = Mouse.GetState();
+        
+        // Capture mouse screen position
+        MouseScreenPosition = new Vector2(_currentMouse.X, _currentMouse.Y);
+        
         var movement = Vector2.Zero;
 
         if (_currentKeyboard.IsKeyDown(Keys.W) || _currentKeyboard.IsKeyDown(Keys.Up))
@@ -130,6 +139,12 @@ internal sealed class InputState
         {
             RespecPressed = false;
         }
+
+        // Skill hotkeys (1-4) - raw input, filtered by game state in systems
+        CastSkill1Pressed = _currentKeyboard.IsKeyDown(Keys.D1) || _currentKeyboard.IsKeyDown(Keys.NumPad1);
+        CastSkill2Pressed = _currentKeyboard.IsKeyDown(Keys.D2) || _currentKeyboard.IsKeyDown(Keys.NumPad2);
+        CastSkill3Pressed = _currentKeyboard.IsKeyDown(Keys.D3) || _currentKeyboard.IsKeyDown(Keys.NumPad3);
+        CastSkill4Pressed = _currentKeyboard.IsKeyDown(Keys.D4) || _currentKeyboard.IsKeyDown(Keys.NumPad4);
     }
 
     private bool IsNewKeyPress(Keys key) =>

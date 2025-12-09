@@ -5,7 +5,7 @@
 - **Session-based runs**: Each run is a stage within an act, culminating in act boss fights.
 - **Meta hub progression**: Skills, talents, and equipment are configured in the meta hub before runs.
 - **Dual level caps**: Meta progression level cap of 60; in-run level cap of 60 per stage.
-- **In-run progression**: Level-ups grant choice between stat boosts OR skill modifiers (no new skills/talents mid-run).
+- **In-run progression**: Each level-up rolls three options drawn from stat boosts and equipped-skill modifiers (no new skills/talents mid-run); player picks one.
 - **Moment-to-moment readability**: Clear telegraphs, hit feedback, and camera stability.
 - **Deterministic, event-driven ECS**: Combat, VFX/SFX, and UI remain decoupled and testable.
 - **Scalable foundation**: Collision, hitboxes, projectiles, progression, and perks are additive.
@@ -65,6 +65,37 @@
 - Death → game over → meta XP/gold rewards → return to hub.
 - Stage completion → stage rewards → unlock next stage → return to hub.
 
+### Scene Management
+- **Scene Types**: Hub, Stage, Cutscene (future).
+- **Hub Scene**:
+  - Default starting scene on game launch.
+  - Main menu with navigation to Stage Select, Skills, Talents, Equipment, Stats, Quit.
+  - All meta progression activities (skill selection, talent tree, equipment, shop) accessible only in hub.
+  - Input gating: P key (talent tree), I key (inventory), Shift+R (respec) only work in hub.
+  - Player exists in hub world with hub map (HubMap.tmx).
+- **Stage Scene**:
+  - Active during combat runs (wave-based gameplay).
+  - Skills, talents, and equipment locked to hub configuration.
+  - Input gating: P, I, Shift+R keys show "Available in Hub" message.
+  - Player exists in stage map with dynamic map loading based on selected stage.
+  - Run ends on player death or stage completion → transition back to hub.
+- **Scene Transitions**:
+  - Managed by `SceneManager` with deferred transitions via `ProcessPendingTransition()`.
+  - Publishes `SceneExitEvent` and `SceneEnterEvent` on transitions.
+  - Map reloading handled in `Game1.ReloadSceneContent()` based on scene type.
+  - `EcsWorldRunner` conditionally runs scene-specific systems:
+    - `_hubOnlyUpdateSystems` / `_hubOnlyDrawSystems` for hub logic.
+    - `_stageOnlyUpdateSystems` / `_stageOnlyDrawSystems` for combat logic.
+    - Common systems (player rendering, SFX, input) run in both scenes.
+- **Profile Persistence**: `PlayerProfile` persists across scene transitions with `CompletedStages` tracking.
+- **Stage Selection**:
+  - `StageRegistry` defines all acts/stages with requirements (meta level, previous stage completion).
+  - `StageSelectionUISystem` displays unlocked stages with visual indicators (✓ completed, 🔒 locked).
+  - Stage selection triggers `SceneManager.TransitionToStage(stageId)`.
+- **Stage Completion**:
+  - `StageCompletionSystem` listens for `RunEndedEvent` and triggers `SceneManager.TransitionToHub()`.
+  - Rewards and stage completion saved to profile before transition.
+
 ## 4. Camera, World, Maps
 - **Camera**: `Camera2D` maintains view transform with optional shake offset; follows entity with `CameraTarget` component; shake applied as random offset during hit events.
 - **Maps**: TMX format in `Content/Tiles/Maps`; loaded via MonoGame.Extended importer.
@@ -79,6 +110,9 @@
 - **Movement**: WASD/Arrow keys normalized to unit vector.
 - **Attack**: Left Mouse Button or **J** publishes `PlayerAttackIntentEvent`.
 - **Skills**: Number keys 1-4 cast equipped hotbar skills (configured in hub).
+  - **Mouse Targeting**: All skills are aimed toward the mouse cursor position in world space.
+  - Direction calculated from player position to cursor; supports kiting and precise aiming.
+  - Fallback hierarchy if cursor exactly on player: movement direction → last facing → default right.
 - **Dash/Evade**: Left Shift or Space triggers dash (0.2s, 150u, 2s cooldown) with 0.15s i-frames; 50ms input buffer during cooldown.
 - **Pause**: Escape toggles pause overlay.
 - **Restart**: R key resets current stage; Game Over screen also accepts Enter/Confirm to restart or return to hub.
@@ -86,7 +120,7 @@
 ### UI Navigation
 - **Menu Navigation**: Arrow keys/WASD + Enter/Space to confirm; Back/Escape to close submenus.
 - **Pause Menu**: Resume, Restart, Settings (opens audio submenu), Return to Hub, Quit.
-- **Level-Up UI**: Choose stat boost or skill modifier; arrow keys to select, Enter to confirm.
+- **Level-Up UI**: Choose one of three cards (stat boost or equipped-skill modifier); arrow keys/WASD to move focus, Enter to confirm.
 
 ### Hub Controls (Meta Scene)
 - **P Key**: Open Talent Tree (hub only; disabled during stage runs with "Available in Hub" message).
@@ -305,24 +339,25 @@
 - **Run Level Cap**: 60 per stage (starts at 1 each run).
 - **XP System**: Orbs spawn on enemy death; magnet radius 120px, collection radius 40px.
 - **Leveling Formula**: Base XP 10, growth 1.5×; requirement = `10 × (1.5 ^ (level - 1))`.
-- **Level-Up Choice**: Each level-up presents TWO options (player picks ONE):
-  1. **Stat Boost Option**:
-     - +15 Max Health, OR
-     - +3 Attack Damage, OR
-     - +8 Move Speed, OR
-     - +5 Armor, OR
-     - +0.15 Power Multiplier, OR
-     - +3% Crit Chance, OR
-     - Other stat variants
-  2. **Skill Modifier Option** (for equipped skills only):
-     - +15% Skill Damage, OR
-     - -10% Skill Cooldown, OR
-     - +20% AoE Radius, OR
-     - +1 Projectile Count, OR
-     - +1 Pierce, OR
-     - +10% Cast Speed, OR
-     - Other modifier variants specific to equipped skills
-- **Choice UI**: Pause on level-up, show 2 cards with clear descriptions, player selects one.
+- **Level-Up Choice**: Each level-up presents THREE random options (player picks ONE), sampled without duplicates from:
+  - **Stat Boost Pool** (1-3 may appear per roll):
+    - +15 Max Health, OR
+    - +3 Attack Damage, OR
+    - +8 Move Speed, OR
+    - +5 Armor, OR
+    - +0.15 Power Multiplier, OR
+    - +3% Crit Chance, OR
+    - Other stat variants
+  - **Equipped Skill Modifier Pool** (1-3 may appear per roll, only for currently equipped skills):
+    - +15% Skill Damage, OR
+    - -10% Skill Cooldown, OR
+    - +20% AoE Radius, OR
+    - +1 Projectile Count, OR
+    - +1 Pierce, OR
+    - +10% Cast Speed, OR
+    - Other modifier variants specific to equipped skills
+  - If fewer than three total valid options exist, surface all available.
+- **Choice UI**: Pause on level-up, show 3 cards with clear descriptions, player selects one.
 - **No New Unlocks Mid-Run**: Cannot learn new skills, allocate talent points, or equip different gear during a run.
 - **Respec**: Not available mid-run; talent/equipment changes only in hub.
 
@@ -340,7 +375,7 @@
   - `SkillModifiers`: Modified during runs via level-up choices only.
   - `SkillCasting`: Active cast state with progress (0–1).
 - **Cast Pipeline**:
-  1. `PlayerSkillInputSystem`: Convert `PlayerAttackIntentEvent` to `SkillCastRequestEvent`.
+  1. `PlayerSkillInputSystem`: Converts `PlayerAttackIntentEvent` (primary skill) and hotkey inputs (1-4) to `SkillCastRequestEvent`. Checks game state and plays UI sound for empty slots.
   2. `SkillCastSystem`: Validate cooldown/resources → apply cooldown → start cast or execute immediately.
   3. `SkillExecutionSystem`: Spawn projectiles/AoE/hitboxes on `SkillCastCompletedEvent`.
 - **In-Run Modifiers**: Level-up choices can modify equipped skill stats (damage, cooldown, AoE, pierce, projectiles).

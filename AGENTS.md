@@ -27,6 +27,7 @@
 - Keep namespaces under `TheLastMageStanding.Game.*`.
 - Prefer pure logic in systems; keep MonoGame types at boundaries where practical.
 - Fixed timestep @ 60 FPS; leverage camera/view matrices instead of manual offsets.
+- Screen-space UI goes through the UI pass: implement `IUiDrawSystem` and register in `EcsWorldRunner.DrawUI` lists (not world draw lists) so centering and scaling stay correct.
 
 ## Branching / reviews / testing
 - Branch per task; name `feature/<task-id>-short-desc` or `chore/<...>`.

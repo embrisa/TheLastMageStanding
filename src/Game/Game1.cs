@@ -9,6 +9,7 @@ using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Input;
 using TheLastMageStanding.Game.Core.World.Map;
 using TheLastMageStanding.Game.Core.SceneState;
+using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game;
 
@@ -22,7 +23,9 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private SpriteBatch _spriteBatch = null!;
     private RenderTarget2D _renderTarget = null!;
     private Camera2D _camera = null!;
+    private EventBus _eventBus = null!;
     private SceneStateService _sceneStateService = null!;
+    private SceneManager _sceneManager = null!;
     private InputState _input = null!;
     private EcsWorldRunner _ecs = null!;
     private TiledMapService _mapService = null!;
@@ -54,9 +57,14 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _audioSettingsStore = new AudioSettingsStore();
         _audioSettings = _audioSettingsStore.LoadOrDefault();
         _musicService = new MusicService(_audioSettings);
+        _eventBus = new EventBus();
         _sceneStateService = new SceneStateService();
+        _sceneManager = new SceneManager(_sceneStateService, _eventBus);
         _input = new InputState(_sceneStateService);
-        _ecs = new EcsWorldRunner(_camera, _audioSettings, _audioSettingsStore, _musicService);
+        _ecs = new EcsWorldRunner(_camera, _audioSettings, _audioSettingsStore, _musicService, _eventBus, _sceneStateService, _sceneManager);
+
+        // Subscribe to scene transition events
+        _eventBus.Subscribe<SceneEnterEvent>(OnSceneEnter);
 
         base.Initialize();
     }
@@ -85,6 +93,13 @@ public class Game1 : Microsoft.Xna.Framework.Game
     protected override void Update(GameTime gameTime)
     {
         _input.Update();
+
+        // Process pending scene transitions
+        if (_sceneManager.ProcessPendingTransition())
+        {
+            // Scene transition happened, reload map if needed
+            ReloadSceneContent();
+        }
 
         _mapService.Update(gameTime);
         _ecs.Update(gameTime, _input);
@@ -134,6 +149,39 @@ public class Game1 : Microsoft.Xna.Framework.Game
         }
 
         base.Dispose(disposing);
+    }
+
+    private void OnSceneEnter(SceneEnterEvent evt)
+    {
+        Console.WriteLine($"[Game1] Scene entered: {evt.Scene}, StageId: {evt.StageId}");
+    }
+
+    private void ReloadSceneContent()
+    {
+        var currentScene = _sceneManager.CurrentScene;
+        Console.WriteLine($"[Game1] Reloading content for scene: {currentScene}");
+
+        // Determine which map to load
+        string mapAsset = currentScene switch
+        {
+            SceneType.Hub => HubMapAsset,
+            SceneType.Stage => FirstMapAsset, // TODO: Load based on selected stage
+            _ => HubMapAsset
+        };
+
+        // Dispose old map
+        _mapService?.Dispose();
+
+        // Load new map
+        _mapService = TiledMapService.Load(Content, GraphicsDevice, mapAsset);
+
+        // Reset player position
+        var playerSpawn = _mapService.GetPlayerSpawnOrDefault(Vector2.Zero);
+        _ecs.SetPlayerPosition(playerSpawn);
+        _camera.LookAt(playerSpawn);
+
+        // Load collision regions
+        _mapService.LoadCollisionRegions(_ecs.World);
     }
 
     private static string ResolveMapAsset()

@@ -45,7 +45,7 @@ public class VfxSystemTests
         eventBus.ProcessEvents();
 
         // Act - update with large delta to expire VFX
-        var context = new EcsUpdateContext(null!, 1.0f, null!, null!);
+        var context = new EcsUpdateContext(null!, 1.0f, null!, null!, Vector2.Zero);
         system.Update(world, context);
 
         // Assert - VFX should be removed
@@ -111,7 +111,7 @@ public class TelegraphSystemTests
         TelegraphSystem.SpawnTelegraph(world, Vector2.Zero, telegraphData);
 
         // Act - update to expire telegraph
-        var context = new EcsUpdateContext(null!, 0.2f, null!, null!);
+        var context = new EcsUpdateContext(null!, 0.2f, null!, null!, Vector2.Zero);
         system.Update(world, context);
 
         // Assert - telegraph should be removed

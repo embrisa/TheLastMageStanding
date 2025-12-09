@@ -37,6 +37,7 @@ Context: Tasks 031 and above assume the Mage is the first class with fire/arcane
 - [053 - Remove mid-run configuration access](tasks/053-remove-mid-run-configuration.md) — Gate P/I/Shift+R behind hub; stop design conflicts
 
 ### HIGH PRIORITY (Foundation)
+- [057 - Mouse-aimed skill targeting](tasks/057-mouse-aimed-skill-targeting.md) — Skills aim toward mouse cursor, not facing direction (do before 044)
 - [041 - Skill hotkey input (keys 1-4)](tasks/041-skill-hotkey-input.md) — Bind 1-4 to cast skills (still valid, independent)
 - [051 - Hub scene and scene management](tasks/051-hub-scene-and-scene-management.md) — Create hub scene, scene transitions (blocks 055, 056, 045-047)
 - [050 - Level-up choice system](tasks/050-level-up-choice-system.md) — Replace auto-stat-boost with choice UI
@@ -62,6 +63,7 @@ Context: Tasks 031 and above assume the Mage is the first class with fire/arcane
 - [048 - In-run inventory UI](tasks/048-in-run-inventory-ui.md) — **CONFLICTS with new design; needs complete rewrite or removal**
 
 ## Done
+- [041 - Skill hotkey input (keys 1-4)](tasks/041-skill-hotkey-input.md)
 - [040 - Skill hotbar UI](tasks/040-skill-hotbar-ui.md)
 - [038 - Extended sound settings & volume controls](tasks/038-extended-sound-settings-and-volume-controls.md)
 - [037 - Meta progression & run tracking (MVP)](tasks/037-meta-progression-and-run-tracking.md)

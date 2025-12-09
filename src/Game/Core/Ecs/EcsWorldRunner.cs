@@ -16,13 +16,15 @@ using TheLastMageStanding.Game.Core.Perks;
 using TheLastMageStanding.Game.Core.Skills;
 using TheLastMageStanding.Game.Core.Loot;
 using TheLastMageStanding.Game.Core.MetaProgression;
+using TheLastMageStanding.Game.Core.SceneState;
+using TheLastMageStanding.Game.Core.Progression;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
 internal sealed class EcsWorldRunner
 {
     private readonly EcsWorld _world = new();
-    private readonly EventBus _eventBus = new();
+    private readonly EventBus _eventBus;
     private readonly PlayerEntityFactory _playerFactory;
     private readonly EnemyEntityFactory _enemyFactory;
     private readonly EnemyWaveConfig _waveConfig;
@@ -34,9 +36,15 @@ internal sealed class EcsWorldRunner
     private readonly GameSessionSystem _gameSessionSystem;
     private readonly HitStopSystem _hitStopSystem;
     private readonly MetaProgressionManager _metaProgressionManager;
+    private readonly SceneStateService _sceneStateService;
     private readonly List<IUpdateSystem> _updateSystems;
+    private readonly List<IUpdateSystem> _hubOnlyUpdateSystems;
+    private readonly List<IUpdateSystem> _stageOnlyUpdateSystems;
     private readonly List<IDrawSystem> _drawSystems;
-    private readonly List<IDrawSystem> _uiDrawSystems;
+    private readonly List<IDrawSystem> _hubOnlyDrawSystems;
+    private readonly List<IDrawSystem> _stageOnlyDrawSystems;
+    private readonly List<IUiDrawSystem> _hubOnlyUiDrawSystems;
+    private readonly List<IUiDrawSystem> _uiDrawSystems;
     private readonly List<ILoadContentSystem> _loadSystems;
     private readonly Camera2D _camera;
 
@@ -44,10 +52,15 @@ internal sealed class EcsWorldRunner
         Camera2D camera,
         AudioSettingsConfig audioSettings,
         AudioSettingsStore audioSettingsStore,
-        MusicService musicService)
+        MusicService musicService,
+        EventBus eventBus,
+        SceneStateService sceneStateService,
+        SceneManager sceneManager)
     {
+        _eventBus = eventBus;
         _world.EventBus = _eventBus;
         _camera = camera;
+        _sceneStateService = sceneStateService;
         _audioSettings = audioSettings;
         _audioSettingsStore = audioSettingsStore;
         _musicService = musicService;
@@ -113,15 +126,26 @@ internal sealed class EcsWorldRunner
         var skillCastSystem = new SkillCastSystem(skillRegistry);
         var skillExecutionSystem = new SkillExecutionSystem(skillRegistry);
         var skillHotbarRenderer = new Rendering.UI.SkillHotbarRenderer(skillRegistry);
+        var levelUpChoiceGenerator = new LevelUpChoiceGenerator(LevelUpChoiceConfig.Default, skillRegistry);
+        var levelUpChoiceUiSystem = new LevelUpChoiceUISystem(levelUpChoiceGenerator);
         var dashInputSystem = new DashInputSystem();
         var dashExecutionSystem = new DashExecutionSystem(hitStopSystem);
         var dashMovementSystem = new DashMovementSystem();
 
-        _updateSystems =
+        // Hub-specific systems
+        var stageRegistry = new Campaign.StageRegistry();
+        var profileService = new PlayerProfileService(new DefaultFileSystem());
+        var stageSelectionUI = new StageSelectionUISystem(stageRegistry, sceneManager, profileService);
+        var hubSceneSystem = new HubSceneSystem(stageSelectionUI);
+        var inventoryUiSystem = new InventoryUiSystem();
+
+        // Stage completion system
+        var stageCompletionSystem = new StageCompletionSystem(sceneManager);
+
+        // Stage-only systems (combat, waves, etc)
+        _stageOnlyUpdateSystems =
         [
-            _gameSessionSystem,
-            debugInputSystem,  // Handle debug input early
-            new InputSystem(),
+            stageCompletionSystem,  // Handle stage completion and transitions
             dashInputSystem,
             dashExecutionSystem,
             dashMovementSystem,
@@ -153,30 +177,47 @@ internal sealed class EcsWorldRunner
             new CombatSystem(),
             hitStopSystem,  // Handle hit-stop timing
             vfxSystem,  // Process VFX spawns
-            _sfxSystem,  // Process SFX playback
             statusEffectVfxSystem,  // Status VFX/SFX hooks
             telegraphSystem,  // Update telegraph lifetimes
             hitReactionSystem,
             hitEffectSystem,
             new MovementSystem(),
-            enemyRenderSystem,
-            playerRenderSystem,
             new CameraFollowSystem(),
-            damageNumberSystem,
             new XpOrbSpawnSystem(_progressionConfig),
             new XpCollectionSystem(_progressionConfig),
             lootDropSystem,
             lootPickupSystem,
-            new LevelUpSystem(_progressionConfig),
+            new LevelUpSystem(levelUpChoiceGenerator),
+            levelUpChoiceUiSystem,
             perkPointGrantSystem,
             perkEffectApplicationSystem,
+        ];
+
+        // Hub-only systems
+        _hubOnlyUpdateSystems =
+        [
+            hubSceneSystem,
+            stageSelectionUI,
+            inventoryUiSystem,
+        ];
+
+        // Common systems (run in both hub and stage)
+        _updateSystems =
+        [
+            _gameSessionSystem,
+            debugInputSystem,  // Handle debug input early
+            new InputSystem(),
+            _sfxSystem,  // Process SFX playback
+            enemyRenderSystem,
+            playerRenderSystem,
+            damageNumberSystem,
             perkAutoSaveSystem,
             perkTreeUISystem,
             new CleanupSystem(),
             new IntentResetSystem(),
         ];
 
-        _drawSystems =
+        _stageOnlyDrawSystems =
         [
             enemyRenderSystem,
             playerRenderSystem,
@@ -190,16 +231,38 @@ internal sealed class EcsWorldRunner
             collisionDebugRenderSystem,  // Draw collision debug last
         ];
 
+        _hubOnlyDrawSystems = [];
+
+        // Common draw systems
+        _drawSystems =
+        [
+            playerRenderSystem,
+            damageNumberSystem,
+        ];
+
+        _hubOnlyUiDrawSystems =
+        [
+            hubSceneSystem,
+            stageSelectionUI,
+        ];
+
         _uiDrawSystems =
         [
             new HudRenderSystem(),
             skillHotbarRenderer,
             perkTreeUISystem,
+            inventoryUiSystem,
+            levelUpChoiceUiSystem,
         ];
 
         _loadSystems =
             _updateSystems.OfType<ILoadContentSystem>()
+                .Concat(_hubOnlyUpdateSystems.OfType<ILoadContentSystem>())
+                .Concat(_stageOnlyUpdateSystems.OfType<ILoadContentSystem>())
                 .Concat(_drawSystems.OfType<ILoadContentSystem>())
+                .Concat(_hubOnlyDrawSystems.OfType<ILoadContentSystem>())
+                .Concat(_stageOnlyDrawSystems.OfType<ILoadContentSystem>())
+                .Concat(_hubOnlyUiDrawSystems.OfType<ILoadContentSystem>())
                 .Concat(_uiDrawSystems.OfType<ILoadContentSystem>())
                 .ToList();
 
@@ -208,7 +271,32 @@ internal sealed class EcsWorldRunner
             system.Initialize(_world);
         }
 
+        foreach (var system in _hubOnlyUpdateSystems)
+        {
+            system.Initialize(_world);
+        }
+
+        foreach (var system in _stageOnlyUpdateSystems)
+        {
+            system.Initialize(_world);
+        }
+
         foreach (var system in _drawSystems)
+        {
+            system.Initialize(_world);
+        }
+
+        foreach (var system in _hubOnlyDrawSystems)
+        {
+            system.Initialize(_world);
+        }
+
+        foreach (var system in _stageOnlyDrawSystems)
+        {
+            system.Initialize(_world);
+        }
+
+        foreach (var system in _hubOnlyUiDrawSystems)
         {
             system.Initialize(_world);
         }
@@ -259,48 +347,71 @@ internal sealed class EcsWorldRunner
 
     public void Update(GameTime gameTime, InputState input)
     {
+        // Transform mouse screen position to world space
+        var mouseWorldPosition = _camera.ScreenToWorld(input.MouseScreenPosition);
+        
         var context = new EcsUpdateContext(
             gameTime,
             (float)gameTime.ElapsedGameTime.TotalSeconds,
             input,
-            _camera);
+            _camera,
+            mouseWorldPosition);
 
-        // Always run session system to handle pause/resume/restart
-        _gameSessionSystem.Update(_world, context);
+        var isInHub = _sceneStateService.IsInHub();
+        var isInStage = _sceneStateService.IsInStage();
 
-        var sessionState = GetSessionState();
-        if (sessionState == GameState.Playing)
+        // Always run common systems
+        foreach (var system in _updateSystems)
         {
-            // Run hit-stop system first to track timing
-            _hitStopSystem.Update(_world, context);
+            system.Update(_world, context);
+        }
 
-            // Apply camera shake from hit-stop system
-            _camera.ShakeOffset = _hitStopSystem.CameraShakeOffset;
-
-            // If hit-stopped, only update certain systems (VFX, SFX, visual feedback)
-            if (_hitStopSystem.IsHitStopped())
+        // Run scene-specific systems
+        if (isInHub)
+        {
+            foreach (var system in _hubOnlyUpdateSystems)
             {
-                // During hit-stop, only update visual/audio feedback systems
-                // Skip movement, combat logic, etc.
-                for (int i = 1; i < _updateSystems.Count; i++)
+                system.Update(_world, context);
+            }
+        }
+        else if (isInStage)
+        {
+            // Always run session system to handle pause/resume/restart
+            _gameSessionSystem.Update(_world, context);
+
+            var sessionState = GetSessionState();
+            if (sessionState == GameState.Playing)
+            {
+                // Run hit-stop system first to track timing
+                _hitStopSystem.Update(_world, context);
+
+                // Apply camera shake from hit-stop system
+                _camera.ShakeOffset = _hitStopSystem.CameraShakeOffset;
+
+                // If hit-stopped, only update certain systems (VFX, SFX, visual feedback)
+                if (_hitStopSystem.IsHitStopped())
                 {
-                    var system = _updateSystems[i];
-                    // Allow VFX, SFX, visual effects to update during hit-stop
-                    if (system is VfxSystem || system is SfxSystem ||
-                        system is HitEffectSystem || system is TelegraphSystem)
+                    // During hit-stop, only update visual/audio feedback systems
+                    // Skip movement, combat logic, etc.
+                    foreach (var system in _stageOnlyUpdateSystems)
                     {
-                        system.Update(_world, context);
+                        // Allow VFX, SFX, visual effects to update during hit-stop
+                        if (system is VfxSystem || system is SfxSystem ||
+                            system is HitEffectSystem || system is TelegraphSystem)
+                        {
+                            system.Update(_world, context);
+                        }
                     }
                 }
-            }
-            else
-            {
-                // Normal update - skip hit-stop system as it's already run
-                for (int i = 1; i < _updateSystems.Count; i++)
+                else
                 {
-                    if (_updateSystems[i] != _hitStopSystem)
+                    // Normal update - run all stage systems except hit-stop (already run)
+                    foreach (var system in _stageOnlyUpdateSystems)
                     {
-                        _updateSystems[i].Update(_world, context);
+                        if (system != _hitStopSystem)
+                        {
+                            system.Update(_world, context);
+                        }
                     }
                 }
             }
@@ -312,15 +423,45 @@ internal sealed class EcsWorldRunner
     public void Draw(SpriteBatch spriteBatch)
     {
         var context = new EcsDrawContext(spriteBatch, _camera);
+        var isInHub = _sceneStateService.IsInHub();
+        var isInStage = _sceneStateService.IsInStage();
+
+        // Draw common systems
         foreach (var system in _drawSystems)
         {
             system.Draw(_world, context);
+        }
+
+        // Draw scene-specific systems
+        if (isInHub)
+        {
+            foreach (var system in _hubOnlyDrawSystems)
+            {
+                system.Draw(_world, context);
+            }
+        }
+        else if (isInStage)
+        {
+            foreach (var system in _stageOnlyDrawSystems)
+            {
+                system.Draw(_world, context);
+            }
         }
     }
 
     public void DrawUI(SpriteBatch spriteBatch)
     {
         var context = new EcsDrawContext(spriteBatch, _camera);
+        var isInHub = _sceneStateService.IsInHub();
+
+        if (isInHub)
+        {
+            foreach (var system in _hubOnlyUiDrawSystems)
+            {
+                system.Draw(_world, context);
+            }
+        }
+
         foreach (var system in _uiDrawSystems)
         {
             system.Draw(_world, context);

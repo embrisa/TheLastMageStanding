@@ -16,7 +16,7 @@ public class AnimationEventSystemTests
         var gameTime = new GameTime();
         var input = new InputState();
         var camera = new Camera2D(800, 600);
-        return new EcsUpdateContext(gameTime, 0.016f, input, camera);
+        return new EcsUpdateContext(gameTime, 0.016f, input, camera, Vector2.Zero);
     }
     [Fact]
     public void AnimationEvent_HitboxEnable_SpawnsHitbox()

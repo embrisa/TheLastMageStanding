@@ -36,7 +36,7 @@ internal enum InventoryUiMode
 /// <summary>
 /// Renders and handles input for inventory/equipment UI.
 /// </summary>
-internal sealed class InventoryUiSystem : IUpdateSystem, IDrawSystem, ILoadContentSystem
+internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadContentSystem
 {
     private SpriteFont _font = null!;
     private Texture2D _pixel = null!;
@@ -235,7 +235,7 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IDrawSystem, ILoadConte
         }
 
         // Draw controls hint
-        var hint = "[Tab] Close  [↑↓] Navigate  [Enter] Equip/Unequip";
+        var hint = "[Tab] Close  [Up/Down] Navigate  [Enter] Equip/Unequip";
         var hintPos = new Vector2(panelX + 20, panelY + panelHeight - 40);
         spriteBatch.DrawString(_font, hint, hintPos, Color.Gray);
     }

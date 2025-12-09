@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Ecs.Components;
+using TheLastMageStanding.Game.Core.Ecs.Systems;
 using TheLastMageStanding.Game.Core.Skills;
 
 namespace TheLastMageStanding.Game.Core.Rendering.UI;
@@ -12,7 +13,7 @@ namespace TheLastMageStanding.Game.Core.Rendering.UI;
 /// <summary>
 /// Renders the skill hotbar UI showing equipped skills, cooldown timers, and hotkey bindings.
 /// </summary>
-internal sealed class SkillHotbarRenderer : IDrawSystem, ILoadContentSystem
+internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem
 {
     private const int SlotCount = 5;
     private const int SlotSize = 48;
