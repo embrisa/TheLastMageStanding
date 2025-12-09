@@ -11,18 +11,24 @@ public sealed class MetaProgressionManager
     private readonly PlayerProfileService _profileService;
     private readonly RunHistoryService _historyService;
     private readonly IEventBus _eventBus;
+    private readonly SaveSlotService _saveSlotService;
+    private readonly string _slotId;
 
     private PlayerProfile _currentProfile;
     private RunSession? _currentRun;
 
     public PlayerProfile CurrentProfile => _currentProfile;
     public RunSession? CurrentRun => _currentRun;
+    public string SlotId => _slotId;
 
-    public MetaProgressionManager(IEventBus eventBus, string? saveDirectory = null)
+    public MetaProgressionManager(IEventBus eventBus, SaveSlotService saveSlotService, string slotId)
     {
+        _saveSlotService = saveSlotService;
+        _slotId = slotId;
         var fileSystem = new DefaultFileSystem();
-        _profileService = new PlayerProfileService(fileSystem, saveDirectory);
-        _historyService = new RunHistoryService(fileSystem, saveDirectory);
+        var slotPath = _saveSlotService.GetSlotPath(slotId);
+        _profileService = new PlayerProfileService(fileSystem, slotPath);
+        _historyService = new RunHistoryService(fileSystem, slotPath);
         _eventBus = eventBus;
 
         // Load profile

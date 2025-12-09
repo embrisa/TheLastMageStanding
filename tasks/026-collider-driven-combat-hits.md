@@ -109,3 +109,5 @@ CollisionSystem → CollisionEnterEvent → MeleeHitSystem → EntityDamagedEven
 - Convert enemy melee to use same hitbox system
 - Support for more hitbox shapes (AABB, cone, arc)
 
+
+

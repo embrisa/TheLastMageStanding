@@ -39,3 +39,5 @@ The game currently runs continuously with no in-run pause or settings control. W
 - Restart should reuse the existing session reset path to avoid duplicated code.
 - If audio routing is not yet centralized, add minimal plumbing to honor mute toggles without refactoring the entire audio stack.
 
+
+

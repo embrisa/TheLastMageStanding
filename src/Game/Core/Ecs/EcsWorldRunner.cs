@@ -32,6 +32,8 @@ internal sealed class EcsWorldRunner
     private readonly AudioSettingsConfig _audioSettings;
     private readonly AudioSettingsStore _audioSettingsStore;
     private readonly MusicService _musicService;
+    private readonly SaveSlotService _saveSlotService;
+    private readonly string _slotId;
     private readonly SfxSystem _sfxSystem;
     private readonly GameSessionSystem _gameSessionSystem;
     private readonly HitStopSystem _hitStopSystem;
@@ -55,7 +57,9 @@ internal sealed class EcsWorldRunner
         MusicService musicService,
         EventBus eventBus,
         SceneStateService sceneStateService,
-        SceneManager sceneManager)
+        SceneManager sceneManager,
+        SaveSlotService saveSlotService,
+        string slotId)
     {
         _eventBus = eventBus;
         _world.EventBus = _eventBus;
@@ -64,6 +68,8 @@ internal sealed class EcsWorldRunner
         _audioSettings = audioSettings;
         _audioSettingsStore = audioSettingsStore;
         _musicService = musicService;
+        _saveSlotService = saveSlotService;
+        _slotId = slotId;
         _waveConfig = EnemyWaveConfig.Default;
         _progressionConfig = ProgressionConfig.Default;
         var perkTreeConfig = PerkTreeConfig.Default;
@@ -73,7 +79,7 @@ internal sealed class EcsWorldRunner
         _playerFactory.CreatePlayer(Vector2.Zero);
 
         // Initialize meta progression system
-        _metaProgressionManager = new MetaProgressionManager(_eventBus);
+        _metaProgressionManager = new MetaProgressionManager(_eventBus, _saveSlotService, _slotId);
 
         var lootConfig = LootDropConfig.CreateDefault();
         var itemRegistry = new ItemRegistry();
@@ -134,10 +140,14 @@ internal sealed class EcsWorldRunner
 
         // Hub-specific systems
         var stageRegistry = new Campaign.StageRegistry();
-        var profileService = new PlayerProfileService(new DefaultFileSystem());
+        var profileService = new PlayerProfileService(new DefaultFileSystem(), _saveSlotService.GetSlotPath(_slotId));
         var stageSelectionUI = new StageSelectionUISystem(stageRegistry, sceneManager, profileService);
-        var hubSceneSystem = new HubSceneSystem(stageSelectionUI);
         var inventoryUiSystem = new InventoryUiSystem();
+        var proximityInteractionSystem = new ProximityInteractionSystem();
+        var interactionInputSystem = new InteractionInputSystem();
+        var hubMenuSystem = new HubMenuSystem(_sceneStateService);
+        var proximityPromptRenderSystem = new ProximityPromptRenderSystem();
+        var npcRenderSystem = new NpcRenderSystem();
 
         // Stage completion system
         var stageCompletionSystem = new StageCompletionSystem(sceneManager);
@@ -145,6 +155,7 @@ internal sealed class EcsWorldRunner
         // Stage-only systems (combat, waves, etc)
         _stageOnlyUpdateSystems =
         [
+            _gameSessionSystem,  // Run timer, pause menu, wave tracking (stage-only)
             stageCompletionSystem,  // Handle stage completion and transitions
             dashInputSystem,
             dashExecutionSystem,
@@ -164,11 +175,8 @@ internal sealed class EcsWorldRunner
             aiProtectorSystem,
             aiBufferSystem,
             buffTickSystem,
-            new MovementIntentSystem(),
             new ProjectileUpdateSystem(),  // Update projectile lifetimes
             knockbackSystem,  // Apply knockback before collision resolution
-            collisionResolutionSystem,  // Resolve collisions before applying movement
-            collisionSystem,  // Detect collisions after resolution
             dynamicSeparationSystem,  // Separate overlapping dynamic entities
             contactDamageSystem,  // Handle contact damage with cooldowns
             meleeHitSystem,  // Handle attack hitbox collisions
@@ -181,8 +189,6 @@ internal sealed class EcsWorldRunner
             telegraphSystem,  // Update telegraph lifetimes
             hitReactionSystem,
             hitEffectSystem,
-            new MovementSystem(),
-            new CameraFollowSystem(),
             new XpOrbSpawnSystem(_progressionConfig),
             new XpCollectionSystem(_progressionConfig),
             lootDropSystem,
@@ -196,23 +202,29 @@ internal sealed class EcsWorldRunner
         // Hub-only systems
         _hubOnlyUpdateSystems =
         [
-            hubSceneSystem,
             stageSelectionUI,
-            inventoryUiSystem,
+            proximityInteractionSystem,
+            interactionInputSystem,
+            hubMenuSystem,
         ];
 
         // Common systems (run in both hub and stage)
         _updateSystems =
         [
-            _gameSessionSystem,
             debugInputSystem,  // Handle debug input early
-            new InputSystem(),
+            new InputSystem(),  // Read input (WASD, etc.)
+            new MovementIntentSystem(),  // Convert input to velocity
+            new MovementSystem(),  // Apply velocity to position
+            new CameraFollowSystem(),  // Camera follows player
+            collisionResolutionSystem,  // Resolve collisions before applying movement
+            collisionSystem,  // Detect collisions after resolution
             _sfxSystem,  // Process SFX playback
             enemyRenderSystem,
             playerRenderSystem,
             damageNumberSystem,
             perkAutoSaveSystem,
             perkTreeUISystem,
+            inventoryUiSystem,  // Allow inventory viewing in both hub and stage
             new CleanupSystem(),
             new IntentResetSystem(),
         ];
@@ -231,7 +243,11 @@ internal sealed class EcsWorldRunner
             collisionDebugRenderSystem,  // Draw collision debug last
         ];
 
-        _hubOnlyDrawSystems = [];
+        _hubOnlyDrawSystems = 
+        [
+            npcRenderSystem,
+            proximityPromptRenderSystem,
+        ];
 
         // Common draw systems
         _drawSystems =
@@ -242,8 +258,8 @@ internal sealed class EcsWorldRunner
 
         _hubOnlyUiDrawSystems =
         [
-            hubSceneSystem,
             stageSelectionUI,
+            hubMenuSystem,
         ];
 
         _uiDrawSystems =
@@ -477,6 +493,26 @@ internal sealed class EcsWorldRunner
         });
 
         return state;
+    }
+
+    /// <summary>
+    /// Spawns NPC entities from the hub map after map loading.
+    /// Should be called when entering the hub scene.
+    /// </summary>
+    public void SpawnHubNpcs(MonoGame.Extended.Tiled.TiledMap hubMap)
+    {
+        var npcSpawnSystem = new NpcSpawnSystem(hubMap);
+        npcSpawnSystem.Initialize(_world);
+        
+        // Run once to spawn NPCs
+        var dummyContext = new EcsUpdateContext(
+            new Microsoft.Xna.Framework.GameTime(),
+            0f,
+            new Input.InputState(),
+            _camera,
+            Microsoft.Xna.Framework.Vector2.Zero
+        );
+        npcSpawnSystem.Update(_world, dummyContext);
     }
 }
 

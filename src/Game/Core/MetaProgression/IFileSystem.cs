@@ -44,6 +44,11 @@ public interface IFileSystem
     /// Checks if a directory exists.
     /// </summary>
     bool DirectoryExists(string path);
+
+    /// <summary>
+    /// Gets subdirectories for a path.
+    /// </summary>
+    string[] GetDirectories(string path);
 }
 
 /// <summary>
@@ -68,4 +73,6 @@ public sealed class DefaultFileSystem : IFileSystem
         Directory.GetFiles(directory, searchPattern);
 
     public bool DirectoryExists(string path) => Directory.Exists(path);
+
+    public string[] GetDirectories(string path) => Directory.GetDirectories(path);
 }

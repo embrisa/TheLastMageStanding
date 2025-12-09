@@ -29,9 +29,12 @@ internal sealed class InputState
     public bool CastSkill2Pressed { get; private set; }
     public bool CastSkill3Pressed { get; private set; }
     public bool CastSkill4Pressed { get; private set; }
+    public bool InteractPressed { get; private set; }
+    public bool PrimaryClickPressed { get; private set; }
 
     private KeyboardState _previousKeyboard;
     private KeyboardState _currentKeyboard;
+    private MouseState _previousMouse;
     private MouseState _currentMouse;
 
     public InputState(SceneStateService? sceneStateService = null)
@@ -42,6 +45,7 @@ internal sealed class InputState
     public void Update()
     {
         _previousKeyboard = _currentKeyboard;
+        _previousMouse = _currentMouse;
 
         _currentKeyboard = Keyboard.GetState();
         _currentMouse = Mouse.GetState();
@@ -83,45 +87,16 @@ internal sealed class InputState
         AttackPressed = _currentKeyboard.IsKeyDown(Keys.J) || _currentMouse.LeftButton == ButtonState.Pressed;
         DashPressed = IsNewKeyPress(Keys.LeftShift) || IsNewKeyPress(Keys.RightShift) || IsNewKeyPress(Keys.Space);
         DebugTogglePressed = IsNewKeyPress(Keys.F3);
+        InteractPressed = IsNewKeyPress(Keys.E);
+        PrimaryClickPressed = _currentMouse.LeftButton == ButtonState.Pressed && _previousMouse.LeftButton == ButtonState.Released;
 
-        // Gate perk tree, inventory, and respec based on scene
+        // P and I keys toggle UI (work in both hub and stage, though changes only possible in hub)
+        PerkTreePressed = IsNewKeyPress(Keys.P);
+        InventoryPressed = IsNewKeyPress(Keys.I);
+
+        // Respec (Shift+R) - gate to hub only
         LockedFeatureMessage = null;
         var isInHub = _sceneStateService?.IsInHub() ?? false;
-
-        if (IsNewKeyPress(Keys.P))
-        {
-            if (isInHub)
-            {
-                PerkTreePressed = true;
-            }
-            else
-            {
-                PerkTreePressed = false;
-                LockedFeatureMessage = "Perk Tree available in Hub";
-            }
-        }
-        else
-        {
-            PerkTreePressed = false;
-        }
-
-        if (IsNewKeyPress(Keys.I))
-        {
-            if (isInHub)
-            {
-                InventoryPressed = true;
-            }
-            else
-            {
-                InventoryPressed = false;
-                LockedFeatureMessage = "Inventory available in Hub";
-            }
-        }
-        else
-        {
-            InventoryPressed = false;
-        }
-
         var shiftRPressed = IsNewKeyPress(Keys.R) && (_currentKeyboard.IsKeyDown(Keys.LeftShift) || _currentKeyboard.IsKeyDown(Keys.RightShift));
         if (shiftRPressed)
         {

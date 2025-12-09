@@ -47,22 +47,34 @@ Context: Tasks 031 and above assume the Mage is the first class with fire/arcane
 - [055 - Skill selection hub UI](tasks/055-skill-selection-hub-ui.md) — Hub UI for skill equipping (**supersedes 042**)
 - [056 - Equipment management hub UI](tasks/056-equipment-management-hub-ui.md) — Hub UI for equipment (**supersedes parts of 046**)
 - [044 - Skill balance & feel pass](tasks/044-skill-balance-and-feel-pass.md) — Playtest and tune all skills
+### HIGH PRIORITY (Hub Completion Arc)
+- [061 - Debug NPC visibility](tasks/061-debug-npc-visibility.md) — **IN PROGRESS** Fix NPCs not appearing in hub
+- [062 - Skill selection UI](tasks/062-skill-selection-ui.md) — Equip skills via `npc_ability_loadout` (blue NPC)
+- [063 - Shop UI & equipment purchasing](tasks/063-shop-ui-equipment-purchasing.md) — Buy equipment via `npc_vendor` (gold NPC)
+- [064 - Stats & run history UI](tasks/064-stats-run-history-ui.md) — View stats via `npc_archivist` (green NPC)
+- [065 - Hub menu actions](tasks/065-hub-menu-actions.md) — Wire up Settings and Quit from ESC menu
+
+### MEDIUM PRIORITY (Hub Polish Arc)
+- [066 - NPC visual improvements](tasks/066-npc-visual-improvements.md) — Replace colored squares with sprites, animations
+- [067 - Hub map environmental polish](tasks/067-hub-map-environmental-polish.md) — Decorations, lighting, music, ambience
+- [068 - Hub tutorial & first-time UX](tasks/068-hub-tutorial-first-time-ux.md) — Guide new players through hub
 
 ### MEDIUM PRIORITY (Hub Features - Modified)
-- [045 - Meta hub main menu](tasks/045-meta-hub-ui-and-scene.md) — Main hub navigation (**BLOCKED by 051; merge with 051 or defer**)
-- [046 - Shop UI](tasks/046-shop-and-equipment-ui.md) — Shop for purchasing equipment (**NEEDS UPDATE: shop only, not equipment UI**)
-- [047 - Talent tree hub integration](tasks/047-talent-tree-integration.md) — Hub-based talent unlocking (**NEEDS UPDATE: hub-only, remove in-run mentions**)
-- [049 - Run history UI](tasks/049-run-history-stats-ui.md) — View past runs (independent, can do anytime)
+- [045 - Meta hub main menu](tasks/045-meta-hub-ui-and-scene.md) — **SUPERSEDED by Task 051** (hub is now playable world, not menu)
+- [046 - Shop UI](tasks/046-shop-and-equipment-ui.md) — **SUPERSEDED by Task 055** (shop UI separate task now)
+- [047 - Talent tree hub integration](tasks/047-talent-tree-integration.md) — **MOSTLY DONE** in Task 051 (P key works in hub)
+- [049 - Run history UI](tasks/049-run-history-stats-ui.md) — **SUPERSEDED by Task 056** (stats UI via archivist NPC)
 
 ### MEDIUM PRIORITY (Campaign)
 - [052 - Stage/act campaign system](tasks/052-stage-act-campaign-system.md) — 4 acts, stages, bosses, progression
 
 ### LOW PRIORITY / RECONSIDER
-- ~~[042 - Skill selection UI](tasks/042-skill-selection-ui.md)~~ — **SUPERSEDED by Task 055**
+- ~~[042 - Skill selection UI](tasks/042-skill-selection-ui.md)~~ — **SUPERSEDED by Task 054**
 - ~~[043 - Skill unlock progression](tasks/043-skill-unlock-progression.md)~~ — **SUPERSEDED by Task 054**
 - [048 - In-run inventory UI](tasks/048-in-run-inventory-ui.md) — **CONFLICTS with new design; needs complete rewrite or removal**
 
 ## Done
+- [051 - Hub scene & scene management](tasks/051-hub-scene-and-scene-management.md) — **REIMPLEMENTED 2024-12-09** Playable hub with NPC interactions
 - [041 - Skill hotkey input (keys 1-4)](tasks/041-skill-hotkey-input.md)
 - [040 - Skill hotbar UI](tasks/040-skill-hotbar-ui.md)
 - [038 - Extended sound settings & volume controls](tasks/038-extended-sound-settings-and-volume-controls.md)

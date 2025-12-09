@@ -39,3 +39,5 @@ With wave/game-state events in place and a game over overlay planned, we still l
 - Pause timers during game over to keep summaries accurate.
 - Ensure event subscriptions are not duplicated on restart; consider lifecycle hooks or system resets.
 
+
+

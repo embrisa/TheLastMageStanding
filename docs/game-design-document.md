@@ -66,28 +66,45 @@
 - Stage completion → stage rewards → unlock next stage → return to hub.
 
 ### Scene Management
-- **Scene Types**: Hub, Stage, Cutscene (future).
+- **Scene Types**: MainMenu, Hub, Stage, Cutscene (future).
+- **Main Menu**:
+  - Default entry point on boot; static background with keyboard/mouse navigation.
+  - Options: Continue (most recent slot), New Game (creates next empty slot), Load Game (list all slots), Settings (stub), Quit.
+  - Plays `StartScreenMusic`; transitions into Hub after slot selection.
 - **Hub Scene**:
-  - Default starting scene on game launch.
-  - Main menu with navigation to Stage Select, Skills, Talents, Equipment, Stats, Quit.
+  - **Playable hub world**: Player spawns in hub map (HubMap.tmx) and can move freely using WASD.
+  - **NPC Interactions**: NPCs spawn at object markers in the map. Player walks near NPCs (80px radius) to see "E - [Action]" prompts, then presses E to interact:
+    - `npc_tome_scribe` (purple) → Opens Talent Tree
+    - `npc_arena_master` (red) → Opens Stage Selection
+    - `npc_ability_loadout` (blue) → Opens Skill Selection
+    - `npc_vendor` (gold) → Opens Shop
+    - `npc_archivist` (green) → Opens Stats/History
+  - **Keyboard shortcuts**: P (talent tree), I (inventory) work directly without NPC interaction (available in both hub and stage for viewing, changes only in hub).
+  - **ESC menu**: Opens hub-specific menu with Settings and Quit options (different from stage pause menu).
   - All meta progression activities (skill selection, talent tree, equipment, shop) accessible only in hub.
-  - Input gating: P key (talent tree), I key (inventory), Shift+R (respec) only work in hub.
-  - Player exists in hub world with hub map (HubMap.tmx).
+  - Camera follows player smoothly; collision with walls enabled.
 - **Stage Scene**:
   - Active during combat runs (wave-based gameplay).
   - Skills, talents, and equipment locked to hub configuration.
-  - Input gating: P, I, Shift+R keys show "Available in Hub" message.
+  - P and I keys still work to view talent tree/inventory (read-only, no changes allowed).
+  - ESC key opens pause menu with Resume/Restart/Settings/Quit options.
   - Player exists in stage map with dynamic map loading based on selected stage.
+  - Run Timer tracks elapsed time (does NOT run in hub).
   - Run ends on player death or stage completion → transition back to hub.
 - **Scene Transitions**:
   - Managed by `SceneManager` with deferred transitions via `ProcessPendingTransition()`.
   - Publishes `SceneExitEvent` and `SceneEnterEvent` on transitions.
   - Map reloading handled in `Game1.ReloadSceneContent()` based on scene type.
+  - NPC entities spawned via `EcsWorldRunner.SpawnHubNpcs()` when entering hub scene.
   - `EcsWorldRunner` conditionally runs scene-specific systems:
     - `_hubOnlyUpdateSystems` / `_hubOnlyDrawSystems` for hub logic.
     - `_stageOnlyUpdateSystems` / `_stageOnlyDrawSystems` for combat logic.
     - Common systems (player rendering, SFX, input) run in both scenes.
 - **Profile Persistence**: `PlayerProfile` persists across scene transitions with `CompletedStages` tracking.
+- **Save Slots**:
+  - Slots live under the platform save root in `Slots/slotX`; legacy single-save auto-migrated to `slot1`.
+  - Continue uses the most recent slot; New Game creates the next available slot and seeds a default profile.
+  - Load Game lists all slots with Created/Last Played metadata and starts the selected slot.
 - **Stage Selection**:
   - `StageRegistry` defines all acts/stages with requirements (meta level, previous stage completion).
   - `StageSelectionUISystem` displays unlocked stages with visual indicators (✓ completed, 🔒 locked).

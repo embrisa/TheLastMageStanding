@@ -24,3 +24,5 @@ Update chain around AI: `AiSeekSystem → RangedAttackSystem → AiChargerSystem
 ## Debugging
 - New AI overlay toggle: **F11**. Renders role/state text above enemies and range circles (charger commit, protector shield, buffer buff). Colors: Seeking white, Committing yellow, Shielding blue, Buffing green, Cooldown gray.
 
+
+

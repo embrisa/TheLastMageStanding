@@ -6,6 +6,11 @@ namespace TheLastMageStanding.Game.Core.SceneState;
 public enum SceneType
 {
     /// <summary>
+    /// Main menu shown on game startup.
+    /// </summary>
+    MainMenu,
+
+    /// <summary>
     /// The hub scene where players configure their build (skills, talents, equipment).
     /// </summary>
     Hub,

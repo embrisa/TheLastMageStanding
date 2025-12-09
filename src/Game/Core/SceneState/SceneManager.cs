@@ -23,7 +23,7 @@ internal sealed class SceneManager
     {
         _sceneStateService = sceneStateService;
         _eventBus = eventBus;
-        _currentScene = SceneType.Hub; // Start in hub
+        _currentScene = SceneType.MainMenu; // Start in main menu
         _sceneStateService.SetScene(_currentScene);
     }
 
@@ -57,6 +57,22 @@ internal sealed class SceneManager
         _pendingTransition = SceneType.Stage;
         _pendingStageId = stageId;
         Console.WriteLine($"[SceneManager] Queued transition to Stage: {stageId}");
+    }
+
+    /// <summary>
+    /// Transitions back to the main menu.
+    /// </summary>
+    public void TransitionToMainMenu()
+    {
+        if (_currentScene == SceneType.MainMenu)
+        {
+            Console.WriteLine("[SceneManager] Already in MainMenu, ignoring transition request.");
+            return;
+        }
+
+        _pendingTransition = SceneType.MainMenu;
+        _pendingStageId = null;
+        Console.WriteLine("[SceneManager] Queued transition to MainMenu");
     }
 
     /// <summary>

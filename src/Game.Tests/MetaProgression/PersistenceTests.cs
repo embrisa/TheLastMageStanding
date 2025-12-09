@@ -56,6 +56,13 @@ public class InMemoryFileSystem : IFileSystem
     }
 
     public bool DirectoryExists(string path) => _directories.Contains(path);
+
+    public string[] GetDirectories(string path)
+    {
+        return _directories
+            .Where(d => d.StartsWith(path, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+    }
 }
 
 public class PlayerProfileServiceTests

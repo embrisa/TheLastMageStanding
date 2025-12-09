@@ -35,7 +35,7 @@ public sealed class PlayerProfileService
     /// <summary>
     /// Gets the platform-specific default save directory.
     /// </summary>
-    private static string GetDefaultSaveDirectory()
+    internal static string GetDefaultSaveDirectory()
     {
         string baseDirectory;
 

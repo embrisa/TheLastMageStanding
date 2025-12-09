@@ -15,6 +15,8 @@ internal sealed class TiledMapService : IDisposable
     private readonly TiledMap _map;
     private readonly TiledMapRenderer _renderer;
 
+    public TiledMap Map => _map;
+
     private TiledMapService(TiledMap map, TiledMapRenderer renderer)
     {
         _map = map;

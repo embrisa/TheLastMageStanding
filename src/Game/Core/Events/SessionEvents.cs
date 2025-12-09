@@ -6,3 +6,5 @@ namespace TheLastMageStanding.Game.Core.Events;
 public readonly record struct SessionRestartedEvent;
 
 
+
+

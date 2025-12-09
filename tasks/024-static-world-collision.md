@@ -90,3 +90,5 @@ Both HubMap.tmx and FirstMap.tmx have collision regions marked with `type="colli
 - Efficient broad-phase reduces narrow-phase collision tests
 - Console output: "Loaded X static collision regions" on map load
 
+
+

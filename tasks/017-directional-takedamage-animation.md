@@ -35,3 +35,5 @@ The player’s TakeDamage animation currently ignores facing and always plays th
 - Implemented explicit facing update in `HitReactionSystem` using `InputIntent` (or `Velocity` fallback) to ensure the hit animation starts with the correct facing.
 - `PlayerRenderSystem` correctly locks the facing during the hit animation and resumes updating it afterwards.
 
+
+
