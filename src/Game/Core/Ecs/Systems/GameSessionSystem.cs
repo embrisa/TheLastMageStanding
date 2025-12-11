@@ -17,6 +17,10 @@ internal sealed class GameSessionSystem : IUpdateSystem
 {
     private readonly AudioSettingsConfig _audioSettings;
     private readonly AudioSettingsStore _audioSettingsStore;
+    private readonly VideoSettingsConfig _videoSettings;
+    private readonly VideoSettingsStore _videoSettingsStore;
+    private readonly InputBindingsConfig _inputBindings;
+    private readonly InputBindingsStore _inputBindingsStore;
     private readonly MusicService _musicService;
     private readonly SfxSystem _sfxSystem;
     private EcsWorld _world = null!;
@@ -38,11 +42,19 @@ internal sealed class GameSessionSystem : IUpdateSystem
     public GameSessionSystem(
         AudioSettingsConfig audioSettings,
         AudioSettingsStore audioSettingsStore,
+        VideoSettingsConfig videoSettings,
+        VideoSettingsStore videoSettingsStore,
+        InputBindingsConfig inputBindings,
+        InputBindingsStore inputBindingsStore,
         MusicService musicService,
         SfxSystem sfxSystem)
     {
         _audioSettings = audioSettings;
         _audioSettingsStore = audioSettingsStore;
+        _videoSettings = videoSettings;
+        _videoSettingsStore = videoSettingsStore;
+        _inputBindings = inputBindings;
+        _inputBindingsStore = inputBindingsStore;
         _musicService = musicService;
         _sfxSystem = sfxSystem;
     }
@@ -54,6 +66,11 @@ internal sealed class GameSessionSystem : IUpdateSystem
         world.EventBus.Subscribe<WaveCompletedEvent>(OnWaveCompleted);
         world.EventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
         world.EventBus.Subscribe<EnemyDiedEvent>(OnEnemyDied);
+        world.EventBus.Subscribe<PauseMenuActionRequestedEvent>(OnPauseMenuActionRequested);
+        world.EventBus.Subscribe<AudioSettingChangedEvent>(OnAudioSettingChanged);
+        world.EventBus.Subscribe<VideoSettingChangedEvent>(OnVideoSettingChanged);
+        world.EventBus.Subscribe<InputBindingChangedEvent>(OnInputBindingChanged);
+        world.EventBus.Subscribe<SettingsTabChangedEvent>(OnSettingsTabChanged);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
@@ -70,7 +87,12 @@ internal sealed class GameSessionSystem : IUpdateSystem
 
         var audioState = EnsureAudioSettingsState(world, _sessionEntity.Value);
         var audioMenu = EnsureAudioSettingsMenu(world, _sessionEntity.Value);
+        var videoState = EnsureVideoSettingsState(world, _sessionEntity.Value);
+        var settingsMenu = EnsureSettingsMenuState(world, _sessionEntity.Value);
+        var pauseMenu = EnsurePauseMenu(world, _sessionEntity.Value);
         var levelUpOpen = IsLevelUpChoiceOpen(world);
+
+        TickAudioMenu(ref audioMenu, context.DeltaSeconds);
 
         // Force paused while level-up choice UI is open
         if (levelUpOpen && session.State != GameState.GameOver && session.State != GameState.Paused)
@@ -86,13 +108,18 @@ internal sealed class GameSessionSystem : IUpdateSystem
             {
                 session.State = GameState.Paused;
                 world.SetComponent(_sessionEntity.Value, session);
-                var pauseMenu = EnsurePauseMenu(world, _sessionEntity.Value);
+                pauseMenu = EnsurePauseMenu(world, _sessionEntity.Value);
                 pauseMenu.SelectedIndex = 0;
                 world.SetComponent(_sessionEntity.Value, pauseMenu);
             }
             else if (session.State == GameState.Paused)
             {
-                if (audioMenu.IsOpen)
+                if (settingsMenu.IsOpen)
+                {
+                    settingsMenu.IsOpen = false;
+                    world.SetComponent(_sessionEntity.Value, settingsMenu);
+                }
+                else if (audioMenu.IsOpen)
                 {
                     audioMenu.IsOpen = false;
                     world.SetComponent(_sessionEntity.Value, audioMenu);
@@ -107,15 +134,22 @@ internal sealed class GameSessionSystem : IUpdateSystem
 
         if (session.State == GameState.Paused)
         {
-            if (audioMenu.IsOpen)
+            if (!levelUpOpen && !settingsMenu.IsOpen)
             {
-                HandleAudioSettingsMenu(world, context.Input, context.DeltaSeconds, ref audioState, ref audioMenu);
+                HandlePauseMenu(world, context.Input, ref session, ref audioState, ref audioMenu, ref pauseMenu, ref settingsMenu);
             }
-            else if (!levelUpOpen)
-            {
-                HandlePauseMenu(world, context.Input, ref session, ref audioState, ref audioMenu);
-            }
+            PublishPauseMenuViewModel(world, session, pauseMenu, audioState, audioMenu, levelUpOpen, settingsMenu.IsOpen);
+            PublishSettingsMenuViewModel(world, settingsMenu, audioState, audioMenu, videoState);
+            world.SetComponent(_sessionEntity.Value, audioMenu);
+            world.SetComponent(_sessionEntity.Value, settingsMenu);
+            world.SetComponent(_sessionEntity.Value, videoState);
             return;
+        }
+
+        if (settingsMenu.IsOpen)
+        {
+            settingsMenu.IsOpen = false;
+            world.SetComponent(_sessionEntity.Value, settingsMenu);
         }
 
         if (levelUpOpen)
@@ -141,6 +175,25 @@ internal sealed class GameSessionSystem : IUpdateSystem
         }
 
         UpdateNotificationTimer(world, context.DeltaSeconds);
+        PublishPauseMenuViewModel(world, session, pauseMenu, audioState, audioMenu, levelUpOpen, settingsMenu.IsOpen);
+        PublishSettingsMenuViewModel(world, settingsMenu, audioState, audioMenu, videoState);
+        world.SetComponent(_sessionEntity.Value, audioMenu);
+    }
+
+    /// <summary>
+    /// Resets stage run state when starting a new stage (or restarting the same stage via transition).
+    /// </summary>
+    public void ResetForNewStage(EcsWorld world)
+    {
+        if (!TryCacheSessionEntity(world) || _sessionEntity is not Entity sessionEntity)
+        {
+            return;
+        }
+
+        if (world.TryGetComponent(sessionEntity, out GameSession session))
+        {
+            RestartSession(world, ref session);
+        }
     }
 
     private bool TryCacheSessionEntity(EcsWorld world)
@@ -182,6 +235,33 @@ internal sealed class GameSessionSystem : IUpdateSystem
         return audioState;
     }
 
+    private VideoSettingsState EnsureVideoSettingsState(EcsWorld world, Entity sessionEntity)
+    {
+        if (!world.TryGetComponent(sessionEntity, out VideoSettingsState videoState))
+        {
+            videoState = new VideoSettingsState(
+                _videoSettings.Fullscreen,
+                _videoSettings.VSync,
+                _videoSettings.BackBufferWidth,
+                _videoSettings.BackBufferHeight,
+                _videoSettings.WindowScale);
+            world.SetComponent(sessionEntity, videoState);
+        }
+
+        return videoState;
+    }
+
+    private static SettingsMenuState EnsureSettingsMenuState(EcsWorld world, Entity sessionEntity)
+    {
+        if (!world.TryGetComponent(sessionEntity, out SettingsMenuState settingsMenu))
+        {
+            settingsMenu = new SettingsMenuState(false, "audio");
+            world.SetComponent(sessionEntity, settingsMenu);
+        }
+
+        return settingsMenu;
+    }
+
     private static bool IsLevelUpChoiceOpen(EcsWorld world)
     {
         var open = false;
@@ -217,44 +297,71 @@ internal sealed class GameSessionSystem : IUpdateSystem
         return audioMenu;
     }
 
+    private static void TickAudioMenu(ref AudioSettingsMenu audioMenu, float deltaSeconds)
+    {
+        audioMenu.SampleCooldownSeconds = Math.Max(0f, audioMenu.SampleCooldownSeconds - deltaSeconds);
+        audioMenu.ConfirmationTimerSeconds = Math.Max(0f, audioMenu.ConfirmationTimerSeconds - deltaSeconds);
+        if (audioMenu.ConfirmationTimerSeconds <= 0f)
+        {
+            audioMenu.ConfirmationText = string.Empty;
+        }
+    }
+
     private void HandlePauseMenu(
         EcsWorld world,
         InputState input,
         ref GameSession session,
         ref AudioSettingsState audioState,
-        ref AudioSettingsMenu audioMenu)
+        ref AudioSettingsMenu audioMenu,
+        ref PauseMenu pauseMenu,
+        ref SettingsMenuState settingsMenu)
     {
-        var pauseMenu = EnsurePauseMenu(world, _sessionEntity!.Value);
+        if (_sessionEntity is not Entity sessionEntity)
+        {
+            return;
+        }
+
         var optionCount = Enum.GetValues<PauseMenuOption>().Length;
+        var selectionChanged = false;
 
         if (input.MenuUpPressed)
         {
             pauseMenu.SelectedIndex = (pauseMenu.SelectedIndex - 1 + optionCount) % optionCount;
+            selectionChanged = true;
         }
 
         if (input.MenuDownPressed)
         {
             pauseMenu.SelectedIndex = (pauseMenu.SelectedIndex + 1) % optionCount;
+            selectionChanged = true;
+        }
+
+        if (selectionChanged)
+        {
+            PlayUiHover(world);
         }
 
         if (input.MenuConfirmPressed)
         {
+            PlayUiClick(world);
             switch ((PauseMenuOption)pauseMenu.SelectedIndex)
             {
                 case PauseMenuOption.Resume:
                     session.State = GameState.Playing;
-                    world.SetComponent(_sessionEntity.Value, session);
+                    world.SetComponent(sessionEntity, session);
                     break;
                 case PauseMenuOption.Restart:
                     RestartSession(world, ref session);
                     pauseMenu.SelectedIndex = 0;
                     break;
                 case PauseMenuOption.Settings:
-                    audioMenu.IsOpen = true;
-                    audioMenu.SelectedIndex = 0;
-                    world.SetComponent(_sessionEntity.Value, audioMenu);
+                    settingsMenu.IsOpen = true;
+                    settingsMenu.ActiveTab = "audio";
+                    audioMenu.IsOpen = false;
+                    world.SetComponent(sessionEntity, settingsMenu);
                     pauseMenu.SelectedIndex = 0;
-                    world.SetComponent(_sessionEntity.Value, pauseMenu);
+                    world.SetComponent(sessionEntity, pauseMenu);
+                    world.SetComponent(sessionEntity, audioMenu);
                     break;
                 case PauseMenuOption.Quit:
                     ExitRequested = true;
@@ -262,7 +369,7 @@ internal sealed class GameSessionSystem : IUpdateSystem
             }
         }
 
-        world.SetComponent(_sessionEntity.Value, pauseMenu);
+        world.SetComponent(sessionEntity, pauseMenu);
     }
 
     private void HandleAudioSettingsMenu(
@@ -272,6 +379,11 @@ internal sealed class GameSessionSystem : IUpdateSystem
         ref AudioSettingsState audioState,
         ref AudioSettingsMenu audioMenu)
     {
+        if (_sessionEntity is not Entity sessionEntity)
+        {
+            return;
+        }
+
         const int controlCount = 12; // 5 sliders, 6 toggles, 1 back
 
         audioMenu.SampleCooldownSeconds = Math.Max(0f, audioMenu.SampleCooldownSeconds - deltaSeconds);
@@ -290,14 +402,22 @@ internal sealed class GameSessionSystem : IUpdateSystem
             audioMenu.SelectedIndex = controlCount - 1;
         }
 
+        var selectionChanged = false;
         if (input.MenuUpPressed)
         {
             audioMenu.SelectedIndex = (audioMenu.SelectedIndex - 1 + controlCount) % controlCount;
+            selectionChanged = true;
         }
 
         if (input.MenuDownPressed)
         {
             audioMenu.SelectedIndex = (audioMenu.SelectedIndex + 1) % controlCount;
+            selectionChanged = true;
+        }
+
+        if (selectionChanged)
+        {
+            PlayUiHover(world);
         }
 
         var changed = false;
@@ -321,18 +441,20 @@ internal sealed class GameSessionSystem : IUpdateSystem
             ToggleSetting(ref audioState, audioMenu.SelectedIndex);
             changed = true;
             sampleCategory = GetSampleCategory(audioMenu.SelectedIndex);
+            PlayUiClick(world);
         }
 
         var backSelected = audioMenu.SelectedIndex == 11;
         if ((backSelected && input.MenuConfirmPressed) || input.MenuBackPressed)
         {
+            PlayUiCancel(world);
             audioMenu.IsOpen = false;
             audioMenu.SelectedIndex = 0;
             SyncAudioSettings(ref audioState, persist: true);
             audioMenu.ConfirmationText = "Audio settings saved";
             audioMenu.ConfirmationTimerSeconds = 1.0f;
-            world.SetComponent(_sessionEntity!.Value, audioState);
-            world.SetComponent(_sessionEntity.Value, audioMenu);
+            world.SetComponent(sessionEntity, audioState);
+            world.SetComponent(sessionEntity, audioMenu);
             return;
         }
 
@@ -342,10 +464,10 @@ internal sealed class GameSessionSystem : IUpdateSystem
             audioMenu.ConfirmationText = BuildConfirmationText(audioMenu.SelectedIndex, audioState);
             audioMenu.ConfirmationTimerSeconds = 1.0f;
             TryPlaySample(world, sampleCategory, ref audioMenu);
-            world.SetComponent(_sessionEntity!.Value, audioState);
+            world.SetComponent(sessionEntity, audioState);
         }
 
-        world.SetComponent(_sessionEntity!.Value, audioMenu);
+        world.SetComponent(sessionEntity, audioMenu);
     }
 
     private static bool IsSlider(int index) => index is >= 0 and <= 4;
@@ -357,6 +479,18 @@ internal sealed class GameSessionSystem : IUpdateSystem
         var snapped = (float)Math.Round(value / SliderStep) * SliderStep;
         return Math.Clamp(snapped, 0f, 1f);
     }
+
+    private static void PlayUiHover(EcsWorld world)
+    {
+        world.EventBus.Publish(new SfxPlayEvent("UserInterfaceOnHover", SfxCategory.UI, Vector2.Zero));
+    }
+
+    private static void PlayUiClick(EcsWorld world)
+    {
+        world.EventBus.Publish(new SfxPlayEvent("UserInterfaceOnClick", SfxCategory.UI, Vector2.Zero));
+    }
+
+    private static void PlayUiCancel(EcsWorld world) => PlayUiClick(world);
 
     private static bool AdjustSlider(ref AudioSettingsState audioState, int selectedIndex, float delta)
     {
@@ -510,6 +644,264 @@ internal sealed class GameSessionSystem : IUpdateSystem
             {
                 world.SetComponent(_sessionEntity.Value, lockedMsg);
             }
+        }
+    }
+
+    private static void PublishPauseMenuViewModel(
+        EcsWorld world,
+        GameSession session,
+        PauseMenu pauseMenu,
+        AudioSettingsState audioState,
+        AudioSettingsMenu audioMenu,
+        bool levelUpOpen,
+        bool settingsOpen)
+    {
+        var isOpen = session.State == GameState.Paused && !levelUpOpen;
+        world.EventBus.Publish(new PauseMenuViewModelEvent
+        {
+            ViewModel = new PauseMenuViewModel
+            {
+                IsOpen = isOpen,
+                IsAudioOpen = audioMenu.IsOpen && isOpen,
+                IsSettingsOpen = settingsOpen && isOpen,
+                SelectedIndex = pauseMenu.SelectedIndex,
+                AudioState = audioState,
+                AudioMenu = audioMenu,
+                LevelUpOpen = levelUpOpen
+            }
+        });
+    }
+
+    private void OnVideoSettingChanged(VideoSettingChangedEvent evt)
+    {
+        if (_sessionEntity is null || !_world.IsAlive(_sessionEntity.Value))
+        {
+            return;
+        }
+
+        var videoState = EnsureVideoSettingsState(_world, _sessionEntity.Value);
+        var changed = false;
+
+        switch (evt.Field)
+        {
+            case VideoSettingField.Fullscreen when evt.ToggleValue.HasValue:
+                videoState.Fullscreen = evt.ToggleValue.Value;
+                _videoSettings.Fullscreen = evt.ToggleValue.Value;
+                changed = true;
+                break;
+            case VideoSettingField.VSync when evt.ToggleValue.HasValue:
+                videoState.VSync = evt.ToggleValue.Value;
+                _videoSettings.VSync = evt.ToggleValue.Value;
+                changed = true;
+                break;
+            case VideoSettingField.Resolution when evt.Resolution.HasValue:
+                var (width, height) = evt.Resolution.Value;
+                videoState.BackBufferWidth = Math.Max(640, width);
+                videoState.BackBufferHeight = Math.Max(360, height);
+                _videoSettings.BackBufferWidth = videoState.BackBufferWidth;
+                _videoSettings.BackBufferHeight = videoState.BackBufferHeight;
+                changed = true;
+                break;
+            case VideoSettingField.WindowScale when evt.WindowScale.HasValue:
+                var scale = Math.Clamp(evt.WindowScale.Value, 1, 4);
+                videoState.WindowScale = scale;
+                videoState.BackBufferWidth = 960 * scale;
+                videoState.BackBufferHeight = 540 * scale;
+                _videoSettings.WindowScale = scale;
+                _videoSettings.BackBufferWidth = videoState.BackBufferWidth;
+                _videoSettings.BackBufferHeight = videoState.BackBufferHeight;
+                changed = true;
+                break;
+        }
+
+        if (!changed)
+        {
+            return;
+        }
+
+        _world.SetComponent(_sessionEntity.Value, videoState);
+
+        if (evt.Persist)
+        {
+            _videoSettingsStore.Save(_videoSettings);
+        }
+    }
+
+    private void OnInputBindingChanged(InputBindingChangedEvent evt)
+    {
+        if (string.IsNullOrWhiteSpace(evt.ActionId))
+        {
+            return;
+        }
+
+        _inputBindings.Bindings[evt.ActionId] = new InputBinding(evt.NewPrimary, evt.NewAlternate);
+        _inputBindings.Normalize();
+
+        if (evt.Persist)
+        {
+            _inputBindingsStore.Save(_inputBindings);
+        }
+    }
+
+    private void OnSettingsTabChanged(SettingsTabChangedEvent evt)
+    {
+        if (_sessionEntity is null || !_world.IsAlive(_sessionEntity.Value))
+        {
+            return;
+        }
+
+        var settingsMenu = EnsureSettingsMenuState(_world, _sessionEntity.Value);
+        settingsMenu.ActiveTab = string.IsNullOrWhiteSpace(evt.TabId) ? settingsMenu.ActiveTab : evt.TabId;
+        _world.SetComponent(_sessionEntity.Value, settingsMenu);
+    }
+
+    private void PublishSettingsMenuViewModel(
+        EcsWorld world,
+        SettingsMenuState settingsMenu,
+        AudioSettingsState audioState,
+        AudioSettingsMenu audioMenu,
+        VideoSettingsState videoState)
+    {
+        var videoConfig = new VideoSettingsConfig
+        {
+            Version = _videoSettings.Version,
+            Fullscreen = videoState.Fullscreen,
+            VSync = videoState.VSync,
+            BackBufferWidth = videoState.BackBufferWidth,
+            BackBufferHeight = videoState.BackBufferHeight,
+            WindowScale = videoState.WindowScale
+        };
+
+        world.EventBus.Publish(new SettingsMenuViewModelEvent
+        {
+            ViewModel = new SettingsMenuViewModel
+            {
+                IsOpen = settingsMenu.IsOpen,
+                ActiveTab = settingsMenu.ActiveTab,
+                AudioState = audioState,
+                AudioMenu = audioMenu,
+                VideoSettings = videoConfig,
+                Bindings = _inputBindings.Clone()
+            }
+        });
+    }
+
+    private void OnPauseMenuActionRequested(PauseMenuActionRequestedEvent evt)
+    {
+        if (_sessionEntity is null || !_world.IsAlive(_sessionEntity.Value))
+        {
+            return;
+        }
+
+        if (!_world.TryGetComponent(_sessionEntity.Value, out GameSession session))
+        {
+            return;
+        }
+
+        var audioMenu = EnsureAudioSettingsMenu(_world, _sessionEntity.Value);
+        var pauseMenu = EnsurePauseMenu(_world, _sessionEntity.Value);
+        var settingsMenu = EnsureSettingsMenuState(_world, _sessionEntity.Value);
+
+        switch (evt.Action)
+        {
+            case PauseMenuAction.Resume:
+                session.State = GameState.Playing;
+                _world.SetComponent(_sessionEntity.Value, session);
+                break;
+            case PauseMenuAction.Restart:
+                RestartSession(_world, ref session);
+                pauseMenu.SelectedIndex = 0;
+                _world.SetComponent(_sessionEntity.Value, pauseMenu);
+                break;
+            case PauseMenuAction.OpenSettings:
+                settingsMenu.IsOpen = true;
+                settingsMenu.ActiveTab = "audio";
+                audioMenu.IsOpen = false;
+                pauseMenu.SelectedIndex = (int)PauseMenuOption.Settings;
+                _world.SetComponent(_sessionEntity.Value, pauseMenu);
+                _world.SetComponent(_sessionEntity.Value, settingsMenu);
+                _world.SetComponent(_sessionEntity.Value, audioMenu);
+                break;
+            case PauseMenuAction.CloseSettings:
+                settingsMenu.IsOpen = false;
+                _world.SetComponent(_sessionEntity.Value, settingsMenu);
+                break;
+            case PauseMenuAction.Quit:
+                ExitRequested = true;
+                break;
+        }
+    }
+
+    private void OnAudioSettingChanged(AudioSettingChangedEvent evt)
+    {
+        if (_sessionEntity is null || !_world.IsAlive(_sessionEntity.Value))
+        {
+            return;
+        }
+
+        if (!_world.TryGetComponent(_sessionEntity.Value, out AudioSettingsState audioState))
+        {
+            return;
+        }
+
+        var audioMenu = EnsureAudioSettingsMenu(_world, _sessionEntity.Value);
+        audioMenu.SelectedIndex = (int)evt.Field;
+
+        var changed = ApplyAudioChange(evt, ref audioState);
+        if (!changed)
+        {
+            _world.SetComponent(_sessionEntity.Value, audioMenu);
+            return;
+        }
+
+        SyncAudioSettings(ref audioState, evt.Persist);
+        audioMenu.ConfirmationText = BuildConfirmationText((int)evt.Field, audioState);
+        audioMenu.ConfirmationTimerSeconds = 1.0f;
+        TryPlaySample(_world, GetSampleCategory((int)evt.Field), ref audioMenu);
+
+        _world.SetComponent(_sessionEntity.Value, audioState);
+        _world.SetComponent(_sessionEntity.Value, audioMenu);
+    }
+
+    private static bool ApplyAudioChange(AudioSettingChangedEvent evt, ref AudioSettingsState audioState)
+    {
+        switch (evt.Field)
+        {
+            case AudioSettingField.MasterVolume when evt.Value.HasValue:
+                audioState.MasterVolume = ClampAndSnap(evt.Value.Value);
+                return true;
+            case AudioSettingField.MusicVolume when evt.Value.HasValue:
+                audioState.MusicVolume = ClampAndSnap(evt.Value.Value);
+                return true;
+            case AudioSettingField.SfxVolume when evt.Value.HasValue:
+                audioState.SfxVolume = ClampAndSnap(evt.Value.Value);
+                return true;
+            case AudioSettingField.UiVolume when evt.Value.HasValue:
+                audioState.UiVolume = ClampAndSnap(evt.Value.Value);
+                return true;
+            case AudioSettingField.VoiceVolume when evt.Value.HasValue:
+                audioState.VoiceVolume = ClampAndSnap(evt.Value.Value);
+                return true;
+            case AudioSettingField.MuteAll when evt.ToggleValue.HasValue:
+                audioState.MuteAll = evt.ToggleValue.Value;
+                return true;
+            case AudioSettingField.MasterMute when evt.ToggleValue.HasValue:
+                audioState.MasterMuted = evt.ToggleValue.Value;
+                return true;
+            case AudioSettingField.MusicMute when evt.ToggleValue.HasValue:
+                audioState.MusicMuted = evt.ToggleValue.Value;
+                return true;
+            case AudioSettingField.SfxMute when evt.ToggleValue.HasValue:
+                audioState.SfxMuted = evt.ToggleValue.Value;
+                return true;
+            case AudioSettingField.UiMute when evt.ToggleValue.HasValue:
+                audioState.UiMuted = evt.ToggleValue.Value;
+                return true;
+            case AudioSettingField.VoiceMute when evt.ToggleValue.HasValue:
+                audioState.VoiceMuted = evt.ToggleValue.Value;
+                return true;
+            default:
+                return false;
         }
     }
 

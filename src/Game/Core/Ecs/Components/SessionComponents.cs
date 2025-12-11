@@ -91,6 +91,42 @@ internal struct AudioSettingsState
 }
 
 /// <summary>
+/// Session-level video settings mirroring the applied graphics config.
+/// </summary>
+internal struct VideoSettingsState
+{
+    public bool Fullscreen { get; set; }
+    public bool VSync { get; set; }
+    public int BackBufferWidth { get; set; }
+    public int BackBufferHeight { get; set; }
+    public int WindowScale { get; set; }
+
+    public VideoSettingsState(bool fullscreen, bool vSync, int backBufferWidth, int backBufferHeight, int windowScale)
+    {
+        Fullscreen = fullscreen;
+        VSync = vSync;
+        BackBufferWidth = backBufferWidth;
+        BackBufferHeight = backBufferHeight;
+        WindowScale = windowScale;
+    }
+}
+
+/// <summary>
+/// Tracks the tabbed settings menu state when opened from pause/hub.
+/// </summary>
+internal struct SettingsMenuState
+{
+    public bool IsOpen { get; set; }
+    public string ActiveTab { get; set; }
+
+    public SettingsMenuState(bool isOpen, string activeTab)
+    {
+        IsOpen = isOpen;
+        ActiveTab = activeTab;
+    }
+}
+
+/// <summary>
 /// Transient notification message displayed on the HUD with an auto-dismiss timer.
 /// </summary>
 internal struct WaveNotification

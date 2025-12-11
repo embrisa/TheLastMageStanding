@@ -23,6 +23,7 @@ internal sealed class StageCompletionSystem : IUpdateSystem
         _world = world;
         world.EventBus.Subscribe<RunEndedEvent>(OnRunEnded);
         world.EventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
+        world.EventBus.Subscribe<SceneEnterEvent>(OnSceneEnter);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
@@ -49,5 +50,11 @@ internal sealed class StageCompletionSystem : IUpdateSystem
     {
         // Player death triggers run end, which will call OnRunEnded
         Console.WriteLine("[StageCompletion] Player died");
+    }
+
+    private void OnSceneEnter(SceneEnterEvent evt)
+    {
+        // Reset flag so subsequent runs can transition back to hub again
+        _runEndedHandled = false;
     }
 }

@@ -186,7 +186,7 @@ public sealed class SaveSlotService
             return;
         }
 
-        if (SafeGetDirectories(SlotsRoot).Any())
+        if (SafeGetDirectories(SlotsRoot).Length > 0)
         {
             return;
         }

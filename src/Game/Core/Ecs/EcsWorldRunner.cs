@@ -18,6 +18,7 @@ using TheLastMageStanding.Game.Core.Loot;
 using TheLastMageStanding.Game.Core.MetaProgression;
 using TheLastMageStanding.Game.Core.SceneState;
 using TheLastMageStanding.Game.Core.Progression;
+using TheLastMageStanding.Game.Core.Campaign;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
@@ -31,6 +32,10 @@ internal sealed class EcsWorldRunner
     private readonly ProgressionConfig _progressionConfig;
     private readonly AudioSettingsConfig _audioSettings;
     private readonly AudioSettingsStore _audioSettingsStore;
+    private readonly VideoSettingsConfig _videoSettings;
+    private readonly VideoSettingsStore _videoSettingsStore;
+    private readonly InputBindingsConfig _inputBindings;
+    private readonly InputBindingsStore _inputBindingsStore;
     private readonly MusicService _musicService;
     private readonly SaveSlotService _saveSlotService;
     private readonly string _slotId;
@@ -39,6 +44,7 @@ internal sealed class EcsWorldRunner
     private readonly HitStopSystem _hitStopSystem;
     private readonly MetaProgressionManager _metaProgressionManager;
     private readonly SceneStateService _sceneStateService;
+    private readonly StageRegistry _stageRegistry;
     private readonly List<IUpdateSystem> _updateSystems;
     private readonly List<IUpdateSystem> _hubOnlyUpdateSystems;
     private readonly List<IUpdateSystem> _stageOnlyUpdateSystems;
@@ -47,6 +53,7 @@ internal sealed class EcsWorldRunner
     private readonly List<IDrawSystem> _stageOnlyDrawSystems;
     private readonly List<IUiDrawSystem> _hubOnlyUiDrawSystems;
     private readonly List<IUiDrawSystem> _uiDrawSystems;
+    private readonly List<IUiDrawSystem> _screenSpaceUiDrawSystems;
     private readonly List<ILoadContentSystem> _loadSystems;
     private readonly Camera2D _camera;
 
@@ -54,8 +61,13 @@ internal sealed class EcsWorldRunner
         Camera2D camera,
         AudioSettingsConfig audioSettings,
         AudioSettingsStore audioSettingsStore,
+        VideoSettingsConfig videoSettings,
+        VideoSettingsStore videoSettingsStore,
+        InputBindingsConfig inputBindings,
+        InputBindingsStore inputBindingsStore,
         MusicService musicService,
         EventBus eventBus,
+        StageRegistry stageRegistry,
         SceneStateService sceneStateService,
         SceneManager sceneManager,
         SaveSlotService saveSlotService,
@@ -65,8 +77,13 @@ internal sealed class EcsWorldRunner
         _world.EventBus = _eventBus;
         _camera = camera;
         _sceneStateService = sceneStateService;
+        _stageRegistry = stageRegistry;
         _audioSettings = audioSettings;
         _audioSettingsStore = audioSettingsStore;
+        _videoSettings = videoSettings;
+        _videoSettingsStore = videoSettingsStore;
+        _inputBindings = inputBindings;
+        _inputBindingsStore = inputBindingsStore;
         _musicService = musicService;
         _saveSlotService = saveSlotService;
         _slotId = slotId;
@@ -86,7 +103,7 @@ internal sealed class EcsWorldRunner
         var itemFactory = new ItemFactory(itemRegistry.GetAllDefinitions(), lootConfig);
 
         _sfxSystem = new SfxSystem(_audioSettings);
-        _gameSessionSystem = new GameSessionSystem(_audioSettings, _audioSettingsStore, _musicService, _sfxSystem);
+        _gameSessionSystem = new GameSessionSystem(_audioSettings, _audioSettingsStore, _videoSettings, _videoSettingsStore, _inputBindings, _inputBindingsStore, _musicService, _sfxSystem);
         var enemyRenderSystem = new EnemyRenderSystem();
         var playerRenderSystem = new PlayerRenderSystem();
         var hitReactionSystem = new HitReactionSystem();
@@ -139,9 +156,9 @@ internal sealed class EcsWorldRunner
         var dashMovementSystem = new DashMovementSystem();
 
         // Hub-specific systems
-        var stageRegistry = new Campaign.StageRegistry();
         var profileService = new PlayerProfileService(new DefaultFileSystem(), _saveSlotService.GetSlotPath(_slotId));
-        var stageSelectionUI = new StageSelectionUISystem(stageRegistry, sceneManager, profileService);
+        var stageSelectionUI = new StageSelectionUISystem(_stageRegistry, sceneManager, profileService);
+        var pauseMenuUiSystem = new PauseMenuMyraSystem(_sceneStateService);
         var inventoryUiSystem = new InventoryUiSystem();
         var proximityInteractionSystem = new ProximityInteractionSystem();
         var interactionInputSystem = new InteractionInputSystem();
@@ -243,7 +260,7 @@ internal sealed class EcsWorldRunner
             collisionDebugRenderSystem,  // Draw collision debug last
         ];
 
-        _hubOnlyDrawSystems = 
+        _hubOnlyDrawSystems =
         [
             npcRenderSystem,
             proximityPromptRenderSystem,
@@ -258,8 +275,13 @@ internal sealed class EcsWorldRunner
 
         _hubOnlyUiDrawSystems =
         [
-            stageSelectionUI,
             hubMenuSystem,
+        ];
+
+        _screenSpaceUiDrawSystems =
+        [
+            stageSelectionUI,
+            pauseMenuUiSystem,
         ];
 
         _uiDrawSystems =
@@ -279,6 +301,7 @@ internal sealed class EcsWorldRunner
                 .Concat(_hubOnlyDrawSystems.OfType<ILoadContentSystem>())
                 .Concat(_stageOnlyDrawSystems.OfType<ILoadContentSystem>())
                 .Concat(_hubOnlyUiDrawSystems.OfType<ILoadContentSystem>())
+                .Concat(_screenSpaceUiDrawSystems.OfType<ILoadContentSystem>())
                 .Concat(_uiDrawSystems.OfType<ILoadContentSystem>())
                 .ToList();
 
@@ -322,6 +345,11 @@ internal sealed class EcsWorldRunner
             system.Initialize(_world);
         }
 
+        foreach (var system in _screenSpaceUiDrawSystems)
+        {
+            system.Initialize(_world);
+        }
+
         // Create session entity with initial state
         var sessionEntity = _world.CreateEntity();
         _world.SetComponent(sessionEntity, new GameSession(_waveConfig.WaveIntervalSeconds));
@@ -361,11 +389,19 @@ internal sealed class EcsWorldRunner
             });
     }
 
+    /// <summary>
+    /// Clears stage-only state when starting a fresh run (stage reload/restart).
+    /// </summary>
+    public void ResetStageStateForNewRun()
+    {
+        _gameSessionSystem.ResetForNewStage(_world);
+    }
+
     public void Update(GameTime gameTime, InputState input)
     {
         // Transform mouse screen position to world space
         var mouseWorldPosition = _camera.ScreenToWorld(input.MouseScreenPosition);
-        
+
         var context = new EcsUpdateContext(
             gameTime,
             (float)gameTime.ElapsedGameTime.TotalSeconds,
@@ -484,6 +520,15 @@ internal sealed class EcsWorldRunner
         }
     }
 
+    public void DrawScreenSpaceUI(SpriteBatch spriteBatch)
+    {
+        var context = new EcsDrawContext(spriteBatch, _camera);
+        foreach (var system in _screenSpaceUiDrawSystems)
+        {
+            system.Draw(_world, context);
+        }
+    }
+
     private GameState GetSessionState()
     {
         var state = GameState.Playing;
@@ -503,7 +548,7 @@ internal sealed class EcsWorldRunner
     {
         var npcSpawnSystem = new NpcSpawnSystem(hubMap);
         npcSpawnSystem.Initialize(_world);
-        
+
         // Run once to spawn NPCs
         var dummyContext = new EcsUpdateContext(
             new Microsoft.Xna.Framework.GameTime(),

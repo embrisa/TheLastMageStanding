@@ -15,8 +15,10 @@ internal sealed class SceneManager
     private SceneType _currentScene;
     private SceneType? _pendingTransition;
     private string? _pendingStageId;
+    private string? _currentStageId;
 
     public SceneType CurrentScene => _currentScene;
+    public string? CurrentStageId => _currentStageId;
     public bool HasPendingTransition => _pendingTransition.HasValue;
 
     public SceneManager(SceneStateService sceneStateService, IEventBus eventBus)
@@ -24,7 +26,7 @@ internal sealed class SceneManager
         _sceneStateService = sceneStateService;
         _eventBus = eventBus;
         _currentScene = SceneType.MainMenu; // Start in main menu
-        _sceneStateService.SetScene(_currentScene);
+        _sceneStateService.SetScene(_currentScene, _currentStageId);
     }
 
     /// <summary>
@@ -48,9 +50,9 @@ internal sealed class SceneManager
     /// </summary>
     public void TransitionToStage(string stageId)
     {
-        if (_currentScene == SceneType.Stage)
+        if (string.IsNullOrWhiteSpace(stageId))
         {
-            Console.WriteLine("[SceneManager] Already in Stage scene, ignoring transition request.");
+            Console.WriteLine("[SceneManager] Ignoring transition to Stage with empty stageId.");
             return;
         }
 
@@ -98,29 +100,34 @@ internal sealed class SceneManager
 
     private void ExecuteTransition(SceneType targetScene, string? stageId)
     {
-        Console.WriteLine($"[SceneManager] Executing transition: {_currentScene} -> {targetScene}");
+        var resolvedStageId = targetScene == SceneType.Stage
+            ? stageId ?? _currentStageId
+            : null;
+
+        Console.WriteLine($"[SceneManager] Executing transition: {_currentScene} -> {targetScene} (stageId: {resolvedStageId ?? "none"})");
 
         // Publish scene exit event
         _eventBus.Publish(new SceneExitEvent(_currentScene));
 
         // Update current scene
         _currentScene = targetScene;
-        _sceneStateService.SetScene(targetScene);
+        _currentStageId = resolvedStageId;
+        _sceneStateService.SetScene(targetScene, resolvedStageId);
 
         // Publish scene enter event
         if (targetScene == SceneType.Hub)
         {
             _eventBus.Publish(new SceneEnterEvent(SceneType.Hub, null));
         }
-        else if (targetScene == SceneType.Stage && !string.IsNullOrEmpty(stageId))
+        else if (targetScene == SceneType.Stage)
         {
-            _eventBus.Publish(new SceneEnterEvent(SceneType.Stage, stageId));
+            _eventBus.Publish(new SceneEnterEvent(SceneType.Stage, resolvedStageId));
         }
         else
         {
             _eventBus.Publish(new SceneEnterEvent(targetScene, null));
         }
 
-        Console.WriteLine($"[SceneManager] Scene transition complete: {targetScene}");
+        Console.WriteLine($"[SceneManager] Scene transition complete: {targetScene} (stageId: {resolvedStageId ?? "none"})");
     }
 }

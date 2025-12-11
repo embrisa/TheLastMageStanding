@@ -1,11 +1,12 @@
-using Microsoft.Xna.Framework;
+using System.Linq;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using TheLastMageStanding.Game.Core.Campaign;
 using TheLastMageStanding.Game.Core.Ecs.Components;
-using TheLastMageStanding.Game.Core.Events;
 using TheLastMageStanding.Game.Core.MetaProgression;
 using TheLastMageStanding.Game.Core.SceneState;
+using TheLastMageStanding.Game.Core.UI;
+using TheLastMageStanding.Game.Core.UI.Myra;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -27,22 +28,17 @@ internal struct StageSelectionUIState
 }
 
 /// <summary>
-/// Handles stage selection UI in the hub.
+/// Handles stage selection UI in the hub using Myra.
 /// </summary>
-internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILoadContentSystem
+internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILoadContentSystem, IDisposable
 {
     private readonly StageRegistry _stageRegistry;
     private readonly SceneManager _sceneManager;
     private readonly PlayerProfileService _profileService;
-    
-    private SpriteFont _font = null!;
-    private SpriteFont _titleFont = null!;
-    private Texture2D _pixel = null!;
-    
-    private const int ButtonWidth = 600;
-    private const int ButtonHeight = 80;
-    private const int ButtonSpacing = 15;
-    private const int StartY = 180;
+
+    private MyraStageSelectionScreen _ui = null!;
+    private string? _queuedStartStageId;
+    private bool _queuedClose;
 
     public StageSelectionUISystem(
         StageRegistry stageRegistry,
@@ -54,27 +50,35 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         _profileService = profileService;
     }
 
+    public void Dispose()
+    {
+        _ui?.Dispose();
+    }
+
     public void Initialize(EcsWorld world)
     {
-        // Create UI state entity
         var uiEntity = world.CreateEntity();
         world.SetComponent(uiEntity, new StageSelectionUIState());
+
+        var uiSoundPlayer = new EventBusUiSoundPlayer(world.EventBus);
+        _ui = new MyraStageSelectionScreen(_stageRegistry, _profileService, uiSoundPlayer: uiSoundPlayer);
+        _ui.StartRequested += stageId => _queuedStartStageId = stageId;
+        _ui.BackRequested += () => _queuedClose = true;
     }
 
     public void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content)
     {
-        _font = content.Load<SpriteFont>("Fonts/FontRegularText");
-        _titleFont = content.Load<SpriteFont>("Fonts/FontRegularTitle");
-        _pixel = CreatePixel(graphicsDevice);
+        UiFonts.Load(content);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
-        // Find stage selection UI state
         Entity? uiEntity = null;
-        world.ForEach<StageSelectionUIState>((Entity entity, ref StageSelectionUIState _) =>
+        var uiState = new StageSelectionUIState();
+        world.ForEach<StageSelectionUIState>((Entity entity, ref StageSelectionUIState state) =>
         {
             uiEntity = entity;
+            uiState = state;
         });
 
         if (!uiEntity.HasValue)
@@ -82,100 +86,59 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
             return;
         }
 
-        var uiState = world.TryGetComponent<StageSelectionUIState>(uiEntity.Value, out var state) 
-            ? state 
-            : new StageSelectionUIState();
+        // Clamp act index to available acts
+        var maxActIndex = Math.Max(0, _stageRegistry.GetAllStages()
+            .Select(s => s.ActNumber)
+            .DefaultIfEmpty(1)
+            .Max() - 1);
+        uiState.SelectedActIndex = Math.Clamp(uiState.SelectedActIndex, 0, maxActIndex);
+
+        if (_queuedClose)
+        {
+            uiState.IsOpen = false;
+            _queuedClose = false;
+        }
 
         if (!uiState.IsOpen)
         {
+            _queuedStartStageId = null;
+            if (_ui.IsVisible)
+            {
+                _ui.Hide();
+            }
+
             world.SetComponent(uiEntity.Value, uiState);
             return;
         }
 
-        // Get available stages for selected act
-        var actStages = _stageRegistry.GetStagesForAct(uiState.SelectedActIndex + 1);
-        if (actStages.Count == 0)
+        if (!_ui.IsVisible)
         {
-            world.SetComponent(uiEntity.Value, uiState);
-            return;
+            _ui.Show(uiState.SelectedActIndex, uiState.SelectedStageIndex);
         }
 
-        // Navigate stages
-        if (context.Input.MenuDownPressed)
-        {
-            uiState.SelectedStageIndex = (uiState.SelectedStageIndex + 1) % actStages.Count;
-        }
-        else if (context.Input.MenuUpPressed)
-        {
-            uiState.SelectedStageIndex = (uiState.SelectedStageIndex - 1 + actStages.Count) % actStages.Count;
-        }
+        _ui.Update(context.GameTime);
 
-        // Navigate acts (left/right)
-        if (context.Input.MenuLeftPressed)
-        {
-            uiState.SelectedActIndex = Math.Max(0, uiState.SelectedActIndex - 1);
-            uiState.SelectedStageIndex = 0;
-        }
-        else if (context.Input.MenuRightPressed)
-        {
-            // TODO: Max act count from config
-            uiState.SelectedActIndex = Math.Min(3, uiState.SelectedActIndex + 1);
-            uiState.SelectedStageIndex = 0;
-        }
+        HandleNavigation(ref uiState, context);
+        ProcessQueuedStart(ref uiState);
 
-        // Select stage and start
-        if (context.Input.MenuConfirmPressed)
-        {
-            var selectedStage = actStages[uiState.SelectedStageIndex];
-            var profile = _profileService.LoadProfile();
-
-            // Check if stage is unlocked
-            if (IsStageUnlocked(selectedStage, profile))
-            {
-                // Transition to stage
-                _sceneManager.TransitionToStage(selectedStage.StageId);
-                uiState.IsOpen = false;
-            }
-            else
-            {
-                // TODO: Show "stage locked" message
-                Console.WriteLine($"[StageSelection] Stage {selectedStage.StageId} is locked!");
-            }
-        }
-
-        // Close UI
-        if (context.Input.MenuBackPressed)
-        {
-            uiState.IsOpen = false;
-        }
+        uiState.SelectedActIndex = _ui.SelectedActIndex;
+        uiState.SelectedStageIndex = _ui.SelectedStageIndex;
 
         world.SetComponent(uiEntity.Value, uiState);
     }
 
     public void Draw(EcsWorld world, in EcsDrawContext context)
     {
-        // Find stage selection UI state
-        Entity? uiEntity = null;
-        world.ForEach<StageSelectionUIState>((Entity entity, ref StageSelectionUIState _) =>
-        {
-            uiEntity = entity;
-        });
-
-        if (!uiEntity.HasValue)
+        if (!_ui.IsVisible)
         {
             return;
         }
 
-        var uiState = world.TryGetComponent<StageSelectionUIState>(uiEntity.Value, out var state) 
-            ? state 
-            : new StageSelectionUIState();
-
-        if (!uiState.IsOpen)
-        {
-            return;
-        }
-
-        DrawStageSelectionUI(context.SpriteBatch, uiState);
+        // Myra manages its own SpriteBatch. End the shared batch, render Myra,
+        // then restart for remaining UI systems.
+        context.SpriteBatch.End();
+        _ui.Render();
+        context.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
     }
 
     /// <summary>
@@ -190,159 +153,93 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         });
     }
 
-    private void DrawStageSelectionUI(SpriteBatch spriteBatch, StageSelectionUIState uiState)
+    private void HandleNavigation(ref StageSelectionUIState uiState, in EcsUpdateContext context)
     {
-        var viewport = spriteBatch.GraphicsDevice.Viewport;
-        var centerX = viewport.Width / 2;
-
-        // Draw title
-        var title = $"Act {uiState.SelectedActIndex + 1} - Stage Selection";
-        var titleSize = _titleFont.MeasureString(title);
-        spriteBatch.DrawString(
-            _titleFont,
-            title,
-            new Vector2(centerX - titleSize.X / 2, 100),
-            Color.Gold);
-
-        // Get stages for selected act
         var actStages = _stageRegistry.GetStagesForAct(uiState.SelectedActIndex + 1);
-        var profile = _profileService.LoadProfile();
 
-        if (actStages.Count == 0)
+        if (context.Input.MenuLeftPressed)
         {
-            var noStages = "No stages available for this act.";
-            var noStagesSize = _font.MeasureString(noStages);
-            spriteBatch.DrawString(
-                _font,
-                noStages,
-                new Vector2(centerX - noStagesSize.X / 2, viewport.Height / 2),
-                Color.Gray);
+            _ui.ChangeAct(-1);
+            actStages = _stageRegistry.GetStagesForAct(_ui.SelectedActIndex + 1);
         }
-        else
+        else if (context.Input.MenuRightPressed)
         {
-            // Draw stage list
-            for (int i = 0; i < actStages.Count; i++)
+            _ui.ChangeAct(1);
+            actStages = _stageRegistry.GetStagesForAct(_ui.SelectedActIndex + 1);
+        }
+
+        if (actStages.Count > 0)
+        {
+            if (context.Input.MenuDownPressed)
             {
-                var stage = actStages[i];
-                var y = StartY + i * (ButtonHeight + ButtonSpacing);
-                var buttonRect = new Rectangle(
-                    centerX - ButtonWidth / 2,
-                    y,
-                    ButtonWidth,
-                    ButtonHeight);
-
-                var isSelected = i == uiState.SelectedStageIndex;
-                var isUnlocked = IsStageUnlocked(stage, profile);
-                var isCompleted = profile.CompletedStages.Contains(stage.StageId);
-
-                var bgColor = isSelected 
-                    ? new Color(80, 80, 100, 200) 
-                    : new Color(40, 40, 50, 180);
-                
-                if (!isUnlocked)
-                {
-                    bgColor = new Color(30, 30, 30, 180);
-                }
-
-                var textColor = isUnlocked 
-                    ? (isSelected ? Color.Yellow : Color.White) 
-                    : Color.Gray;
-
-                // Draw button background
-                spriteBatch.Draw(_pixel, buttonRect, bgColor);
-
-                // Draw button border
-                var borderColor = isSelected ? Color.Gold : (isUnlocked ? Color.Gray : Color.DarkGray);
-                DrawBorder(spriteBatch, buttonRect, borderColor, 2);
-
-                // Draw stage info
-                var stageName = $"{stage.DisplayName}";
-                if (isCompleted)
-                {
-                    stageName += " (Completed)";
-                }
-                else if (!isUnlocked)
-                {
-                    stageName += " [Locked]";
-                }
-
-                var nameSize = _font.MeasureString(stageName);
-                spriteBatch.DrawString(
-                    _font,
-                    stageName,
-                    new Vector2(buttonRect.X + 20, buttonRect.Y + 15),
-                    textColor);
-
-                // Draw stage description
-                var description = stage.Description;
-                if (!isUnlocked)
-                {
-                    description = $"Requires Meta Level {stage.RequiredMetaLevel}";
-                }
-                var descSize = _font.MeasureString(description);
-                spriteBatch.DrawString(
-                    _font,
-                    description,
-                    new Vector2(buttonRect.X + 20, buttonRect.Y + 45),
-                    new Color(textColor, 0.7f));
+                _ui.MoveSelection(1);
+            }
+            else if (context.Input.MenuUpPressed)
+            {
+                _ui.MoveSelection(-1);
             }
         }
 
-        // Draw instructions
-        var instructions = "Up/Down: Select  |  Left/Right: Change Act  |  Enter: Start  |  ESC: Back";
-        var instructionsSize = _font.MeasureString(instructions);
-        spriteBatch.DrawString(
-            _font,
-            instructions,
-            new Vector2(centerX - instructionsSize.X / 2, viewport.Height - 80),
-            Color.LightGray);
+        if (context.Input.MenuConfirmPressed)
+        {
+            _ui.StartSelectedStage();
+        }
 
-        // Draw player meta level
-        var metaLevel = $"Meta Level: {profile.MetaLevel}";
-        var metaLevelSize = _font.MeasureString(metaLevel);
-        spriteBatch.DrawString(
-            _font,
-            metaLevel,
-            new Vector2(viewport.Width - metaLevelSize.X - 20, 20),
-            Color.Gold);
+        if (context.Input.MenuBackPressed)
+        {
+            _ui.Close();
+        }
+    }
+
+    private void ProcessQueuedStart(ref StageSelectionUIState uiState)
+    {
+        if (string.IsNullOrEmpty(_queuedStartStageId))
+        {
+            return;
+        }
+
+        var stage = _stageRegistry.GetStage(_queuedStartStageId);
+        if (stage == null)
+        {
+            _queuedStartStageId = null;
+            return;
+        }
+
+        var profile = _profileService.LoadProfile();
+        if (!IsStageUnlocked(stage, profile))
+        {
+            _queuedStartStageId = null;
+            return;
+        }
+
+        _sceneManager.TransitionToStage(stage.StageId);
+        uiState.IsOpen = false;
+        _ui.Hide();
+        _queuedStartStageId = null;
+        _queuedClose = false;
     }
 
     private static bool IsStageUnlocked(StageDefinition stage, PlayerProfile profile)
     {
-        // Check meta level requirement
         if (profile.MetaLevel < stage.RequiredMetaLevel)
         {
             return false;
         }
 
-        // Check previous stage completion
-        if (!string.IsNullOrEmpty(stage.RequiredPreviousStageId))
+        if (!string.IsNullOrEmpty(stage.RequiredPreviousStageId) &&
+            !profile.CompletedStages.Contains(stage.RequiredPreviousStageId))
         {
-            if (!profile.CompletedStages.Contains(stage.RequiredPreviousStageId))
-            {
-                return false;
-            }
+            return false;
         }
 
         return true;
     }
-
-    private void DrawBorder(SpriteBatch spriteBatch, Rectangle rect, Color color, int thickness)
-    {
-        // Top
-        spriteBatch.Draw(_pixel, new Rectangle(rect.X, rect.Y, rect.Width, thickness), color);
-        // Bottom
-        spriteBatch.Draw(_pixel, new Rectangle(rect.X, rect.Y + rect.Height - thickness, rect.Width, thickness), color);
-        // Left
-        spriteBatch.Draw(_pixel, new Rectangle(rect.X, rect.Y, thickness, rect.Height), color);
-        // Right
-        spriteBatch.Draw(_pixel, new Rectangle(rect.X + rect.Width - thickness, rect.Y, thickness, rect.Height), color);
-    }
-
-    private static Texture2D CreatePixel(GraphicsDevice graphicsDevice)
-    {
-        var pixel = new Texture2D(graphicsDevice, 1, 1);
-        pixel.SetData(new[] { Color.White });
-        return pixel;
-    }
 }
+
+
+
+
+
+
+
+

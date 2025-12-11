@@ -107,7 +107,7 @@
   - Load Game lists all slots with Created/Last Played metadata and starts the selected slot.
 - **Stage Selection**:
   - `StageRegistry` defines all acts/stages with requirements (meta level, previous stage completion).
-  - `StageSelectionUISystem` displays unlocked stages with visual indicators (✓ completed, 🔒 locked).
+  - `StageSelectionUISystem` now renders a Myra overlay: act navigation, stage list with locked/completed indicators, detail panel, and Start/Back actions.
   - Stage selection triggers `SceneManager.TransitionToStage(stageId)`.
 - **Stage Completion**:
   - `StageCompletionSystem` listens for `RunEndedEvent` and triggers `SceneManager.TransitionToHub()`.

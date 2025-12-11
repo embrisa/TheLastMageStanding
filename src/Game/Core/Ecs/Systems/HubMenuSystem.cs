@@ -94,9 +94,9 @@ internal sealed class HubMenuSystem : IUpdateSystem, IUiDrawSystem, ILoadContent
 
         var spriteBatch = context.SpriteBatch;
         
-        // Use virtual resolution (1280x720 based on game design)
-        const int virtualWidth = 1280;
-        const int virtualHeight = 720;
+        // Use virtual resolution (960x540 based on game design)
+        const int virtualWidth = 960;
+        const int virtualHeight = 540;
 
         // Semi-transparent overlay
         spriteBatch.Draw(_whitePixel, new Rectangle(0, 0, virtualWidth, virtualHeight), new Color(0, 0, 0, 180));

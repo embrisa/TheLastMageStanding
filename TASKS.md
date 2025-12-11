@@ -74,6 +74,7 @@ Context: Tasks 031 and above assume the Mage is the first class with fire/arcane
 - [048 - In-run inventory UI](tasks/048-in-run-inventory-ui.md) — **CONFLICTS with new design; needs complete rewrite or removal**
 
 ## Done
+- [074 - Mouse pointer offset on 4K macOS windowed mode](tasks/074-mouse-pointer-offset.md)
 - [051 - Hub scene & scene management](tasks/051-hub-scene-and-scene-management.md) — **REIMPLEMENTED 2024-12-09** Playable hub with NPC interactions
 - [041 - Skill hotkey input (keys 1-4)](tasks/041-skill-hotkey-input.md)
 - [040 - Skill hotbar UI](tasks/040-skill-hotbar-ui.md)

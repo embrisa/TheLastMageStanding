@@ -91,24 +91,7 @@ internal sealed class HudRenderSystem : IUiDrawSystem, ILoadContentSystem
 
             if (session.State == GameState.Paused)
             {
-                if (levelUpOpen)
-                {
-                    // Level-up overlay draws its own UI; suppress pause overlay.
-                }
-                else if (hasAudioMenu && audioMenu.IsOpen)
-                {
-                    DrawAudioSettingsOverlay(
-                        spriteBatch,
-                        hasAudioSettings ? audioSettings : new AudioSettingsState(),
-                        audioMenu);
-                }
-                else
-                {
-                    DrawPauseOverlay(
-                        spriteBatch,
-                        hasPauseMenu ? pauseMenu : new PauseMenu(0),
-                        hasAudioSettings ? audioSettings : new AudioSettingsState());
-                }
+                // Pause and audio overlays are handled by MyraPauseMenuScreen.
             }
         }
 

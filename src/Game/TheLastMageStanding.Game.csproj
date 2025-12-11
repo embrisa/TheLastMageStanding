@@ -38,4 +38,9 @@
   <ItemGroup>
     <MonoGameContentReference Include="Content/Content.mgcb" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Content/Fonts/*.otf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
