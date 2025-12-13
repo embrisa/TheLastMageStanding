@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
@@ -219,13 +219,11 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         if (_sceneStateService.IsInMainMenu())
         {
-            _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
             _myraMenu.Draw();
             if (_mainMenuSettingsOpen)
             {
                 _myraSettings.Render();
             }
-            _spriteBatch.End();
         }
 
         base.Draw(gameTime);
@@ -558,6 +556,35 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
     private void OnVideoSettingChanged(VideoSettingChangedEvent evt)
     {
+        // #region agent log (hypothesis H)
+        try
+        {
+            System.IO.File.AppendAllText(
+                "/Users/philippetillheden/TheLastMageStanding/.cursor/debug.log",
+                System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    sessionId = "debug-session",
+                    runId = "post-fix",
+                    hypothesisId = "H",
+                    location = "Game1.cs:OnVideoSettingChanged:entry",
+                    message = "VideoSettingChanged received",
+                    data = new
+                    {
+                        field = evt.Field.ToString(),
+                        toggleValue = evt.ToggleValue,
+                        windowScale = evt.WindowScale,
+                        resolution = evt.Resolution.HasValue ? new { w = evt.Resolution.Value.Width, h = evt.Resolution.Value.Height } : null,
+                        persist = evt.Persist
+                    },
+                    timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                }) + "\n");
+        }
+        catch
+        {
+            // ignored
+        }
+        // #endregion
+
         var changed = false;
         switch (evt.Field)
         {
@@ -591,9 +618,74 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
         ApplyVideoSettings(_videoSettings, applyChanges: true);
 
+        // #region agent log (hypothesis H)
+        try
+        {
+            System.IO.File.AppendAllText(
+                "/Users/philippetillheden/TheLastMageStanding/.cursor/debug.log",
+                System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    sessionId = "debug-session",
+                    runId = "post-fix",
+                    hypothesisId = "H",
+                    location = "Game1.cs:OnVideoSettingChanged:afterApply",
+                    message = "ApplyVideoSettings called",
+                    data = new
+                    {
+                        fullscreen = _videoSettings.Fullscreen,
+                        vsync = _videoSettings.VSync,
+                        backBufferWidth = _videoSettings.BackBufferWidth,
+                        backBufferHeight = _videoSettings.BackBufferHeight,
+                        windowScale = _videoSettings.WindowScale
+                    },
+                    timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                }) + "\n");
+        }
+        catch
+        {
+            // ignored
+        }
+        // #endregion
+
         if (evt.Persist)
         {
             _videoSettingsStore.Save(_videoSettings);
+        }
+
+        // If we're in the main-menu settings screen, refresh the view model so the UI
+        // reflects any dynamic state (e.g. resolution locked when fullscreen is enabled).
+        if (_mainMenuSettingsOpen)
+        {
+            // #region agent log (hypothesis I)
+            try
+            {
+                System.IO.File.AppendAllText(
+                    "/Users/philippetillheden/TheLastMageStanding/.cursor/debug.log",
+                    System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        sessionId = "debug-session",
+                        runId = "post-fix",
+                        hypothesisId = "I",
+                        location = "Game1.cs:OnVideoSettingChanged:refreshVm",
+                        message = "Refreshing main menu settings view model",
+                        data = new
+                        {
+                            activeTab = _mainMenuSettingsTab,
+                            fullscreen = _videoSettings.Fullscreen,
+                            backBufferWidth = _videoSettings.BackBufferWidth,
+                            backBufferHeight = _videoSettings.BackBufferHeight,
+                            windowScale = _videoSettings.WindowScale
+                        },
+                        timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                    }) + "\n");
+            }
+            catch
+            {
+                // ignored
+            }
+            // #endregion
+
+            _myraSettings.ApplyViewModel(BuildMainMenuSettingsViewModel());
         }
     }
 

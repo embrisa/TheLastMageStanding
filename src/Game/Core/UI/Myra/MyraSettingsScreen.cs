@@ -186,7 +186,7 @@ internal sealed class MyraSettingsScreen : MyraSettingsScreenBase
         section.AddRow(SettingsFieldRow.ToggleRow(
             "video",
             "fullscreen",
-            "Fullscreen (Borderless)",
+            "Fullscreen",
             video.Fullscreen,
             onChanged: change =>
             {

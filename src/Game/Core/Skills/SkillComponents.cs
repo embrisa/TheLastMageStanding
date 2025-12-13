@@ -153,6 +153,20 @@ internal struct PlayerSkillModifiers
 }
 
 /// <summary>
+/// Skill modifiers granted by in-run level-up choices.
+/// Reset on stage restart.
+/// </summary>
+internal struct LevelUpSkillModifiers
+{
+    public Dictionary<SkillId, SkillModifiers> SkillSpecificModifiers { get; set; }
+
+    public LevelUpSkillModifiers()
+    {
+        SkillSpecificModifiers = new Dictionary<SkillId, SkillModifiers>();
+    }
+}
+
+/// <summary>
 /// Component for entities currently casting a skill.
 /// </summary>
 internal struct SkillCasting

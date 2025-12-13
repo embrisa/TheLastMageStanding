@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Skills;
@@ -36,20 +35,14 @@ internal sealed class LevelUpChoiceGenerator
             return pool;
         }
 
-        var choices = new List<LevelUpChoice>(capacity: 3);
-        var maxAttempts = pool.Count * 3;
-        var attempts = 0;
-        while (choices.Count < 3 && attempts < maxAttempts)
+        // Sample without replacement using a partial Fisher–Yates shuffle.
+        for (var i = 0; i < 3; i++)
         {
-            var pick = pool[_rng.Next(pool.Count)];
-            if (choices.All(c => c.Id != pick.Id))
-            {
-                choices.Add(pick);
-            }
-            attempts++;
+            var j = _rng.Next(i, pool.Count);
+            (pool[i], pool[j]) = (pool[j], pool[i]);
         }
 
-        return choices;
+        return new List<LevelUpChoice>(capacity: 3) { pool[0], pool[1], pool[2] };
     }
 
     private void AddStatChoices(List<LevelUpChoice> pool, HashSet<string> ids)
@@ -133,4 +126,3 @@ internal sealed class LevelUpChoiceGenerator
         }
     }
 }
-

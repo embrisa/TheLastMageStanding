@@ -389,7 +389,8 @@
 - **Skill Components**:
   - `EquippedSkills`: Primary (slot 0) + hotkeys 1–4; configured in hub.
   - `SkillCooldowns`: Per-skill cooldown tracking (seconds remaining).
-  - `SkillModifiers`: Modified during runs via level-up choices only.
+  - `PlayerSkillModifiers`: Persistent modifiers from talents/perks/equipment (meta sources).
+  - `LevelUpSkillModifiers`: Run-only skill-specific modifiers from level-up choices (resets each stage).
   - `SkillCasting`: Active cast state with progress (0–1).
 - **Cast Pipeline**:
   1. `PlayerSkillInputSystem`: Converts `PlayerAttackIntentEvent` (primary skill) and hotkey inputs (1-4) to `SkillCastRequestEvent`. Checks game state and plays UI sound for empty slots.

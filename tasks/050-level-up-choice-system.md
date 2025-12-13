@@ -1,5 +1,5 @@
 # Task: 050 - Level-up choice system
-- Status: backlog
+- Status: done (build green; needs playtest)
 
 ## Summary
 Replace the current automatic stat bonus system on level-up with a choice-based system where players select from three random options pulled from stat boosts and skill modifiers (modifiers only for equipped skills). This is a core feature of the new game vision where in-run progression is choice-driven rather than fixed.
@@ -18,15 +18,15 @@ Replace the current automatic stat bonus system on level-up with a choice-based 
 - Respec or undo of choices mid-run
 
 ## Acceptance criteria
-- [ ] On level-up, game pauses and shows choice UI with 3 cards (random mix of stat boosts and equipped-skill modifiers)
-- [ ] Options are sampled without duplicates from the available pools (stat boosts + modifiers for equipped skills); if fewer than 3 exist, show all available
-- [ ] Player can navigate between the 3 choices with arrow keys/WASD and confirm with Enter
-- [ ] Stat boost options cover multiple stat types (HP, Damage, Speed, Armor, Power, Crit)
-- [ ] Skill modifier options are limited to the player's equipped skills only
-- [ ] Chosen effect applies immediately and is visible in stats/HUD
-- [ ] Choices reset on stage restart (new run)
-- [ ] Choice history can be viewed during run (optional but nice to have)
-- [ ] `dotnet build` passes with no errors
+- [x] On level-up, game pauses and shows choice UI with 3 cards (random mix of stat boosts and equipped-skill modifiers)
+- [x] Options are sampled without duplicates from the available pools (stat boosts + modifiers for equipped skills); if fewer than 3 exist, show all available
+- [x] Player can navigate between the 3 choices with arrow keys/WASD and confirm with Enter
+- [x] Stat boost options cover multiple stat types (HP, Damage, Speed, Armor, Power, Crit)
+- [x] Skill modifier options are limited to the player's equipped skills only
+- [x] Chosen effect applies immediately and is visible in stats/HUD
+- [x] Choices reset on stage restart (new run)
+- [x] Choice history can be viewed during run (optional but nice to have)
+- [x] `dotnet build` passes with no errors
 - [ ] Manual playtest verifies choice flow feels good
 
 ## Definition of done
@@ -78,3 +78,11 @@ Replace the current automatic stat bonus system on level-up with a choice-based 
 - Task 029: Unified stat and damage model (stat application)
 - Task 039: Skill system (modifier integration)
 - Task 051: Hub scene and scene management (separation of concerns)
+
+## Implementation Notes (2025-12-13)
+- Choice generation: `src/Game/Core/Progression/LevelUpChoiceGenerator.cs`
+- Choice state + opening on level-up: `src/Game/Core/Ecs/Systems/LevelUpSystem.cs`
+- Choice UI + application: `src/Game/Core/Ecs/Systems/LevelUpChoiceUISystem.cs`
+- Run-only stat modifiers: `LevelUpStatModifiers` (combined in `src/Game/Core/Ecs/Systems/StatRecalculationSystem.cs`)
+- Run-only skill modifiers: `LevelUpSkillModifiers` (combined in `src/Game/Core/Skills/SkillCastSystem.cs` and `src/Game/Core/Skills/SkillExecutionSystem.cs`)
+- Run reset: `SessionRestartedEvent` clears level-up choice state + run-only modifiers.

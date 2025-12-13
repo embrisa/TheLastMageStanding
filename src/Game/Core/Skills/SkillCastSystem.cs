@@ -110,13 +110,8 @@ internal sealed class SkillCastSystem : IUpdateSystem
         }
 
         // Get modifiers for this skill
-        var skillModifiers = SkillModifiers.Zero;
+        var skillModifiers = GetCombinedSkillModifiers(request.Caster, definition);
         var globalCdr = 0f;
-        
-        if (_world.TryGetComponent(request.Caster, out PlayerSkillModifiers playerMods))
-        {
-            skillModifiers = playerMods.GetModifiersForSkill(definition.Id, definition.Element);
-        }
 
         // Get global CDR from character stats
         if (_world.TryGetComponent(request.Caster, out ComputedStats stats))
@@ -154,5 +149,24 @@ internal sealed class SkillCastSystem : IUpdateSystem
                 request.TargetPosition,
                 request.Direction));
         }
+    }
+
+    private SkillModifiers GetCombinedSkillModifiers(Entity caster, SkillDefinition definition)
+    {
+        var modifiers = SkillModifiers.Zero;
+
+        if (_world.TryGetComponent(caster, out PlayerSkillModifiers playerMods))
+        {
+            modifiers = playerMods.GetModifiersForSkill(definition.Id, definition.Element);
+        }
+
+        if (_world.TryGetComponent(caster, out LevelUpSkillModifiers levelUpMods) &&
+            levelUpMods.SkillSpecificModifiers != null &&
+            levelUpMods.SkillSpecificModifiers.TryGetValue(definition.Id, out var runMods))
+        {
+            modifiers = SkillModifiers.Combine(modifiers, runMods);
+        }
+
+        return modifiers;
     }
 }

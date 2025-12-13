@@ -168,7 +168,11 @@ internal sealed class MyraMainMenuScreen : MyraMenuScreenBase
         layout.AddRow(UiStyles.Heading("Select Save Slot", 1.6f, UiTheme.PrimaryText));
 
         var card = new MenuCard(UiTheme.LargePadding);
-        var listColumn = new MenuColumn(UiTheme.Spacing);
+        var listColumn = new MenuColumn(UiTheme.Spacing)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Top
+        };
         _buttons.Clear();
         _selectedIndex = 0;
 
@@ -197,7 +201,16 @@ internal sealed class MyraMainMenuScreen : MyraMenuScreenBase
             listColumn.AddRow(UiStyles.BodyText(_statusMessage, UiTheme.MutedText));
         }
 
-        card.Widgets.Add(listColumn);
+        var listScrollViewer = new ScrollViewer
+        {
+            Content = listColumn,
+            Height = Math.Max(200, VirtualHeight - 220),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Top,
+            ClipToBounds = true
+        };
+
+        card.Widgets.Add(listScrollViewer);
         layout.AddRow(card);
 
         _hintBar.SetHints(("Esc", "Back"));

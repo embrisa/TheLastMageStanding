@@ -23,6 +23,7 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
     private SpriteFont _titleFont = null!;
     private Texture2D _pixel = null!;
     private Entity? _sessionEntity;
+    private bool _subscribed;
 
     public LevelUpChoiceUISystem(LevelUpChoiceGenerator generator)
     {
@@ -31,7 +32,13 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
 
     public void Initialize(EcsWorld world)
     {
-        world.EventBus.Subscribe<SessionRestartedEvent>(_ => ClearState(world));
+        if (_subscribed)
+        {
+            return;
+        }
+
+        _subscribed = true;
+        world.EventBus.Subscribe<SessionRestartedEvent>(_ => OnSessionRestarted(world));
     }
 
     public void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content)
@@ -175,6 +182,8 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
                 cardRect.Bottom - footerSize.Y - 12f);
             spriteBatch.DrawString(_regularFont, footer, footerPos, Color.WhiteSmoke);
         }
+
+        DrawHistory(world, spriteBatch, screenRect);
     }
 
     private void ApplyChoice(EcsWorld world, Entity player, LevelUpChoice choice)
@@ -247,13 +256,12 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
 
     private static void ApplySkillModifier(EcsWorld world, Entity player, LevelUpChoice choice)
     {
-        if (!world.TryGetComponent(player, out PlayerSkillModifiers modifiers))
+        if (!world.TryGetComponent(player, out LevelUpSkillModifiers modifiers))
         {
-            modifiers = new PlayerSkillModifiers();
+            modifiers = new LevelUpSkillModifiers();
         }
 
         modifiers.SkillSpecificModifiers ??= new Dictionary<SkillId, SkillModifiers>();
-        modifiers.ElementModifiers ??= new Dictionary<SkillElement, SkillModifiers>();
 
         modifiers.SkillSpecificModifiers.TryGetValue(choice.SkillId, out var skillMods);
 
@@ -280,7 +288,6 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
         }
 
         modifiers.SkillSpecificModifiers[choice.SkillId] = skillMods;
-        PlayerSkillModifiers.MarkDirty(ref modifiers);
         world.SetComponent(player, modifiers);
     }
 
@@ -384,15 +391,37 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
         return _sessionEntity;
     }
 
-    private void ClearState(EcsWorld world)
+    private void OnSessionRestarted(EcsWorld world)
     {
-        if (!TryGetChoiceState(world, out var sessionEntity, out _))
+        ClearUiState(world);
+        ClearRunModifiers(world);
+    }
+
+    private void ClearUiState(EcsWorld world)
+    {
+        var sessionEntity = EnsureSessionEntity(world);
+        if (!sessionEntity.HasValue)
         {
             return;
         }
 
-        world.RemoveComponent<LevelUpChoiceState>(sessionEntity);
-        world.RemoveComponent<LevelUpChoiceHistory>(sessionEntity);
+        world.RemoveComponent<LevelUpChoiceState>(sessionEntity.Value);
+        world.RemoveComponent<LevelUpChoiceHistory>(sessionEntity.Value);
+    }
+
+    private static void ClearRunModifiers(EcsWorld world)
+    {
+        world.ForEach<PlayerTag>((Entity entity, ref PlayerTag _) =>
+        {
+            world.RemoveComponent<LevelUpStatModifiers>(entity);
+            world.RemoveComponent<LevelUpSkillModifiers>(entity);
+
+            if (world.TryGetComponent(entity, out ComputedStats computed))
+            {
+                computed.IsDirty = true;
+                world.SetComponent(entity, computed);
+            }
+        });
     }
 
     private void DrawBorder(SpriteBatch spriteBatch, Rectangle rect, int thickness, Color color)
@@ -442,5 +471,38 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
 
         return sb.ToString();
     }
-}
 
+    private void DrawHistory(EcsWorld world, SpriteBatch spriteBatch, Rectangle screenRect)
+    {
+        var sessionEntity = EnsureSessionEntity(world);
+        if (!sessionEntity.HasValue)
+        {
+            return;
+        }
+
+        if (!world.TryGetComponent(sessionEntity.Value, out LevelUpChoiceHistory history) ||
+            history.Selections is null ||
+            history.Selections.Count == 0)
+        {
+            return;
+        }
+
+        var header = "Choices this run:";
+        var headerPos = new Vector2(24f, 380f);
+        spriteBatch.DrawString(_regularFont, header, headerPos, Color.WhiteSmoke);
+
+        var startIndex = Math.Max(0, history.Selections.Count - 5);
+        var y = headerPos.Y + 24f;
+        for (var i = startIndex; i < history.Selections.Count; i++)
+        {
+            var text = $"- {history.Selections[i]}";
+            spriteBatch.DrawString(_regularFont, text, new Vector2(24f, y), Color.LightGray);
+            y += 20f;
+
+            if (y >= screenRect.Bottom - 18f)
+            {
+                break;
+            }
+        }
+    }
+}

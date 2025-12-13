@@ -262,7 +262,8 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         {
             Background = new SolidBrush(new Color(30, 30, 40, 150)),
             Border = new SolidBrush(Color.Gray),
-            BorderThickness = new Thickness(1)
+            BorderThickness = new Thickness(1),
+            ClipToBounds = true
         };
         
         _stageListGrid = new Grid { RowSpacing = 4, Padding = new Thickness(8) };
@@ -283,7 +284,8 @@ internal sealed class MyraStageSelectionScreen : IDisposable
             Background = new SolidBrush(new Color(30, 30, 40, 150)),
             Border = new SolidBrush(Color.Gray),
             BorderThickness = new Thickness(1),
-            Padding = new Thickness(24)
+            Padding = new Thickness(24),
+            ClipToBounds = true
         };
 
         var detailsLayout = new Grid { RowSpacing = 16 };
@@ -599,4 +601,3 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         return true;
     }
 }
-

@@ -211,7 +211,6 @@ internal sealed class EcsWorldRunner
             lootDropSystem,
             lootPickupSystem,
             new LevelUpSystem(levelUpChoiceGenerator),
-            levelUpChoiceUiSystem,
             perkPointGrantSystem,
             perkEffectApplicationSystem,
         ];
@@ -230,6 +229,7 @@ internal sealed class EcsWorldRunner
         [
             debugInputSystem,  // Handle debug input early
             new InputSystem(),  // Read input (WASD, etc.)
+            levelUpChoiceUiSystem,  // Level-up choice input should work while paused
             new MovementIntentSystem(),  // Convert input to velocity
             new MovementSystem(),  // Apply velocity to position
             new CameraFollowSystem(),  // Camera follows player
@@ -560,4 +560,3 @@ internal sealed class EcsWorldRunner
         npcSpawnSystem.Update(_world, dummyContext);
     }
 }
-

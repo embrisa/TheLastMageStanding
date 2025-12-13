@@ -78,6 +78,7 @@ internal sealed class HudRenderSystem : IUiDrawSystem, ILoadContentSystem
 
                 // Draw XP bar and level
                 DrawPlayerXpBar(world, spriteBatch, position);
+                DrawLevelUpHistory(world, spriteBatch, _sessionEntity.Value, position + new Vector2(0f, 70f));
 
                 // Draw dash indicator in bottom-right corner
                 DrawDashIndicator(world, spriteBatch);
@@ -434,6 +435,27 @@ internal sealed class HudRenderSystem : IUiDrawSystem, ILoadContentSystem
                 var xpTextPosition = barPosition + new Vector2(barWidth + 10f, -4f);
                 spriteBatch.DrawString(_regularFont, xpText, xpTextPosition, Color.White);
             });
+    }
+
+    private void DrawLevelUpHistory(EcsWorld world, SpriteBatch spriteBatch, Entity sessionEntity, Vector2 position)
+    {
+        if (!world.TryGetComponent(sessionEntity, out LevelUpChoiceHistory history) ||
+            history.Selections is null ||
+            history.Selections.Count == 0)
+        {
+            return;
+        }
+
+        spriteBatch.DrawString(_regularFont, "Run choices:", position, Color.LightGray);
+
+        var startIndex = System.Math.Max(0, history.Selections.Count - 3);
+        var y = position.Y + 22f;
+        for (var i = startIndex; i < history.Selections.Count; i++)
+        {
+            var text = $"- {history.Selections[i]}";
+            spriteBatch.DrawString(_regularFont, text, new Vector2(position.X, y), Color.LightGray);
+            y += 20f;
+        }
     }
 
     private void DrawDashIndicator(EcsWorld world, SpriteBatch spriteBatch)

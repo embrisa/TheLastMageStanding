@@ -48,13 +48,8 @@ internal sealed class SkillExecutionSystem : IUpdateSystem
         }
 
         // Get skill modifiers
-        var skillModifiers = SkillModifiers.Zero;
+        var skillModifiers = GetCombinedSkillModifiers(evt.Caster, definition);
         var globalCdr = 0f;
-        
-        if (_world.TryGetComponent(evt.Caster, out PlayerSkillModifiers playerMods))
-        {
-            skillModifiers = playerMods.GetModifiersForSkill(definition.Id, definition.Element);
-        }
 
         if (_world.TryGetComponent(evt.Caster, out ComputedStats stats))
         {
@@ -86,6 +81,25 @@ internal sealed class SkillExecutionSystem : IUpdateSystem
 
         // Publish VFX/SFX events
         PublishSkillEffects(evt, definition);
+    }
+
+    private SkillModifiers GetCombinedSkillModifiers(Entity caster, SkillDefinition definition)
+    {
+        var modifiers = SkillModifiers.Zero;
+
+        if (_world.TryGetComponent(caster, out PlayerSkillModifiers playerMods))
+        {
+            modifiers = playerMods.GetModifiersForSkill(definition.Id, definition.Element);
+        }
+
+        if (_world.TryGetComponent(caster, out LevelUpSkillModifiers levelUpMods) &&
+            levelUpMods.SkillSpecificModifiers != null &&
+            levelUpMods.SkillSpecificModifiers.TryGetValue(definition.Id, out var runMods))
+        {
+            modifiers = SkillModifiers.Combine(modifiers, runMods);
+        }
+
+        return modifiers;
     }
 
     private void SpawnProjectiles(
