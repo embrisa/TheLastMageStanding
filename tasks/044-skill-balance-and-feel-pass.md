@@ -1,6 +1,6 @@
 # Task 044 — Skill Balance & Feel Pass
 
-**Status:** backlog  
+**Status:** Completed
 **Priority:** High  
 **Estimated effort:** 2-3 hours (playtesting + iteration)  
 **Dependencies:** Task 040-043 (full skill UI/input/progression)
@@ -9,7 +9,29 @@
 
 Playtest all 9 mage skills in real gameplay scenarios and tune damage, cooldowns, cast times, and visual/audio feedback for satisfying moment-to-moment combat feel.
 
+## Changes Implemented
+
+- **Skill Tuning:**
+  - **Firebolt:** Increased speed to 600, reduced CD to 0.4s.
+  - **Fireball:** Increased AoE to 80, reduced cast time to 0.2s.
+  - **Flame Wave:** Increased AoE to 180, reduced cast time to 0.15s.
+  - **Arcane Missile:** Increased speed to 550, reduced CD to 0.7s.
+  - **Arcane Burst:** Increased AoE to 120, reduced cast time to 0.1s.
+  - **Arcane Barrage:** Increased speed to 600, reduced cast time to 0.4s.
+  - **Frost Bolt:** Increased speed to 500, increased slow duration to 2.0s.
+  - **Frost Nova:** Increased AoE to 140, reduced CD to 7.0s.
+  - **Blizzard:** Increased AoE to 180, reduced cast time to 0.3s.
+
+- **Feel Improvements:**
+  - Implemented `ProjectileAoE` handling in `ProjectileHitSystem`.
+  - Added AoE explosion logic: spawns explosion entity with damage, VFX, and SFX on impact.
+  - Ensures Fireball and other AoE projectiles actually explode and deal area damage.
+
+- **Documentation:**
+  - Updated `docs/game-design-document.md` with a detailed "Skill Balance Reference" table.
+
 ## Rationale
+
 
 Current skill values are placeholder estimates. Real gameplay will reveal balance issues (too weak/strong), feel problems (unresponsive, awkward), and clarity issues (visual/audio feedback). This pass ensures skills feel good to use before building more systems on top.
 

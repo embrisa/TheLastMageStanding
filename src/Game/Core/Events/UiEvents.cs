@@ -102,3 +102,28 @@ internal readonly struct AudioSettingChangedEvent
     public bool Persist { get; init; }
 }
 
+internal readonly struct LevelUpChoiceCardViewModel
+{
+    public string Id { get; init; }
+    public string Title { get; init; }
+    public string Description { get; init; }
+    public LevelUpChoiceKind Kind { get; init; }
+}
+
+internal readonly struct LevelUpChoiceViewModel
+{
+    public bool IsOpen { get; init; }
+    public bool CanSelect { get; init; }
+    public int SelectedIndex { get; init; }
+    public LevelUpChoiceCardViewModel[] Choices { get; init; }
+}
+
+internal readonly struct LevelUpChoiceViewModelEvent
+{
+    public LevelUpChoiceViewModel ViewModel { get; init; }
+}
+
+internal readonly struct LevelUpChoicePickedEvent
+{
+    public string ChoiceId { get; init; }
+}

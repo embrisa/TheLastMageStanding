@@ -1,10 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.Graphics;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 using TheLastMageStanding.Game.Core.Progression;
@@ -13,25 +8,26 @@ using TheLastMageStanding.Game.Core.Skills;
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
 /// <summary>
-/// Handles navigation, application, and rendering of level-up choices.
+/// Handles navigation and application of level-up choices. Rendering is done via Myra.
 /// </summary>
-[SuppressMessage("Design", "CA1001", Justification = "Texture lifetime matches graphics device; disposed on game shutdown.")]
-internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoadContentSystem
+internal sealed class LevelUpChoiceSystem : IUpdateSystem
 {
+    private const double InputDelay = 0.5;
     private readonly LevelUpChoiceGenerator _generator;
-    private SpriteFont _regularFont = null!;
-    private SpriteFont _titleFont = null!;
-    private Texture2D _pixel = null!;
     private Entity? _sessionEntity;
+    private EcsWorld? _world;
     private bool _subscribed;
+    private bool _wasOpen;
+    private double _openTimer;
 
-    public LevelUpChoiceUISystem(LevelUpChoiceGenerator generator)
+    public LevelUpChoiceSystem(LevelUpChoiceGenerator generator)
     {
         _generator = generator;
     }
 
     public void Initialize(EcsWorld world)
     {
+        _world = world;
         if (_subscribed)
         {
             return;
@@ -39,70 +35,108 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
 
         _subscribed = true;
         world.EventBus.Subscribe<SessionRestartedEvent>(_ => OnSessionRestarted(world));
-    }
-
-    public void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content)
-    {
-        _regularFont = content.Load<SpriteFont>("Fonts/FontRegularText");
-        _titleFont = content.Load<SpriteFont>("Fonts/FontRegularTitle");
-        _pixel = new Texture2D(graphicsDevice, 1, 1);
-        _pixel.SetData(new[] { Color.White });
+        world.EventBus.Subscribe<LevelUpChoicePickedEvent>(OnChoicePicked);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
-        if (!TryGetChoiceState(world, out var sessionEntity, out var state) || !state.IsOpen)
+        if (!TryGetChoiceState(world, out var sessionEntity, out var state))
         {
+            if (_wasOpen)
+            {
+                PublishClosed(world);
+                _wasOpen = false;
+            }
             return;
         }
+
+        if (!state.IsOpen)
+        {
+            if (_wasOpen)
+            {
+                PublishClosed(world);
+                _wasOpen = false;
+            }
+            return;
+        }
+
+        if (!_wasOpen)
+        {
+            _openTimer = 0;
+            _wasOpen = true;
+        }
+        else
+        {
+            _openTimer += context.DeltaSeconds;
+        }
+
+        var canSelect = _openTimer >= InputDelay;
+
+        EnsurePaused(world, sessionEntity);
 
         var choices = state.Choices;
         if (choices is null || choices.Count == 0)
         {
             CloseAndResume(world, sessionEntity, ref state);
+            PublishViewModel(world, state, canSelect);
+            world.SetComponent(sessionEntity, state);
             return;
         }
 
         var choiceCount = choices.Count;
         state.SelectedIndex = Math.Clamp(state.SelectedIndex, 0, choiceCount - 1);
 
-        if (context.Input.MenuLeftPressed)
+        if (canSelect)
         {
-            state.SelectedIndex = (state.SelectedIndex - 1 + choiceCount) % choiceCount;
-        }
-
-        if (context.Input.MenuRightPressed)
-        {
-            state.SelectedIndex = (state.SelectedIndex + 1) % choiceCount;
-        }
-
-        if (context.Input.MenuConfirmPressed)
-        {
-            ApplyChoice(world, state.Player, choices[state.SelectedIndex]);
-
-            if (state.PendingLevels > 0)
+            if (context.Input.MenuLeftPressed)
             {
-                state.PendingLevels--;
-                state.Choices = _generator.GenerateChoices(world, state.Player);
-                state.SelectedIndex = 0;
-                state.IsOpen = true;
-                EnsurePaused(world, sessionEntity);
-            }
-            else
-            {
-                CloseAndResume(world, sessionEntity, ref state);
+                state.SelectedIndex = (state.SelectedIndex - 1 + choiceCount) % choiceCount;
             }
 
-            world.SetComponent(sessionEntity, state);
-            return;
+            if (context.Input.MenuRightPressed)
+            {
+                state.SelectedIndex = (state.SelectedIndex + 1) % choiceCount;
+            }
+
+            if (context.Input.MenuConfirmPressed)
+            {
+                CommitChoice(world, sessionEntity, ref state, choices[state.SelectedIndex]);
+                PublishViewModel(world, state, canSelect);
+                world.SetComponent(sessionEntity, state);
+                return;
+            }
         }
 
+        PublishViewModel(world, state, canSelect);
         world.SetComponent(sessionEntity, state);
     }
 
-    public void Draw(EcsWorld world, in EcsDrawContext context)
+    private void CommitChoice(EcsWorld world, Entity sessionEntity, ref LevelUpChoiceState state, LevelUpChoice choice)
     {
-        if (!TryGetChoiceState(world, out _, out var state) || !state.IsOpen)
+        ApplyChoice(world, state.Player, choice);
+
+        if (state.PendingLevels > 0)
+        {
+            state.PendingLevels--;
+            state.Choices = _generator.GenerateChoices(world, state.Player);
+            state.SelectedIndex = 0;
+            state.IsOpen = true;
+            EnsurePaused(world, sessionEntity);
+        }
+        else
+        {
+            CloseAndResume(world, sessionEntity, ref state);
+        }
+    }
+
+    private void OnChoicePicked(LevelUpChoicePickedEvent evt)
+    {
+        if (_world == null)
+        {
+            return;
+        }
+
+        if (!TryGetChoiceState(_world, out var sessionEntity, out var state) || !state.IsOpen)
         {
             return;
         }
@@ -113,77 +147,28 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
             return;
         }
 
-        var spriteBatch = context.SpriteBatch;
-        var screenRect = new Rectangle(0, 0, 960, 540);
-
-        // Dim background
-        spriteBatch.Draw(_pixel, screenRect, Color.Black * 0.65f);
-
-        var title = "Level Up! Choose one of 3 options";
-        var titleSize = _titleFont.MeasureString(title);
-        var titlePos = new Vector2(
-            screenRect.Center.X - titleSize.X / 2f,
-            48f);
-        spriteBatch.DrawString(_titleFont, title, titlePos, Color.Gold);
-
-        var subtitle = "Navigate with A/D or Arrow Keys. Confirm with Enter/Space.";
-        var subtitleSize = _regularFont.MeasureString(subtitle);
-        var subtitlePos = new Vector2(
-            screenRect.Center.X - subtitleSize.X / 2f,
-            titlePos.Y + titleSize.Y + 6f);
-        spriteBatch.DrawString(_regularFont, subtitle, subtitlePos, Color.LightGray);
-
-        const float cardWidth = 260f;
-        const float cardHeight = 200f;
-        const float cardSpacing = 20f;
-        var totalWidth = choices.Count * cardWidth + (choices.Count - 1) * cardSpacing;
-        var startX = (screenRect.Width - totalWidth) * 0.5f;
-        var cardY = 150f;
-
         for (var i = 0; i < choices.Count; i++)
         {
-            var choice = choices[i];
-            var cardRect = new Rectangle(
-                (int)(startX + i * (cardWidth + cardSpacing)),
-                (int)cardY,
-                (int)cardWidth,
-                (int)cardHeight);
+            if (!string.Equals(choices[i].Id, evt.ChoiceId, StringComparison.Ordinal))
+            {
+                continue;
+            }
 
-            var isSelected = i == state.SelectedIndex;
-            var backgroundColor = isSelected ? Color.DarkSlateBlue * 0.9f : Color.Black * 0.7f;
-            var borderColor = isSelected ? Color.Gold : Color.Gray;
-
-            // Card background
-            spriteBatch.Draw(_pixel, cardRect, backgroundColor);
-
-            // Border
-            DrawBorder(spriteBatch, cardRect, 2, borderColor);
-
-            // Title
-            var titleText = choice.Title;
-            var titleMeasure = _regularFont.MeasureString(titleText);
-            var titlePosition = new Vector2(
-                cardRect.Center.X - titleMeasure.X / 2f,
-                cardRect.Top + 14f);
-            spriteBatch.DrawString(_regularFont, titleText, titlePosition, Color.White);
-
-            // Description (wrapped)
-            var descriptionText = WrapText(_regularFont, choice.Description, cardWidth - 24f);
-            var descriptionPosition = new Vector2(
-                cardRect.Left + 12f,
-                titlePosition.Y + titleMeasure.Y + 12f);
-            spriteBatch.DrawString(_regularFont, descriptionText, descriptionPosition, Color.LightGray);
-
-            // Footer label
-            var footer = choice.Kind == LevelUpChoiceKind.StatBoost ? "Stat Boost" : "Skill Modifier";
-            var footerSize = _regularFont.MeasureString(footer);
-            var footerPos = new Vector2(
-                cardRect.Center.X - footerSize.X / 2f,
-                cardRect.Bottom - footerSize.Y - 12f);
-            spriteBatch.DrawString(_regularFont, footer, footerPos, Color.WhiteSmoke);
+            state.SelectedIndex = i;
+            CommitChoice(_world, sessionEntity, ref state, choices[i]);
+            _world.SetComponent(sessionEntity, state);
+            
+            if (state.IsOpen)
+            {
+                _openTimer = 0;
+                PublishViewModel(_world, state, false);
+            }
+            else
+            {
+                PublishViewModel(_world, state, false);
+            }
+            return;
         }
-
-        DrawHistory(world, spriteBatch, screenRect);
     }
 
     private void ApplyChoice(EcsWorld world, Entity player, LevelUpChoice choice)
@@ -262,7 +247,6 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
         }
 
         modifiers.SkillSpecificModifiers ??= new Dictionary<SkillId, SkillModifiers>();
-
         modifiers.SkillSpecificModifiers.TryGetValue(choice.SkillId, out var skillMods);
 
         switch (choice.SkillModifierType)
@@ -395,6 +379,8 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
     {
         ClearUiState(world);
         ClearRunModifiers(world);
+        PublishClosed(world);
+        _wasOpen = false;
     }
 
     private void ClearUiState(EcsWorld world)
@@ -424,85 +410,50 @@ internal sealed class LevelUpChoiceUISystem : IUpdateSystem, IUiDrawSystem, ILoa
         });
     }
 
-    private void DrawBorder(SpriteBatch spriteBatch, Rectangle rect, int thickness, Color color)
+    private static void PublishViewModel(EcsWorld world, LevelUpChoiceState state, bool canSelect)
     {
-        // Top
-        spriteBatch.Draw(_pixel, new Rectangle(rect.Left, rect.Top, rect.Width, thickness), color);
-        // Bottom
-        spriteBatch.Draw(_pixel, new Rectangle(rect.Left, rect.Bottom - thickness, rect.Width, thickness), color);
-        // Left
-        spriteBatch.Draw(_pixel, new Rectangle(rect.Left, rect.Top, thickness, rect.Height), color);
-        // Right
-        spriteBatch.Draw(_pixel, new Rectangle(rect.Right - thickness, rect.Top, thickness, rect.Height), color);
-    }
-
-    private static string WrapText(SpriteFont font, string text, float maxLineWidth)
-    {
-        var words = text.Split(' ');
-        var sb = new StringBuilder();
-        var line = string.Empty;
-
-        foreach (var word in words)
+        if (!state.IsOpen)
         {
-            var testLine = string.IsNullOrEmpty(line) ? word : $"{line} {word}";
-            if (font.MeasureString(testLine).X <= maxLineWidth)
-            {
-                line = testLine;
-                continue;
-            }
-
-            if (sb.Length > 0)
-            {
-                sb.Append('\n');
-            }
-
-            sb.Append(line);
-            line = word;
-        }
-
-        if (!string.IsNullOrEmpty(line))
-        {
-            if (sb.Length > 0)
-            {
-                sb.Append('\n');
-            }
-            sb.Append(line);
-        }
-
-        return sb.ToString();
-    }
-
-    private void DrawHistory(EcsWorld world, SpriteBatch spriteBatch, Rectangle screenRect)
-    {
-        var sessionEntity = EnsureSessionEntity(world);
-        if (!sessionEntity.HasValue)
-        {
+            PublishClosed(world);
             return;
         }
 
-        if (!world.TryGetComponent(sessionEntity.Value, out LevelUpChoiceHistory history) ||
-            history.Selections is null ||
-            history.Selections.Count == 0)
+        var choices = state.Choices ?? new List<LevelUpChoice>();
+        var cards = new LevelUpChoiceCardViewModel[choices.Count];
+        for (var i = 0; i < choices.Count; i++)
         {
-            return;
-        }
-
-        var header = "Choices this run:";
-        var headerPos = new Vector2(24f, 380f);
-        spriteBatch.DrawString(_regularFont, header, headerPos, Color.WhiteSmoke);
-
-        var startIndex = Math.Max(0, history.Selections.Count - 5);
-        var y = headerPos.Y + 24f;
-        for (var i = startIndex; i < history.Selections.Count; i++)
-        {
-            var text = $"- {history.Selections[i]}";
-            spriteBatch.DrawString(_regularFont, text, new Vector2(24f, y), Color.LightGray);
-            y += 20f;
-
-            if (y >= screenRect.Bottom - 18f)
+            var choice = choices[i];
+            cards[i] = new LevelUpChoiceCardViewModel
             {
-                break;
-            }
+                Id = choice.Id,
+                Title = choice.Title,
+                Description = choice.Description,
+                Kind = choice.Kind
+            };
         }
+
+        world.EventBus.Publish(new LevelUpChoiceViewModelEvent
+        {
+            ViewModel = new LevelUpChoiceViewModel
+            {
+                IsOpen = true,
+                CanSelect = canSelect,
+                SelectedIndex = Math.Clamp(state.SelectedIndex, 0, Math.Max(0, cards.Length - 1)),
+                Choices = cards
+            }
+        });
+    }
+
+    private static void PublishClosed(EcsWorld world)
+    {
+        world.EventBus.Publish(new LevelUpChoiceViewModelEvent
+        {
+            ViewModel = new LevelUpChoiceViewModel
+            {
+                IsOpen = false,
+                SelectedIndex = 0,
+                Choices = Array.Empty<LevelUpChoiceCardViewModel>()
+            }
+        });
     }
 }

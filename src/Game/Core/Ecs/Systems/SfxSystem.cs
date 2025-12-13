@@ -112,9 +112,22 @@ internal sealed class SfxSystem : IUpdateSystem, ILoadContentSystem
         instance.Volume = finalVolume;
         instance.Pan = 0f;
         instance.Pitch = 0f;
-        instance.Play();
 
-        _activeInstances.Add(new ActiveSound(instance, evt.Category, evt.Volume));
+        try
+        {
+            instance.Play();
+            _activeInstances.Add(new ActiveSound(instance, evt.Category, evt.Volume));
+        }
+        catch (InstancePlayLimitException)
+        {
+            // Too many sounds playing, drop this one
+            instance.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SFX] Failed to play sound {evt.SoundName}: {ex.Message}");
+            instance.Dispose();
+        }
     }
 
     private void LoadSound(ContentManager content, string assetName, string key)

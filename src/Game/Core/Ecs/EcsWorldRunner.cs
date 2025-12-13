@@ -150,7 +150,7 @@ internal sealed class EcsWorldRunner
         var skillExecutionSystem = new SkillExecutionSystem(skillRegistry);
         var skillHotbarRenderer = new Rendering.UI.SkillHotbarRenderer(skillRegistry);
         var levelUpChoiceGenerator = new LevelUpChoiceGenerator(LevelUpChoiceConfig.Default, skillRegistry);
-        var levelUpChoiceUiSystem = new LevelUpChoiceUISystem(levelUpChoiceGenerator);
+        var levelUpChoiceSystem = new LevelUpChoiceSystem(levelUpChoiceGenerator);
         var dashInputSystem = new DashInputSystem();
         var dashExecutionSystem = new DashExecutionSystem(hitStopSystem);
         var dashMovementSystem = new DashMovementSystem();
@@ -159,6 +159,7 @@ internal sealed class EcsWorldRunner
         var profileService = new PlayerProfileService(new DefaultFileSystem(), _saveSlotService.GetSlotPath(_slotId));
         var stageSelectionUI = new StageSelectionUISystem(_stageRegistry, sceneManager, profileService);
         var pauseMenuUiSystem = new PauseMenuMyraSystem(_sceneStateService);
+        var levelUpChoiceUiSystem = new LevelUpChoiceMyraSystem(_sceneStateService);
         var inventoryUiSystem = new InventoryUiSystem();
         var proximityInteractionSystem = new ProximityInteractionSystem();
         var interactionInputSystem = new InteractionInputSystem();
@@ -229,7 +230,7 @@ internal sealed class EcsWorldRunner
         [
             debugInputSystem,  // Handle debug input early
             new InputSystem(),  // Read input (WASD, etc.)
-            levelUpChoiceUiSystem,  // Level-up choice input should work while paused
+            levelUpChoiceSystem,  // Level-up choice input should work while paused
             new MovementIntentSystem(),  // Convert input to velocity
             new MovementSystem(),  // Apply velocity to position
             new CameraFollowSystem(),  // Camera follows player
@@ -282,6 +283,7 @@ internal sealed class EcsWorldRunner
         [
             stageSelectionUI,
             pauseMenuUiSystem,
+            levelUpChoiceUiSystem,
         ];
 
         _uiDrawSystems =
@@ -290,7 +292,6 @@ internal sealed class EcsWorldRunner
             skillHotbarRenderer,
             perkTreeUISystem,
             inventoryUiSystem,
-            levelUpChoiceUiSystem,
         ];
 
         _loadSystems =

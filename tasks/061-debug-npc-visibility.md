@@ -16,12 +16,12 @@ NPCs are not visible in the hub after Task 051 implementation. Need to diagnose 
 - Multiple NPC types or states
 
 ## Acceptance criteria
-- [ ] Console logs show NPC spawning when hub loads
-- [ ] 5 colored square NPCs visible in hub at correct positions from HubMap.tmx
-- [ ] Walking near NPCs shows "E - [Action]" proximity prompts
-- [ ] Pressing E near NPCs triggers appropriate UI (talent tree, stage selection, etc.)
-- [ ] `dotnet build` passes
-- [ ] Manual playtest confirms NPCs visible and interactable
+- [X] Console logs show NPC spawning when hub loads
+- [X] 5 colored square NPCs visible in hub at correct positions from HubMap.tmx
+- [X] Walking near NPCs shows "E - [Action]" proximity prompts
+- [X] Pressing E near NPCs triggers appropriate UI (talent tree, stage selection, etc.)
+- [X] `dotnet build` passes
+- [X] Manual playtest confirms NPCs visible and interactable
 
 ## Definition of done
 - Builds pass (`dotnet build`)

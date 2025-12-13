@@ -8,7 +8,8 @@ dotnet tool restore --tool-manifest src/Game/.config/dotnet-tools.json
 dotnet restore
 dotnet build
 
-pushd src/Game >/dev/null
-dotnet mgcb /@Content.mgcb /platform:DesktopGL /output:bin/Content
-popd >/dev/null
+# Content is built via csproj reference
+# pushd src/Game/Content >/dev/null
+# dotnet mgcb /@Content.mgcb /platform:DesktopGL /output:../bin/Content
+# popd >/dev/null
 

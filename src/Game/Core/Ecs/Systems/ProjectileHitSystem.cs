@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 using TheLastMageStanding.Game.Core.Combat;
+using TheLastMageStanding.Game.Core.Skills;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
@@ -128,6 +129,12 @@ internal sealed class ProjectileHitSystem : IUpdateSystem
             projectilePosition = new Position(contactPoint);
         }
 
+        // Check for AoE payload
+        if (_world.TryGetComponent(projectileEntity, out ProjectileAoE aoe))
+        {
+            SpawnAoEExplosion(projectileEntity, projectile, aoe, contactPoint);
+        }
+
         // Apply damage using unified damage calculator
         if (_damageService == null)
             return false;
@@ -146,5 +153,48 @@ internal sealed class ProjectileHitSystem : IUpdateSystem
         _world.SetComponent(projectileEntity, projectile);
 
         return true;
+    }
+
+    private void SpawnAoEExplosion(Entity projectileEntity, Projectile projectile, ProjectileAoE aoe, Vector2 center)
+    {
+        var aoeEntity = _world.CreateEntity();
+        _world.SetComponent(aoeEntity, new Position(center));
+        
+        // Create a large trigger collider for the AoE
+        var hitboxLayer = projectile.SourceFaction == Faction.Player ? CollisionLayer.Projectile : CollisionLayer.Enemy;
+        var targetLayer = projectile.SourceFaction == Faction.Player ? CollisionLayer.Enemy : CollisionLayer.Player;
+        
+        _world.SetComponent(aoeEntity, Collider.CreateCircle(
+            radius: aoe.ExplosionRadius,
+            layer: hitboxLayer,
+            mask: targetLayer,
+            isTrigger: true));
+
+        // Use attack hitbox component for damage
+        _world.SetComponent(aoeEntity, new AttackHitbox(
+            projectile.Source,
+            aoe.ExplosionDamage,
+            projectile.SourceFaction,
+            lifetimeSeconds: 0.1f,
+            statusEffect: projectile.StatusEffect));
+
+        // Visuals
+        Color explosionColor = Color.Orange;
+        if (_world.TryGetComponent(projectileEntity, out ProjectileVisual visual))
+        {
+            explosionColor = visual.Color;
+        }
+
+        _world.EventBus.Publish(new VfxSpawnEvent(
+            "aoe_explosion", 
+            center,
+            VfxType.Impact,
+            explosionColor));
+
+        // Sound
+        _world.EventBus.Publish(new SfxPlayEvent(
+            "skill_aoe_impact",
+            SfxCategory.Ability,
+            center));
     }
 }

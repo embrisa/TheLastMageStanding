@@ -401,10 +401,18 @@
   - Base → skill-specific → element → global → character CDR → clamps (80% CDR max, 0.1s min cooldown).
 - **Damage Scaling**: `finalDamage = casterPower × skillDamageMultiplier × 10.0`; integrates with unified stat model (`ComputedStats.EffectivePower`).
 - **Skill Events**: `SkillCastRequestEvent`, `SkillCastStartedEvent`, `SkillCastCompletedEvent`, `SkillCastCancelledEvent` (all event-bus driven).
-- **Default Skills**:
-  - Fire: Firebolt (fast, 0.5s CD, 1.0× dmg), Fireball (slow AoE, 2s CD, 3.5× dmg + 60 radius), Flame Wave (self AoE, 5s CD, 2.0× dmg).
-  - Arcane: Arcane Missile (homing, 0.8s CD, 1.2× dmg), Arcane Burst (quick AoE, 3s CD, 2.5× dmg), Arcane Barrage (5 projectiles, 4s CD, 0.8× dmg each).
-  - Frost: Frost Bolt (chill, 0.6s CD, 0.9× dmg), Frost Nova (freeze AoE, 8s CD, 1.5× dmg), Blizzard (ground AoE, 10s CD, 4.0× dmg).
+- **Skill Balance Reference (Tuned Values)**:
+  | Skill | Element | Type | CD | Dmg Mult | Speed | AoE | Cast Time | Notes |
+  |-------|---------|------|----|----------|-------|-----|-----------|-------|
+  | **Firebolt** | Fire | Proj | 0.4s | 1.0x | 600 | - | 0s | Fast spam, burns |
+  | **Fireball** | Fire | Proj | 2.0s | 3.5x | 350 | 80 | 0.2s | Big burst, explodes |
+  | **Flame Wave** | Fire | AoE | 5.0s | 2.0x | - | 180 | 0.15s | "Get off me" tool |
+  | **Arcane Missile** | Arcane | Proj | 0.7s | 1.2x | 550 | - | 0s | Homing, reliable |
+  | **Arcane Burst** | Arcane | AoE | 3.0s | 2.5x | - | 120 | 0.1s | Quick PBAoE |
+  | **Arcane Barrage** | Arcane | Proj | 4.0s | 0.8x | 600 | - | 0.4s | 5x projectiles |
+  | **Frost Bolt** | Frost | Proj | 0.6s | 0.9x | 500 | - | 0s | Slows enemies |
+  | **Frost Nova** | Frost | AoE | 7.0s | 1.5x | - | 140 | 0.1s | Freezes enemies |
+  | **Blizzard** | Frost | AoE | 10.0s | 4.0x | - | 180 | 0.3s | Ground target DoT |
 - **Integration**: Skills reuse `Projectile`, `AttackHitbox`, `Collider` components; damage flows through `DamageApplicationService` for crit/resist handling.
 - **Hub vs Run**: Skills CANNOT be changed mid-run; hotbar is locked when entering a stage.
 

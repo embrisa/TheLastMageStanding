@@ -63,10 +63,10 @@ public sealed class SkillRegistry
             element: SkillElement.Fire,
             deliveryType: SkillDeliveryType.Projectile,
             targetType: SkillTargetType.Direction,
-            baseCooldown: 0.5f,
+            baseCooldown: 0.4f,
             baseDamageMultiplier: 1.0f,
             range: 350f,
-            projectileSpeed: 500f,
+            projectileSpeed: 600f,
             canCrit: true,
             onHitStatusEffect: StatusEffectConfig.CreateBurn(potency: 3f, duration: 2f),
             statusEffectApplicationChance: 0.3f
@@ -82,9 +82,9 @@ public sealed class SkillRegistry
             baseCooldown: 2.0f,
             baseDamageMultiplier: 3.5f,
             range: 400f,
-            aoeRadius: 60f,
+            aoeRadius: 80f,
             projectileSpeed: 350f,
-            castTime: 0.3f,
+            castTime: 0.2f,
             canCrit: true,
             onHitStatusEffect: StatusEffectConfig.CreateBurn(potency: 5f, duration: 4f),
             statusEffectApplicationChance: 0.8f
@@ -100,8 +100,8 @@ public sealed class SkillRegistry
             baseCooldown: 5.0f,
             baseDamageMultiplier: 2.0f,
             range: 0f,
-            aoeRadius: 150f,
-            castTime: 0.2f,
+            aoeRadius: 180f,
+            castTime: 0.15f,
             canCrit: true,
             onHitStatusEffect: StatusEffectConfig.CreateBurn(potency: 4f, duration: 3f),
             statusEffectApplicationChance: 1.0f
@@ -116,10 +116,10 @@ public sealed class SkillRegistry
             element: SkillElement.Arcane,
             deliveryType: SkillDeliveryType.Projectile,
             targetType: SkillTargetType.Nearest,
-            baseCooldown: 0.8f,
+            baseCooldown: 0.7f,
             baseDamageMultiplier: 1.2f,
             range: 400f,
-            projectileSpeed: 450f,
+            projectileSpeed: 550f,
             canCrit: true
         ));
 
@@ -133,8 +133,8 @@ public sealed class SkillRegistry
             baseCooldown: 3.0f,
             baseDamageMultiplier: 2.5f,
             range: 0f,
-            aoeRadius: 100f,
-            castTime: 0.15f,
+            aoeRadius: 120f,
+            castTime: 0.1f,
             canCrit: true
         ));
 
@@ -149,8 +149,8 @@ public sealed class SkillRegistry
             baseDamageMultiplier: 0.8f,
             range: 350f,
             projectileCount: 5,
-            projectileSpeed: 500f,
-            castTime: 0.5f,
+            projectileSpeed: 600f,
+            castTime: 0.4f,
             canCrit: true
         ));
 
@@ -166,9 +166,9 @@ public sealed class SkillRegistry
             baseCooldown: 0.6f,
             baseDamageMultiplier: 0.9f,
             range: 350f,
-            projectileSpeed: 450f,
+            projectileSpeed: 500f,
             canCrit: true,
-            onHitStatusEffect: StatusEffectConfig.CreateSlow(potency: 0.5f, duration: 1.5f),
+            onHitStatusEffect: StatusEffectConfig.CreateSlow(potency: 0.5f, duration: 2.0f),
             statusEffectApplicationChance: 0.5f
         ));
 
@@ -179,10 +179,10 @@ public sealed class SkillRegistry
             element: SkillElement.Frost,
             deliveryType: SkillDeliveryType.AreaOfEffect,
             targetType: SkillTargetType.Self,
-            baseCooldown: 8.0f,
+            baseCooldown: 7.0f,
             baseDamageMultiplier: 1.5f,
             range: 0f,
-            aoeRadius: 120f,
+            aoeRadius: 140f,
             castTime: 0.1f,
             canCrit: true,
             onHitStatusEffect: StatusEffectConfig.CreateFreeze(potency: 0.7f, duration: 2f),
@@ -199,8 +199,8 @@ public sealed class SkillRegistry
             baseCooldown: 10.0f,
             baseDamageMultiplier: 4.0f,
             range: 500f,
-            aoeRadius: 150f,
-            castTime: 0.4f,
+            aoeRadius: 180f,
+            castTime: 0.3f,
             canCrit: true,
             onHitStatusEffect: StatusEffectConfig.CreateSlow(potency: 0.6f, duration: 1.0f),
             statusEffectApplicationChance: 1.0f

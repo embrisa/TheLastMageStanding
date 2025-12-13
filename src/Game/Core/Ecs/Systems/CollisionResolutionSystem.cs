@@ -13,6 +13,7 @@ internal sealed class CollisionResolutionSystem : IUpdateSystem
 {
     private readonly SpatialGrid _staticGrid = new(128f);
     private bool _staticGridDirty = true;
+    private Entity? _sessionEntity;
 
     public void Initialize(EcsWorld world)
     {
@@ -21,6 +22,11 @@ internal sealed class CollisionResolutionSystem : IUpdateSystem
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
+        if (!IsPlaying(world))
+        {
+            return;
+        }
+
         // Rebuild static grid if needed
         if (_staticGridDirty)
         {
@@ -125,5 +131,25 @@ internal sealed class CollisionResolutionSystem : IUpdateSystem
     public void MarkStaticGridDirty()
     {
         _staticGridDirty = true;
+    }
+
+    private bool IsPlaying(EcsWorld world)
+    {
+        if (_sessionEntity is null || !world.IsAlive(_sessionEntity.Value))
+        {
+            _sessionEntity = null;
+            world.ForEach<GameSession>((Entity entity, ref GameSession _) =>
+            {
+                _sessionEntity = entity;
+            });
+        }
+
+        if (!_sessionEntity.HasValue)
+        {
+            return true;
+        }
+
+        return world.TryGetComponent(_sessionEntity.Value, out GameSession session) &&
+               session.State == GameState.Playing;
     }
 }

@@ -20,6 +20,7 @@ internal sealed class CollisionSystem : IUpdateSystem
     private HashSet<(int entityA, int entityB)> _currentCollisions = new();
     
     private bool _staticGridDirty = true;
+    private Entity? _sessionEntity;
 
     public void Initialize(EcsWorld world)
     {
@@ -29,6 +30,11 @@ internal sealed class CollisionSystem : IUpdateSystem
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
+        if (!IsPlaying(world))
+        {
+            return;
+        }
+
         // Rebuild static grid if needed (only once or when marked dirty)
         if (_staticGridDirty)
         {
@@ -48,6 +54,26 @@ internal sealed class CollisionSystem : IUpdateSystem
         _staticGridDirty = true;
         _previousCollisions.Clear();
         _currentCollisions.Clear();
+    }
+
+    private bool IsPlaying(EcsWorld world)
+    {
+        if (_sessionEntity is null || !world.IsAlive(_sessionEntity.Value))
+        {
+            _sessionEntity = null;
+            world.ForEach<GameSession>((Entity entity, ref GameSession _) =>
+            {
+                _sessionEntity = entity;
+            });
+        }
+
+        if (!_sessionEntity.HasValue)
+        {
+            return true;
+        }
+
+        return world.TryGetComponent(_sessionEntity.Value, out GameSession session) &&
+               session.State == GameState.Playing;
     }
 
     private void RebuildStaticGrid(EcsWorld world)
