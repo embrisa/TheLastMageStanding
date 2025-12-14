@@ -221,6 +221,25 @@ internal sealed class MyraSettingsScreen : MyraSettingsScreenBase
             },
             _uiSoundPlayer));
 
+        section.AddRow(SettingsFieldRow.ToggleRow(
+            "video",
+            "reduce_status_flashing",
+            "Reduce flashing status effects",
+            video.ReduceStatusEffectFlashing,
+            onChanged: change =>
+            {
+                if (change.ToggleValue.HasValue)
+                {
+                    VideoSettingChanged?.Invoke(new VideoSettingChangedEvent
+                    {
+                        Field = VideoSettingField.ReduceStatusEffectFlashing,
+                        ToggleValue = change.ToggleValue,
+                        Persist = change.Persist
+                    });
+                }
+            },
+            _uiSoundPlayer));
+
         var scaleOptions = BuildScaleOptions();
         var selectedScale = video.WindowScale.ToString(CultureInfo.InvariantCulture);
         section.AddRow(SettingsFieldRow.DropdownRow(
@@ -372,4 +391,3 @@ internal sealed class MyraSettingsScreen : MyraSettingsScreenBase
         return binding.Primary.ToString();
     }
 }
-

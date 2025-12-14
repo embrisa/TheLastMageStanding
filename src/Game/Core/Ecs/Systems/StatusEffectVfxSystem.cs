@@ -54,6 +54,11 @@ internal sealed class StatusEffectVfxSystem : IUpdateSystem
             return;
         }
 
+        if (GetReduceStatusEffectFlashing())
+        {
+            return;
+        }
+
         if (!_world.TryGetComponent(evt.Target, out Position position))
         {
             return;
@@ -61,6 +66,16 @@ internal sealed class StatusEffectVfxSystem : IUpdateSystem
 
         var (effectName, color) = GetVfx(evt.Type);
         _world.EventBus.Publish(new VfxSpawnEvent(effectName + "_tick", position.Value, VfxType.Impact, color * 0.8f));
+    }
+
+    private bool GetReduceStatusEffectFlashing()
+    {
+        var reduce = false;
+        _world.ForEach<VideoSettingsState>((Entity _, ref VideoSettingsState video) =>
+        {
+            reduce = video.ReduceStatusEffectFlashing;
+        });
+        return reduce;
     }
 
     private static (string effectName, Color color) GetVfx(StatusEffectType type) =>
@@ -74,4 +89,3 @@ internal sealed class StatusEffectVfxSystem : IUpdateSystem
             _ => ("status_unknown", Color.White)
         };
 }
-

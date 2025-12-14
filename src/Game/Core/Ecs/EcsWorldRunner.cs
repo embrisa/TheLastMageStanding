@@ -121,6 +121,7 @@ internal sealed class EcsWorldRunner
         var statusEffectDebugSystem = new StatusEffectDebugSystem();
         var aiDebugRenderSystem = new AiDebugRenderSystem();
         var debugInputSystem = new DebugInputSystem(collisionDebugRenderSystem, _enemyFactory, statusEffectDebugSystem, aiDebugRenderSystem);
+        var debugCommandSystem = new DebugCommandSystem();
         var animationEventSystem = new AnimationEventSystem();
         var hitStopSystem = new HitStopSystem();
         _hitStopSystem = hitStopSystem;  // Store reference for hit-stop checks
@@ -186,6 +187,7 @@ internal sealed class EcsWorldRunner
             playerSkillInputSystem,  // Convert attack input to skill cast requests
             skillCastSystem,  // Validate and gate skill casts
             skillExecutionSystem,  // Execute completed skill casts
+            hitReactionSystem, // Reduce health before status application
             statusEffectApplicationSystem,  // Apply statuses from hits
             statusEffectTickSystem,  // Tick DoTs/debuffs
             eliteModifierSystem, // Elite modifier runtime effects
@@ -211,7 +213,6 @@ internal sealed class EcsWorldRunner
             vfxSystem,  // Process VFX spawns
             statusEffectVfxSystem,  // Status VFX/SFX hooks
             telegraphSystem,  // Update telegraph lifetimes
-            hitReactionSystem,
             hitEffectSystem,
             new XpOrbSpawnSystem(_progressionConfig),
             new XpCollectionSystem(_progressionConfig),
@@ -236,6 +237,7 @@ internal sealed class EcsWorldRunner
         _updateSystems =
         [
             debugInputSystem,  // Handle debug input early
+            debugCommandSystem,  // Optional console-driven debug commands
             new InputSystem(),  // Read input (WASD, etc.)
             levelUpChoiceSystem,  // Level-up choice input should work while paused
             new MovementIntentSystem(),  // Convert input to velocity

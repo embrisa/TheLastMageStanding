@@ -139,7 +139,8 @@ internal sealed class DamageApplicationService
                 continue;
             }
 
-            var multiplier = 1f + (StatusEffectConfig.ShockDamageAmp * effect.CurrentStacks);
+            var perStackAmp = Math.Clamp(effect.Data.Potency, 0f, 5f);
+            var multiplier = 1f + (perStackAmp * effect.CurrentStacks);
             return new DamageInfo(
                 damageInfo.BaseDamage * multiplier,
                 damageInfo.DamageType,

@@ -14,6 +14,7 @@ internal sealed class ContactDamageSystem : IUpdateSystem
 {
     private float _gameTime;
     private DamageApplicationService? _damageService;
+    private readonly CombatRng _rng = new();
 
     public void Initialize(EcsWorld world)
     {
@@ -81,11 +82,23 @@ internal sealed class ContactDamageSystem : IUpdateSystem
         if (_damageService == null)
             return;
 
+        StatusEffectData? statusEffect = null;
+        if (world.TryGetComponent(attacker, out OnHitStatusEffect onHit) &&
+            onHit.Effect.Type != StatusEffectType.None)
+        {
+            var chance = Math.Clamp(onHit.Chance, 0f, 1f);
+            if (_rng.NextFloat() <= chance)
+            {
+                statusEffect = onHit.Effect;
+            }
+        }
+
         var damageInfo = new DamageInfo(
             baseDamage: attackStats.Damage,
             damageType: DamageType.Physical,
             flags: DamageFlags.CanCrit,
-            source: DamageSource.ContactDamage);
+            source: DamageSource.ContactDamage,
+            statusEffect: statusEffect);
 
         // Get attacker position for event
         var attackerPos = world.TryGetComponent(attacker, out Position pos) ? pos.Value : Vector2.Zero;

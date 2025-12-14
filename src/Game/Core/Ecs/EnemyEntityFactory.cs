@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using TheLastMageStanding.Game.Core.Config;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Ecs.Config;
 
@@ -160,6 +161,25 @@ internal sealed class EnemyEntityFactory
                 windupSeconds: rangedConfig.WindupSeconds));
         }
 
+        // Basic enemy status theming (Task 034): ensure at least two status effects can be applied by enemies.
+        switch (archetype.Id)
+        {
+            case "bone_scout":
+                _world.SetComponent(entity, new OnHitStatusEffect
+                {
+                    Effect = StatusEffectConfig.CreatePoison(potency: 2.5f, duration: 2.8f),
+                    Chance = 0.35f
+                });
+                break;
+            case "bone_mage":
+                _world.SetComponent(entity, new OnHitStatusEffect
+                {
+                    Effect = StatusEffectConfig.CreateShock(potency: 0.2f, duration: 2.0f),
+                    Chance = 0.35f
+                });
+                break;
+        }
+
         return entity;
     }
 
@@ -271,4 +291,3 @@ internal sealed class EnemyEntityFactory
         return new Color(mix);
     }
 }
-

@@ -242,6 +242,7 @@ internal sealed class GameSessionSystem : IUpdateSystem
             videoState = new VideoSettingsState(
                 _videoSettings.Fullscreen,
                 _videoSettings.VSync,
+                _videoSettings.ReduceStatusEffectFlashing,
                 _videoSettings.BackBufferWidth,
                 _videoSettings.BackBufferHeight,
                 _videoSettings.WindowScale);
@@ -694,6 +695,11 @@ internal sealed class GameSessionSystem : IUpdateSystem
                 _videoSettings.VSync = evt.ToggleValue.Value;
                 changed = true;
                 break;
+            case VideoSettingField.ReduceStatusEffectFlashing when evt.ToggleValue.HasValue:
+                videoState.ReduceStatusEffectFlashing = evt.ToggleValue.Value;
+                _videoSettings.ReduceStatusEffectFlashing = evt.ToggleValue.Value;
+                changed = true;
+                break;
             case VideoSettingField.Resolution when evt.Resolution.HasValue:
                 var (width, height) = evt.Resolution.Value;
                 videoState.BackBufferWidth = Math.Max(640, width);
@@ -767,6 +773,7 @@ internal sealed class GameSessionSystem : IUpdateSystem
             Version = _videoSettings.Version,
             Fullscreen = videoState.Fullscreen,
             VSync = videoState.VSync,
+            ReduceStatusEffectFlashing = videoState.ReduceStatusEffectFlashing,
             BackBufferWidth = videoState.BackBufferWidth,
             BackBufferHeight = videoState.BackBufferHeight,
             WindowScale = videoState.WindowScale

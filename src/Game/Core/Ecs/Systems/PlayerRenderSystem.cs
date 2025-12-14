@@ -199,6 +199,12 @@ internal sealed class PlayerRenderSystem : IUpdateSystem, IDrawSystem, ILoadCont
                     tint = Color.Lerp(tint, Color.OrangeRed, flashStrength * 0.8f);
                 }
 
+                if (world.TryGetComponent(entity, out StatusEffectVisual statusVisual) && statusVisual.Strength > 0f)
+                {
+                    var strength = MathHelper.Clamp(statusVisual.Strength, 0f, 1f);
+                    tint = Color.Lerp(tint, statusVisual.Color, strength);
+                }
+
                 spriteBatch.Draw(
                     animation.Texture,
                     position.Value,
@@ -326,5 +332,4 @@ internal sealed class PlayerRenderSystem : IUpdateSystem, IDrawSystem, ILoadCont
         return texture;
     }
 }
-
 

@@ -18,11 +18,11 @@ Introduce reusable status effects (Burn, Freeze/Slow, Shock, Poison) that stack,
 - Long-form DoT/HoT balancing; keep values tunable placeholders.
 
 ## Acceptance criteria
-- [ ] At least two status effects are applied by both player and enemies; they stack/refresh according to defined rules and expire correctly.
-- [ ] Resistances/immunities prevent or reduce effects as configured; damage formulas use the unified model (Task 029).
-- [ ] VFX/SFX cues indicate status presence; debug view can display active effects and remaining durations.
-- [ ] Status ticks are deterministic and tied to fixed timestep; no double-tick or missed-tick bugs on variable frame rates.
-- [ ] Tests cover stacking/refresh, resistance/immunity paths, and tick timing; `dotnet build` passes.
+- [x] At least two status effects are applied by both player and enemies; they stack/refresh according to defined rules and expire correctly.
+- [x] Resistances/immunities prevent or reduce effects as configured; damage formulas use the unified model (Task 029).
+- [x] VFX/SFX cues indicate status presence; debug view can display active effects and remaining durations.
+- [x] Status ticks are deterministic and tied to fixed timestep; no double-tick or missed-tick bugs on variable frame rates.
+- [x] Tests cover stacking/refresh, resistance/immunity paths, and tick timing; `dotnet build` passes.
 
 ## Definition of done
 - Builds pass (`dotnet build`)
@@ -545,4 +545,3 @@ public void StatusEffect_IntegrationWithSkills() {
 - Avoid per-frame allocations when managing active status lists; consider pooled buffers.
 - VFX spam risk in hordes; support LOD or throttling for effects on many entities.
 - Coordinate with Task 033 dash i-frames: statuses should not apply during immune frames.***
-

@@ -97,14 +97,22 @@ internal struct VideoSettingsState
 {
     public bool Fullscreen { get; set; }
     public bool VSync { get; set; }
+    public bool ReduceStatusEffectFlashing { get; set; }
     public int BackBufferWidth { get; set; }
     public int BackBufferHeight { get; set; }
     public int WindowScale { get; set; }
 
-    public VideoSettingsState(bool fullscreen, bool vSync, int backBufferWidth, int backBufferHeight, int windowScale)
+    public VideoSettingsState(
+        bool fullscreen,
+        bool vSync,
+        bool reduceStatusEffectFlashing,
+        int backBufferWidth,
+        int backBufferHeight,
+        int windowScale)
     {
         Fullscreen = fullscreen;
         VSync = vSync;
+        ReduceStatusEffectFlashing = reduceStatusEffectFlashing;
         BackBufferWidth = backBufferWidth;
         BackBufferHeight = backBufferHeight;
         WindowScale = windowScale;

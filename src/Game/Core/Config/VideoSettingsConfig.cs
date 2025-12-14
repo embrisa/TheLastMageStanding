@@ -7,11 +7,12 @@ namespace TheLastMageStanding.Game.Core.Config;
 /// </summary>
 internal sealed class VideoSettingsConfig
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
 
     // Uses borderless fullscreen (no hardware mode switch) for stability.
     public bool Fullscreen { get; set; }
     public bool VSync { get; set; } = true;
+    public bool ReduceStatusEffectFlashing { get; set; }
 
     public int BackBufferWidth { get; set; } = 960 * 2;  // Virtual * default scale
     public int BackBufferHeight { get; set; } = 540 * 2;
@@ -25,6 +26,7 @@ internal sealed class VideoSettingsConfig
         Version = Version,
         Fullscreen = Fullscreen,
         VSync = VSync,
+        ReduceStatusEffectFlashing = ReduceStatusEffectFlashing,
         BackBufferWidth = BackBufferWidth,
         BackBufferHeight = BackBufferHeight,
         WindowScale = WindowScale
@@ -37,4 +39,3 @@ internal sealed class VideoSettingsConfig
         WindowScale = Math.Clamp(WindowScale, 1, 4);
     }
 }
-

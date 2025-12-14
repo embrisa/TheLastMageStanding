@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using TheLastMageStanding.Game.Core.Combat;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 
@@ -13,6 +14,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 internal sealed class RangedAttackSystem : IUpdateSystem
 {
     private readonly List<(Entity entity, Faction faction, Vector2 position)> _targets = new();
+    private readonly CombatRng _rng = new();
 
     public void Initialize(EcsWorld world)
     {
@@ -79,7 +81,7 @@ internal sealed class RangedAttackSystem : IUpdateSystem
                     if (ranged.WindupTimer >= ranged.WindupSeconds)
                     {
                         // Fire projectile!
-                        FireProjectile(world, entity, position.Value, targetPosition, ranged);
+                        FireProjectile(world, entity, position.Value, targetPosition, ranged, _rng);
 
                         // Reset windup and start attack cooldown
                         ranged.IsWindingUp = false;
@@ -121,7 +123,13 @@ internal sealed class RangedAttackSystem : IUpdateSystem
             });
     }
 
-    private static void FireProjectile(EcsWorld world, Entity source, Vector2 sourcePosition, Vector2 targetPosition, RangedAttacker ranged)
+    private static void FireProjectile(
+        EcsWorld world,
+        Entity source,
+        Vector2 sourcePosition,
+        Vector2 targetPosition,
+        RangedAttacker ranged,
+        CombatRng rng)
     {
         // Calculate direction to target
         var direction = targetPosition - sourcePosition;
@@ -140,18 +148,35 @@ internal sealed class RangedAttackSystem : IUpdateSystem
         if (hasExtraProjectiles)
         {
             var spread = MathF.PI / 9f; // ~20 degrees
-            SpawnProjectile(world, source, sourcePosition, direction, ranged);
-            SpawnProjectile(world, source, sourcePosition, Rotate(direction, spread), ranged);
-            SpawnProjectile(world, source, sourcePosition, Rotate(direction, -spread), ranged);
+            SpawnProjectile(world, source, sourcePosition, direction, ranged, TryRollStatus(world, source, rng));
+            SpawnProjectile(world, source, sourcePosition, Rotate(direction, spread), ranged, TryRollStatus(world, source, rng));
+            SpawnProjectile(world, source, sourcePosition, Rotate(direction, -spread), ranged, TryRollStatus(world, source, rng));
             world.EventBus.Publish(new VfxSpawnEvent("elite_extra_projectiles_muzzle", sourcePosition, VfxType.MuzzleFlash, new Color(255, 170, 80)));
         }
         else
         {
-            SpawnProjectile(world, source, sourcePosition, direction, ranged);
+            SpawnProjectile(world, source, sourcePosition, direction, ranged, TryRollStatus(world, source, rng));
         }
     }
 
-    private static void SpawnProjectile(EcsWorld world, Entity source, Vector2 sourcePosition, Vector2 direction, RangedAttacker ranged)
+    private static StatusEffectData? TryRollStatus(EcsWorld world, Entity source, CombatRng rng)
+    {
+        if (!world.TryGetComponent(source, out OnHitStatusEffect onHit) || onHit.Effect.Type == StatusEffectType.None)
+        {
+            return null;
+        }
+
+        var chance = Math.Clamp(onHit.Chance, 0f, 1f);
+        return rng.NextFloat() <= chance ? onHit.Effect : null;
+    }
+
+    private static void SpawnProjectile(
+        EcsWorld world,
+        Entity source,
+        Vector2 sourcePosition,
+        Vector2 direction,
+        RangedAttacker ranged,
+        StatusEffectData? statusEffect)
     {
         var normalized = direction.LengthSquared() < 0.0001f ? new Vector2(1f, 0f) : Vector2.Normalize(direction);
 
@@ -170,7 +195,7 @@ internal sealed class RangedAttackSystem : IUpdateSystem
         world.SetComponent(projectileEntity, new Velocity(velocity));
 
         // Projectile component
-        world.SetComponent(projectileEntity, new Projectile(source, ranged.ProjectileDamage, sourceFaction, lifetimeSeconds: 5f));
+        world.SetComponent(projectileEntity, new Projectile(source, ranged.ProjectileDamage, sourceFaction, lifetimeSeconds: 5f, statusEffect: statusEffect));
 
         // Visual
         var projectileColor = sourceFaction == Faction.Enemy

@@ -39,6 +39,12 @@ internal sealed class StatusEffectApplicationSystem : IUpdateSystem
             return;
         }
 
+        // Dash i-frames (Task 033): do not apply statuses while invulnerable.
+        if (_world.TryGetComponent(evt.Target, out Invulnerable _))
+        {
+            return;
+        }
+
         if (_world.TryGetComponent(evt.Target, out Health health) && health.IsDead)
         {
             return;
@@ -181,4 +187,3 @@ internal sealed class StatusEffectApplicationSystem : IUpdateSystem
         _world.EventBus.Publish(new StatusEffectAppliedEvent(target, data.Type, data.Duration, stacksApplied));
     }
 }
-

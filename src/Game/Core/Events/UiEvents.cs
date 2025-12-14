@@ -38,8 +38,9 @@ internal enum VideoSettingField
 {
     Fullscreen = 0,
     VSync = 1,
-    Resolution = 2,
-    WindowScale = 3
+    ReduceStatusEffectFlashing = 2,
+    Resolution = 3,
+    WindowScale = 4
 }
 
 internal readonly struct VideoSettingChangedEvent

@@ -111,6 +111,12 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
                     tint = Color.Lerp(tint, Color.OrangeRed, flashStrength * 0.8f);
                 }
 
+                if (world.TryGetComponent(entity, out StatusEffectVisual statusVisual) && statusVisual.Strength > 0f)
+                {
+                    var strength = MathHelper.Clamp(statusVisual.Strength, 0f, 1f);
+                    tint = Color.Lerp(tint, statusVisual.Color, strength);
+                }
+
                 spriteBatch.Draw(
                     animation.Texture,
                     position.Value,
@@ -307,5 +313,4 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
 
     private readonly record struct EnemySpriteKey(string Idle, string Run, int FrameSize);
 }
-
 

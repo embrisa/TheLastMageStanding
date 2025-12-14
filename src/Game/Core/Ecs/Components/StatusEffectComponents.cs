@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Components;
 
@@ -115,3 +116,22 @@ internal struct StatusEffectImmunities
     }
 }
 
+/// <summary>
+/// Optional component enabling attacks (contact/ranged) to apply a status effect on hit.
+/// </summary>
+internal struct OnHitStatusEffect
+{
+    public StatusEffectData Effect { get; set; }
+    public float Chance { get; set; }
+}
+
+/// <summary>
+/// Derived visuals for active status effects (tint + optional pulsing) consumed by render systems.
+/// </summary>
+internal struct StatusEffectVisual
+{
+    public StatusEffectType DominantType { get; set; }
+    public Color Color { get; set; }
+    public float Strength { get; set; }
+    public float PulseTime { get; set; }
+}
