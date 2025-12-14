@@ -88,18 +88,12 @@ internal struct DefensiveStats
     /// </summary>
     public float FrostResist { get; set; }
 
-    /// <summary>
-    /// Nature/poison resistance. Uses diminishing returns.
-    /// </summary>
-    public float NatureResist { get; set; }
-
     public static DefensiveStats Default => new()
     {
         Armor = 0.0f,
         ArcaneResist = 0.0f,
         FireResist = 0.0f,
-        FrostResist = 0.0f,
-        NatureResist = 0.0f
+        FrostResist = 0.0f
     };
 
     public DefensiveStats()
@@ -108,7 +102,6 @@ internal struct DefensiveStats
         ArcaneResist = 0.0f;
         FireResist = 0.0f;
         FrostResist = 0.0f;
-        NatureResist = 0.0f;
     }
 }
 
@@ -146,8 +139,6 @@ internal struct StatModifiers
     public float FireResistMultiplicative { get; set; }
     public float FrostResistAdditive { get; set; }
     public float FrostResistMultiplicative { get; set; }
-    public float NatureResistAdditive { get; set; }
-    public float NatureResistMultiplicative { get; set; }
 
     // Movement modifiers
     public float MoveSpeedAdditive { get; set; }
@@ -170,8 +161,6 @@ internal struct StatModifiers
         FireResistMultiplicative = 1f,
         FrostResistAdditive = 0f,
         FrostResistMultiplicative = 1f,
-        NatureResistAdditive = 0f,
-        NatureResistMultiplicative = 1f,
         MoveSpeedAdditive = 0f,
         MoveSpeedMultiplicative = 1f
     };
@@ -193,8 +182,6 @@ internal struct StatModifiers
         FireResistMultiplicative = 1f;
         FrostResistAdditive = 0f;
         FrostResistMultiplicative = 1f;
-        NatureResistAdditive = 0f;
-        NatureResistMultiplicative = 1f;
         MoveSpeedAdditive = 0f;
         MoveSpeedMultiplicative = 1f;
     }
@@ -217,7 +204,6 @@ internal struct StatModifiers
             result.ArcaneResistAdditive += mod.ArcaneResistAdditive;
             result.FireResistAdditive += mod.FireResistAdditive;
             result.FrostResistAdditive += mod.FrostResistAdditive;
-            result.NatureResistAdditive += mod.NatureResistAdditive;
             result.MoveSpeedAdditive += mod.MoveSpeedAdditive;
 
             // Multiplicative bonuses stack multiplicatively
@@ -227,7 +213,6 @@ internal struct StatModifiers
             result.ArcaneResistMultiplicative *= mod.ArcaneResistMultiplicative;
             result.FireResistMultiplicative *= mod.FireResistMultiplicative;
             result.FrostResistMultiplicative *= mod.FrostResistMultiplicative;
-            result.NatureResistMultiplicative *= mod.NatureResistMultiplicative;
             result.MoveSpeedMultiplicative *= mod.MoveSpeedMultiplicative;
         }
         return result;
@@ -249,7 +234,6 @@ internal struct ComputedStats
     public float EffectiveArcaneResist { get; set; }
     public float EffectiveFireResist { get; set; }
     public float EffectiveFrostResist { get; set; }
-    public float EffectiveNatureResist { get; set; }
     public float EffectiveMoveSpeed { get; set; }
 
     /// <summary>
@@ -268,7 +252,6 @@ internal struct ComputedStats
         EffectiveArcaneResist = 0.0f;
         EffectiveFireResist = 0.0f;
         EffectiveFrostResist = 0.0f;
-        EffectiveNatureResist = 0.0f;
         EffectiveMoveSpeed = 0.0f;
         IsDirty = true;
     }

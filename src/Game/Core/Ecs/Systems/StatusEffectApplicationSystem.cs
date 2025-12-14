@@ -92,8 +92,7 @@ internal sealed class StatusEffectApplicationSystem : IUpdateSystem
                 Armor = computed.EffectiveArmor,
                 ArcaneResist = computed.EffectiveArcaneResist,
                 FireResist = computed.EffectiveFireResist,
-                FrostResist = computed.EffectiveFrostResist,
-                NatureResist = computed.EffectiveNatureResist
+                FrostResist = computed.EffectiveFrostResist
             };
         }
 

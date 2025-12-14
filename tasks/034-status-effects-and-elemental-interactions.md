@@ -190,7 +190,6 @@ MovementSystem (uses slowed stats)
   - Add to `DefensiveStats`:
     - `float FireResist` (reduces Burn duration/potency)
     - `float FrostResist` (reduces Freeze/Slow duration)
-    - `float NatureResist` (future: for Poison, currently uses Arcane)
   - Add to `StatModifiers`:
     - Additive/multiplicative arrays for new resist types
   - Update `ComputedStats` to cache effective resists
@@ -217,7 +216,7 @@ var adjustedPotency = effect.Potency * (1.0f - resistance);
 Burn → FireResist
 Freeze/Slow → FrostResist
 Shock → ArcaneResist
-Poison → ArcaneResist (future: NatureResist if added)
+Poison → ArcaneResist
 ```
 
 **Default Values:**

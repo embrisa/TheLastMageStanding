@@ -66,8 +66,7 @@ internal sealed class EnemyEntityFactory
             Armor = 0f,
             ArcaneResist = 0f,
             FireResist = 0f,
-            FrostResist = 0f,
-            NatureResist = 0f
+            FrostResist = 0f
         });
         _world.SetComponent(entity, StatModifiers.Zero);
         _world.SetComponent(entity, new ComputedStats { IsDirty = true });
@@ -106,8 +105,7 @@ internal sealed class EnemyEntityFactory
                 Armor = 5f, // Small armor bonus
                 ArcaneResist = 10f, // 10% arcane resist
                 FireResist = 20f,
-                FrostResist = 20f,
-                NatureResist = 20f
+                FrostResist = 20f
             });
         }
         else if (archetype.Tier == EnemyTier.Boss)
@@ -118,8 +116,7 @@ internal sealed class EnemyEntityFactory
                 Armor = 15f, // Significant armor
                 ArcaneResist = 25f, // 25% arcane resist
                 FireResist = 50f,
-                FrostResist = 50f,
-                NatureResist = 50f
+                FrostResist = 50f
             });
         }
 

@@ -57,8 +57,7 @@ internal sealed class PlayerEntityFactory
             Armor = 0f,
             ArcaneResist = 0f,
             FireResist = 0f,
-            FrostResist = 0f,
-            NatureResist = 0f
+            FrostResist = 0f
         });
         _world.SetComponent(entity, StatModifiers.Zero);
         _world.SetComponent(entity, new ComputedStats { IsDirty = true });

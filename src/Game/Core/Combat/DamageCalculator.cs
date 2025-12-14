@@ -163,7 +163,7 @@ internal sealed class DamageCalculator
             StatusEffectType.Freeze => defense.FrostResist,
             StatusEffectType.Slow => defense.FrostResist,
             StatusEffectType.Shock => defense.ArcaneResist,
-            StatusEffectType.Poison => defense.NatureResist > 0f ? defense.NatureResist : defense.ArcaneResist,
+            StatusEffectType.Poison => defense.ArcaneResist,
             _ => 0f
         };
 
@@ -200,7 +200,6 @@ internal static class StatCalculator
         computed.EffectiveArcaneResist = Math.Max(0f, (baseDefense.ArcaneResist + modifiers.ArcaneResistAdditive) * modifiers.ArcaneResistMultiplicative);
         computed.EffectiveFireResist = Math.Max(0f, (baseDefense.FireResist + modifiers.FireResistAdditive) * modifiers.FireResistMultiplicative);
         computed.EffectiveFrostResist = Math.Max(0f, (baseDefense.FrostResist + modifiers.FrostResistAdditive) * modifiers.FrostResistMultiplicative);
-        computed.EffectiveNatureResist = Math.Max(0f, (baseDefense.NatureResist + modifiers.NatureResistAdditive) * modifiers.NatureResistMultiplicative);
 
         // Movement speed
         computed.EffectiveMoveSpeed = Math.Max(0f, (baseMoveSpeed + modifiers.MoveSpeedAdditive) * modifiers.MoveSpeedMultiplicative);

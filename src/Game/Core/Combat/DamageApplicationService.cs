@@ -53,8 +53,7 @@ internal sealed class DamageApplicationService
                 Armor = targetComputed.EffectiveArmor,
                 ArcaneResist = targetComputed.EffectiveArcaneResist,
                 FireResist = targetComputed.EffectiveFireResist,
-                FrostResist = targetComputed.EffectiveFrostResist,
-                NatureResist = targetComputed.EffectiveNatureResist
+                FrostResist = targetComputed.EffectiveFrostResist
             }
             : DefensiveStats.Default;
 
@@ -103,8 +102,7 @@ internal sealed class DamageApplicationService
                 Armor = targetComputed.EffectiveArmor,
                 ArcaneResist = targetComputed.EffectiveArcaneResist,
                 FireResist = targetComputed.EffectiveFireResist,
-                FrostResist = targetComputed.EffectiveFrostResist,
-                NatureResist = targetComputed.EffectiveNatureResist
+                FrostResist = targetComputed.EffectiveFrostResist
             }
             : DefensiveStats.Default;
 

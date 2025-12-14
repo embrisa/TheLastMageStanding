@@ -55,8 +55,7 @@ public class StatusEffectTests
             Armor = 0f,
             ArcaneResist = 0f,
             FireResist = fireResist,
-            FrostResist = frostResist,
-            NatureResist = 0f
+            FrostResist = frostResist
         });
         world.SetComponent(entity, CreateComputed(fireResist: fireResist, frostResist: frostResist));
         return entity;
@@ -66,7 +65,6 @@ public class StatusEffectTests
         float fireResist = 0f,
         float frostResist = 0f,
         float arcaneResist = 0f,
-        float natureResist = 0f,
         float moveSpeed = 200f)
     {
         return new ComputedStats
@@ -80,7 +78,6 @@ public class StatusEffectTests
             EffectiveArcaneResist = arcaneResist,
             EffectiveFireResist = fireResist,
             EffectiveFrostResist = frostResist,
-            EffectiveNatureResist = natureResist,
             EffectiveMoveSpeed = moveSpeed,
             IsDirty = false
         };

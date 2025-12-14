@@ -46,7 +46,6 @@ internal static class StatInspector
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Arcane Resist: {defense.ArcaneResist:F1}");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Fire Resist: {defense.FireResist:F1}");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Frost Resist: {defense.FrostResist:F1}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  Nature Resist: {defense.NatureResist:F1}");
         }
 
         if (world.TryGetComponent(entity, out BaseMoveSpeed baseMoveSpeed))
@@ -72,8 +71,6 @@ internal static class StatInspector
                 sb.AppendLine(CultureInfo.InvariantCulture, $"  Fire Resist: +{mods.FireResistAdditive:F1} x {mods.FireResistMultiplicative:F2}");
             if (mods.FrostResistAdditive != 0f || mods.FrostResistMultiplicative != 1f)
                 sb.AppendLine(CultureInfo.InvariantCulture, $"  Frost Resist: +{mods.FrostResistAdditive:F1} x {mods.FrostResistMultiplicative:F2}");
-            if (mods.NatureResistAdditive != 0f || mods.NatureResistMultiplicative != 1f)
-                sb.AppendLine(CultureInfo.InvariantCulture, $"  Nature Resist: +{mods.NatureResistAdditive:F1} x {mods.NatureResistMultiplicative:F2}");
             if (mods.MoveSpeedAdditive != 0f || mods.MoveSpeedMultiplicative != 1f)
                 sb.AppendLine(CultureInfo.InvariantCulture, $"  Move Speed: +{mods.MoveSpeedAdditive:F1} x {mods.MoveSpeedMultiplicative:F2}");
         }
@@ -91,7 +88,6 @@ internal static class StatInspector
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Arcane Resist: {computed.EffectiveArcaneResist:F1} ({CalculateReductionPercent(computed.EffectiveArcaneResist):P1})");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Fire Resist: {computed.EffectiveFireResist:F1} ({CalculateReductionPercent(computed.EffectiveFireResist):P1})");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Frost Resist: {computed.EffectiveFrostResist:F1} ({CalculateReductionPercent(computed.EffectiveFrostResist):P1})");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  Nature Resist: {computed.EffectiveNatureResist:F1} ({CalculateReductionPercent(computed.EffectiveNatureResist):P1})");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  Move Speed: {computed.EffectiveMoveSpeed:F1}");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  [Dirty: {computed.IsDirty}]");
         }
