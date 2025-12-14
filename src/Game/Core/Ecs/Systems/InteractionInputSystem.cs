@@ -49,9 +49,20 @@ internal sealed class InteractionInputSystem : IUpdateSystem
                 break;
 
             case InteractionType.OpenStats:
-                // TODO: Open stats UI (future task)
+                ToggleRunHistoryUI(world);
                 break;
         }
+    }
+
+    private static void ToggleRunHistoryUI(EcsWorld world)
+    {
+        // Find the RunHistoryUIState entity and toggle it
+        world.ForEach<RunHistoryUIState>(
+            (Entity entity, ref RunHistoryUIState state) =>
+            {
+                state.IsOpen = !state.IsOpen;
+                world.SetComponent(entity, state);
+            });
     }
 
     private static void TogglePerkTreeUI(EcsWorld world)

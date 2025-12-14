@@ -39,10 +39,7 @@ internal sealed class LootDropSystem : IUpdateSystem
     private void OnEnemyDied(EnemyDiedEvent evt)
     {
         if (_world == null) return;
-        
-        // Check if entity can drop loot
-        if (!_world.TryGetComponent(evt.Enemy, out LootDropper dropper))
-            return;
+        var dropper = evt.Dropper;
 
         // Roll for drop
         float dropChance = dropper.DropChance;

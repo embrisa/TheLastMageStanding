@@ -42,11 +42,23 @@ internal readonly struct EnemyDiedEvent
     public Entity Enemy { get; }
     public Vector2 Position { get; }
     public IReadOnlyList<EliteModifierType>? Modifiers { get; }
+    public bool IsElite { get; }
+    public bool IsBoss { get; }
+    public LootDropper Dropper { get; }
 
-    public EnemyDiedEvent(Entity enemy, Vector2 position, IReadOnlyList<EliteModifierType>? modifiers = null)
+    public EnemyDiedEvent(
+        Entity enemy,
+        Vector2 position,
+        IReadOnlyList<EliteModifierType>? modifiers = null,
+        bool isElite = false,
+        bool isBoss = false,
+        LootDropper? dropper = null)
     {
         Enemy = enemy;
         Position = position;
         Modifiers = modifiers;
+        IsElite = isElite;
+        IsBoss = isBoss;
+        Dropper = dropper ?? new LootDropper();
     }
 }

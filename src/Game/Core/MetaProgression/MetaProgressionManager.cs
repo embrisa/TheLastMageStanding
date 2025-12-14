@@ -20,6 +20,7 @@ public sealed class MetaProgressionManager
     public PlayerProfile CurrentProfile => _currentProfile;
     public RunSession? CurrentRun => _currentRun;
     public string SlotId => _slotId;
+    public RunHistoryService HistoryService => _historyService;
 
     public MetaProgressionManager(IEventBus eventBus, SaveSlotService saveSlotService, string slotId)
     {
@@ -43,6 +44,9 @@ public sealed class MetaProgressionManager
         _eventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
         _eventBus.Subscribe<WaveCompletedEvent>(OnWaveCompleted);
         _eventBus.Subscribe<EntityDamagedEvent>(OnEntityDamaged);
+        _eventBus.Subscribe<StageRunStartedEvent>(OnStageRunStarted);
+        _eventBus.Subscribe<StageRunCompletedEvent>(OnStageRunCompleted);
+        _eventBus.Subscribe<RunMetaXpBonusEvent>(OnRunMetaXpBonus);
     }
 
     /// <summary>
@@ -92,7 +96,11 @@ public sealed class MetaProgressionManager
         _currentRun = new RunSession
         {
             StartTime = DateTime.UtcNow,
-            RunId = Guid.NewGuid().ToString()
+            RunId = Guid.NewGuid().ToString(),
+            StageId = null,
+            StageCompleted = false,
+            BossKilled = false,
+            BonusMetaXp = 0
         };
 
         Console.WriteLine($"[MetaProgression] Run started: {_currentRun.RunId}");
@@ -112,7 +120,11 @@ public sealed class MetaProgressionManager
         _currentRun = new RunSession
         {
             StartTime = DateTime.UtcNow,
-            RunId = Guid.NewGuid().ToString()
+            RunId = Guid.NewGuid().ToString(),
+            StageId = null,
+            StageCompleted = false,
+            BossKilled = false,
+            BonusMetaXp = 0
         };
 
         Console.WriteLine($"[MetaProgression] Run restarted: {_currentRun.RunId}");
@@ -161,6 +173,51 @@ public sealed class MetaProgressionManager
         // Track damage (Amount is the damage dealt)
         // This is simplified - in a complete implementation you'd check if Source is player
         _currentRun.TotalDamageDealt += evt.Amount;
+    }
+
+    private void OnStageRunStarted(StageRunStartedEvent evt)
+    {
+        if (_currentRun == null)
+        {
+            return;
+        }
+
+        _currentRun.StageId = evt.StageId;
+        _currentRun.StageCompleted = false;
+        _currentRun.BossKilled = false;
+    }
+
+    private void OnStageRunCompleted(StageRunCompletedEvent evt)
+    {
+        if (_currentRun == null)
+        {
+            return;
+        }
+
+        _currentRun.StageId ??= evt.StageId;
+        _currentRun.StageCompleted = evt.IsVictory;
+        _currentRun.BossKilled = evt.BossKilled;
+        if (evt.IsVictory)
+        {
+            _currentRun.CauseOfDeath = "Stage Completed";
+        }
+
+        if (evt.IsVictory &&
+            !string.IsNullOrWhiteSpace(evt.StageId) &&
+            !_currentProfile.CompletedStages.Contains(evt.StageId))
+        {
+            _currentProfile.CompletedStages.Add(evt.StageId);
+        }
+    }
+
+    private void OnRunMetaXpBonus(RunMetaXpBonusEvent evt)
+    {
+        if (_currentRun == null)
+        {
+            return;
+        }
+
+        _currentRun.BonusMetaXp += Math.Max(0, evt.Amount);
     }
 
     private void FinalizeRun()

@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+using System.Globalization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -19,7 +18,7 @@ namespace TheLastMageStanding.Game.Core.Rendering.UI;
 /// <summary>
 /// Renders the skill hotbar UI showing equipped skills, cooldown timers, and hotkey bindings using Myra UI.
 /// </summary>
-internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem
+internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem, IDisposable
 {
     private const int SlotCount = 5;
     
@@ -85,18 +84,18 @@ internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem
             Width = 200,
             Height = 12,
             Visible = false,
-            GridRow = 0,
             HorizontalAlignment = HorizontalAlignment.Center,
             Margin = new Thickness(0, 0, 0, 10)
         };
+        Grid.SetRow(_castBar, 0);
         _mainContainer.Widgets.Add(_castBar);
 
         // 2. Hotbar Grid
         var hotbarGrid = new Grid
         {
-            GridRow = 1,
             ColumnSpacing = 8
         };
+        Grid.SetRow(hotbarGrid, 1);
 
         for (int i = 0; i < SlotCount; i++)
         {
@@ -107,11 +106,11 @@ internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem
             {
                 Width = 48,
                 Height = 48,
-                GridColumn = i,
                 Background = new SolidBrush(new Color(40, 40, 40, 200)),
                 Border = new SolidBrush(Color.Gray),
                 BorderThickness = new Thickness(2)
             };
+            Grid.SetColumn(slotPanel, i);
 
             // Icon
             var icon = new Image
@@ -138,7 +137,7 @@ internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem
             // Hotkey Label
             var label = new Label
             {
-                Text = i == 0 ? "LMB" : i.ToString(),
+                Text = i == 0 ? "LMB" : i.ToString(CultureInfo.InvariantCulture),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Bottom,
                 TextColor = Color.White,
@@ -239,4 +238,8 @@ internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem
         }
     }
 
+    public void Dispose()
+    {
+        _desktop?.Dispose();
+    }
 }

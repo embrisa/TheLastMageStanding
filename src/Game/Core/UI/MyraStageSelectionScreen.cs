@@ -20,7 +20,7 @@ namespace TheLastMageStanding.Game.Core.UI;
 internal sealed class MyraStageSelectionScreen : IDisposable
 {
     private readonly StageRegistry _stageRegistry;
-    private readonly PlayerProfileService _profileService;
+    private readonly CampaignProgressionService _campaignProgressionService;
     private readonly int _virtualWidth;
     private readonly int _virtualHeight;
     private IUiSoundPlayer? _uiSoundPlayer;
@@ -52,13 +52,13 @@ internal sealed class MyraStageSelectionScreen : IDisposable
 
     public MyraStageSelectionScreen(
         StageRegistry stageRegistry,
-        PlayerProfileService profileService,
+        CampaignProgressionService campaignProgressionService,
         int virtualWidth = 960,
         int virtualHeight = 540,
         IUiSoundPlayer? uiSoundPlayer = null)
     {
         _stageRegistry = stageRegistry;
-        _profileService = profileService;
+        _campaignProgressionService = campaignProgressionService;
         _virtualWidth = virtualWidth;
         _virtualHeight = virtualHeight;
         _uiSoundPlayer = uiSoundPlayer;
@@ -165,7 +165,7 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         var selectedStage = GetSelectedStage();
         if (selectedStage == null) return;
 
-        if (!IsStageUnlocked(selectedStage, _profile)) return;
+        if (!_campaignProgressionService.IsStageUnlocked(selectedStage, _profile)) return;
 
         UiSoundBinder.PlayKeyboardActivate(_uiSoundPlayer);
         StartRequested?.Invoke(selectedStage.StageId);
@@ -393,11 +393,14 @@ internal sealed class MyraStageSelectionScreen : IDisposable
 
     private void RefreshView()
     {
-        _profile = _profileService.LoadProfile();
+        _profile = _campaignProgressionService.LoadProfile();
         _currentStages = _stageRegistry.GetStagesForAct(_selectedActIndex + 1);
         _selectedStageIndex = Math.Clamp(_selectedStageIndex, 0, Math.Max(0, _currentStages.Count - 1));
 
-        _actLabel.Text = $"ACT {_selectedActIndex + 1}";
+        var act = _stageRegistry.GetAct(_selectedActIndex + 1);
+        _actLabel.Text = act != null
+            ? $"ACT {act.ActNumber} - {act.DisplayName}"
+            : $"ACT {_selectedActIndex + 1}";
         _metaLabel.Text = $"Meta Level: {_profile.MetaLevel}";
 
         _stageListGrid.Widgets.Clear();
@@ -416,7 +419,7 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         for (int i = 0; i < _currentStages.Count; i++)
         {
             var stage = _currentStages[i];
-            var isUnlocked = IsStageUnlocked(stage, _profile);
+            var isUnlocked = _campaignProgressionService.IsStageUnlocked(stage, _profile);
             var isCompleted = _profile.CompletedStages.Contains(stage.StageId);
             
             _stageListGrid.RowsProportions.Add(new Proportion(ProportionType.Auto));
@@ -528,11 +531,7 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         }
         else
         {
-            _detailsStatus.Text = $"LOCKED - Requires Meta Level {stage.RequiredMetaLevel}";
-            if (!string.IsNullOrEmpty(stage.RequiredPreviousStageId))
-            {
-                _detailsStatus.Text += "\n& Previous Stage Completion";
-            }
+            _detailsStatus.Text = $"LOCKED - {_campaignProgressionService.GetLockReason(stage, _profile)}";
             _detailsStatus.TextColor = Color.OrangeRed;
             _startButton.Enabled = false;
             ((Label)_startButton.Content).Text = "LOCKED";
@@ -585,19 +584,6 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         return Math.Max(0, maxAct - 1);
     }
 
-    private static bool IsStageUnlocked(StageDefinition stage, PlayerProfile profile)
-    {
-        if (profile.MetaLevel < stage.RequiredMetaLevel)
-        {
-            return false;
-        }
-
-        if (!string.IsNullOrEmpty(stage.RequiredPreviousStageId) &&
-            !profile.CompletedStages.Contains(stage.RequiredPreviousStageId))
-        {
-            return false;
-        }
-
-        return true;
-    }
+    private bool IsStageUnlocked(StageDefinition stage, PlayerProfile profile) =>
+        _campaignProgressionService.IsStageUnlocked(stage, profile);
 }

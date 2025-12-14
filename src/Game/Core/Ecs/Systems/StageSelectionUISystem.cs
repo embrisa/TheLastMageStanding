@@ -34,7 +34,7 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
 {
     private readonly StageRegistry _stageRegistry;
     private readonly SceneManager _sceneManager;
-    private readonly PlayerProfileService _profileService;
+    private readonly CampaignProgressionService _campaignProgressionService;
 
     private MyraStageSelectionScreen _ui = null!;
     private string? _queuedStartStageId;
@@ -43,11 +43,11 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
     public StageSelectionUISystem(
         StageRegistry stageRegistry,
         SceneManager sceneManager,
-        PlayerProfileService profileService)
+        CampaignProgressionService campaignProgressionService)
     {
         _stageRegistry = stageRegistry;
         _sceneManager = sceneManager;
-        _profileService = profileService;
+        _campaignProgressionService = campaignProgressionService;
     }
 
     public void Dispose()
@@ -61,7 +61,7 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         world.SetComponent(uiEntity, new StageSelectionUIState());
 
         var uiSoundPlayer = new EventBusUiSoundPlayer(world.EventBus);
-        _ui = new MyraStageSelectionScreen(_stageRegistry, _profileService, uiSoundPlayer: uiSoundPlayer);
+        _ui = new MyraStageSelectionScreen(_stageRegistry, _campaignProgressionService, uiSoundPlayer: uiSoundPlayer);
         _ui.StartRequested += stageId => _queuedStartStageId = stageId;
         _ui.BackRequested += () => _queuedClose = true;
     }
@@ -205,8 +205,8 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
             return;
         }
 
-        var profile = _profileService.LoadProfile();
-        if (!IsStageUnlocked(stage, profile))
+        var profile = _campaignProgressionService.LoadProfile();
+        if (!_campaignProgressionService.IsStageUnlocked(stage, profile))
         {
             _queuedStartStageId = null;
             return;
@@ -218,24 +218,7 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         _queuedStartStageId = null;
         _queuedClose = false;
     }
-
-    private static bool IsStageUnlocked(StageDefinition stage, PlayerProfile profile)
-    {
-        if (profile.MetaLevel < stage.RequiredMetaLevel)
-        {
-            return false;
-        }
-
-        if (!string.IsNullOrEmpty(stage.RequiredPreviousStageId) &&
-            !profile.CompletedStages.Contains(stage.RequiredPreviousStageId))
-        {
-            return false;
-        }
-
-        return true;
-    }
 }
-
 
 
 

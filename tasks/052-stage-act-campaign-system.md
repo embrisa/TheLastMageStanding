@@ -1,5 +1,5 @@
 # Task: 052 - Stage/act campaign system
-- Status: backlog
+- Status: done
 
 ## Summary
 Implement the 4-act campaign structure with multiple stages per act, act bosses, biome definitions, and linear progression tracking. This replaces the endless wave system with a story-driven stage progression where completing a stage unlocks the next.
@@ -22,22 +22,30 @@ Implement the 4-act campaign structure with multiple stages per act, act bosses,
 - Difficulty scaling beyond basic tuning
 
 ## Acceptance criteria
-- [ ] `ActDefinition` and `StageDefinition` data models exist
-- [ ] Campaign config defines 4 acts with at least 3 stages each (Act 1 fully fleshed out)
-- [ ] Each act has unique biome theme (at minimum: name, color palette, enemy set)
-- [ ] Act bosses defined with multi-phase mechanics (at least Act 1 boss implemented)
-- [ ] `CampaignProgressionService` tracks unlocked/completed stages
-- [ ] Completing a stage unlocks the next stage/act
-- [ ] Boss stages award significant rewards (meta XP, gold, guaranteed loot)
-- [ ] Stage selection UI shows progression and locked/unlocked states
-- [ ] Profile persistence includes campaign progress
-- [ ] `dotnet build` passes; Act 1 fully playable end-to-end
+- [x] `ActDefinition` and `StageDefinition` data models exist
+- [x] Campaign config defines 4 acts with at least 3 stages each (Act 1 fully fleshed out)
+- [x] Each act has unique biome theme (at minimum: name, color palette, enemy set)
+- [x] Act bosses defined with multi-phase mechanics (at least Act 1 boss implemented)
+- [x] `CampaignProgressionService` tracks unlocked/completed stages
+- [x] Completing a stage unlocks the next stage/act
+- [x] Boss stages award significant rewards (meta XP, gold, guaranteed loot)
+- [x] Stage selection UI shows progression and locked/unlocked states
+- [x] Profile persistence includes campaign progress
+- [x] `dotnet build` passes; Act 1 fully playable end-to-end
 
 ## Definition of done
 - Builds pass (`dotnet build`)
 - Tests/play check done (Act 1 fully playable)
 - Docs updated (GDD with act descriptions, boss mechanics)
 - Handoff notes added (if handing off)
+
+## Implementation notes (2025-12-13)
+- Campaign models and config live in `src/Game/Core/Campaign/CampaignData.cs` and `src/Game/Core/Campaign/StageRegistry.cs`.
+- Stage runs are now capped by `StageDefinition.MaxWaves`; non-boss stages complete after the final wave.
+- Boss stages spawn a deterministic act boss at the boss wave and complete on boss death; bosses have a simple multi-phase system (stat scaling + summon bursts).
+- Campaign progression persists via `PlayerProfile.CompletedStages` and is saved as part of the meta progression run finalization.
+- Stage selection UI now shows act names and clearer lock requirements.
+- Maps are still placeholders (`Tiles/Maps/FirstMap`) for all stages until unique stage maps/arenas are authored.
 
 ## Plan
 - Step 1: Define campaign data model

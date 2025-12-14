@@ -28,8 +28,6 @@ Use this file to track active work items. Each task should be created by copying
 
 
 ## Backlog
-- [ ] [Task: 049 - Run History & Stats Display UI](tasks/049-run-history-stats-ui.md)
-- [ ] [Task: 052 - Stage/act campaign system](tasks/052-stage-act-campaign-system.md)
 - [ ] [Task: 054 - Meta progression system updates](tasks/054-meta-progression-updates.md)
 - [ ] [Task: 055 - Skill selection hub UI](tasks/055-skill-selection-hub-ui.md)
 - [ ] [Task: 056 - Equipment management hub UI](tasks/056-equipment-management-hub-ui.md)
@@ -53,6 +51,8 @@ Use this file to track active work items. Each task should be created by copying
 - [ ] [Hub Completion Arc — Task Summary](tasks/HUB_COMPLETION_ARC.md) - : Blocking all other hub tasks
 
 ## Completed
+- [x] [Task: 052 - Stage/act campaign system](tasks/052-stage-act-campaign-system.md)
+- [x] [Task: 049 - Run History & Stats Display UI](tasks/049-run-history-stats-ui.md)
 - [x] [Task 044 — Skill Balance & Feel Pass](tasks/044-skill-balance-and-feel-pass.md)
 - [x] [Task: 001 - Placeholder assets import](tasks/001-placeholder-assets-import.md)
 - [x] [Task: 002 - Basic enemy wave prototype](tasks/002-basic-enemy-wave-prototype.md)

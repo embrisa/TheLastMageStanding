@@ -1,5 +1,5 @@
 # Task: 049 - Run History & Stats Display UI
-- Status: backlog
+- Status: done
 
 ## Summary
 Create UI for viewing run history, aggregate stats, and personal records. Display recent runs with detailed stats, highlight personal bests, and show interesting insights about player performance over time.

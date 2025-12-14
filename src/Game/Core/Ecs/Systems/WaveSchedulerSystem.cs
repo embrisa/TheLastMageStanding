@@ -12,6 +12,7 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
 
     private float _waveTimer;
     private int _waveIndex;
+    private Entity? _sessionEntity;
 
     public WaveSchedulerSystem(EnemyWaveConfig config)
     {
@@ -45,18 +46,51 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
             return;
         }
 
+        _waveTimer = 0f;
+        var hasStage = TryGetStageRunState(world, out var stageState);
+
         if (_waveIndex > 0)
         {
             world.EventBus.Publish(new WaveCompletedEvent(_waveIndex));
+
+            if (hasStage && !stageState.IsBossStage && stageState.MaxWaves > 0 && _waveIndex >= stageState.MaxWaves)
+            {
+                world.EventBus.Publish(new StageRunCompletedEvent(stageState.StageId, isVictory: true, bossKilled: false));
+                return;
+            }
         }
 
-        _waveTimer = 0f;
+        // If we're in a boss stage and the boss wave has already started, don't schedule additional waves.
+        if (hasStage && stageState.IsBossStage && stageState.BossWaveIndex > 0 && _waveIndex >= stageState.BossWaveIndex)
+        {
+            return;
+        }
+
+        // In non-boss stages, stop once the stage wave cap has been reached.
+        if (hasStage && !stageState.IsBossStage && stageState.MaxWaves > 0 && _waveIndex >= stageState.MaxWaves)
+        {
+            return;
+        }
+
         _waveIndex++;
 
         world.EventBus.Publish(new WaveStartedEvent(_waveIndex));
 
         if (!TryGetPlayerPosition(world, out var playerPosition))
         {
+            return;
+        }
+
+        if (hasStage && stageState.IsBossStage && stageState.BossWaveIndex > 0 && _waveIndex == stageState.BossWaveIndex)
+        {
+            var bossArchetypeId = stageState.BossArchetypeId;
+            if (!string.IsNullOrWhiteSpace(bossArchetypeId))
+            {
+                var spawnPosition = playerPosition + GetSpawnOffset(300f, 420f);
+                var request = world.CreateEntity();
+                world.SetComponent(request, new EnemySpawnRequest(spawnPosition, EnemyWaveConfig.CreateBossArchetype(bossArchetypeId)));
+            }
+
             return;
         }
 
@@ -67,10 +101,9 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
         }
 
         // Count active elites and bosses to cap their spawns
-        var (activeElites, activeBosses) = CountElitesAndBosses(world);
+        var (activeElites, _) = CountElitesAndBosses(world);
         var (activeChargers, activeProtectors, activeBuffers) = CountActiveRoles(world);
         const int maxElites = 3; // At most 3 elites at once
-        const int maxBosses = 1; // At most 1 boss at once
         const int maxChargers = 2;
         const int maxProtectors = 1;
         const int maxBuffers = 1;
@@ -86,14 +119,15 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
             var rerollAttempts = 0;
             while (rerollAttempts < 5)
             {
-                if (archetype.Tier == EnemyTier.Elite && activeElites >= maxElites)
+                // Bosses are stage-driven; prevent random boss spawns.
+                if (archetype.Tier == EnemyTier.Boss)
                 {
                     archetype = _config.ChooseArchetype(_waveIndex, _random);
                     rerollAttempts++;
                     continue;
                 }
 
-                if (archetype.Tier == EnemyTier.Boss && activeBosses >= maxBosses)
+                if (archetype.Tier == EnemyTier.Elite && activeElites >= maxElites)
                 {
                     archetype = _config.ChooseArchetype(_waveIndex, _random);
                     rerollAttempts++;
@@ -128,11 +162,6 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
             if (archetype.Tier == EnemyTier.Elite)
             {
                 activeElites++;
-                modifiers = _config.ModifierConfig.RollModifiers(_waveIndex, _random);
-            }
-            else if (archetype.Tier == EnemyTier.Boss)
-            {
-                activeBosses++;
                 modifiers = _config.ModifierConfig.RollModifiers(_waveIndex, _random);
             }
 
@@ -285,5 +314,25 @@ internal sealed class WaveSchedulerSystem : IUpdateSystem
         _waveTimer = 0f;
         _waveIndex = 0;
     }
-}
 
+    private bool TryGetStageRunState(EcsWorld world, out StageRunState stageState)
+    {
+        if (_sessionEntity.HasValue && world.IsAlive(_sessionEntity.Value) && world.TryGetComponent(_sessionEntity.Value, out stageState))
+        {
+            return true;
+        }
+
+        _sessionEntity = null;
+        var found = false;
+        var captured = new StageRunState();
+        world.ForEach<GameSession, StageRunState>((Entity entity, ref GameSession _, ref StageRunState state) =>
+        {
+            _sessionEntity = entity;
+            captured = state;
+            found = true;
+        });
+
+        stageState = captured;
+        return found;
+    }
+}

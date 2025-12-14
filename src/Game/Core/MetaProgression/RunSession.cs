@@ -75,4 +75,24 @@ public sealed class RunSession
     /// Unique identifier for this run session.
     /// </summary>
     public string RunId { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Stage id that this run was played on (if applicable).
+    /// </summary>
+    public string? StageId { get; set; }
+
+    /// <summary>
+    /// True when the run ended by completing the stage.
+    /// </summary>
+    public bool StageCompleted { get; set; }
+
+    /// <summary>
+    /// True when the run killed the stage boss (boss stages).
+    /// </summary>
+    public bool BossKilled { get; set; }
+
+    /// <summary>
+    /// Additional meta XP granted by stage completion rewards.
+    /// </summary>
+    public int BonusMetaXp { get; set; }
 }

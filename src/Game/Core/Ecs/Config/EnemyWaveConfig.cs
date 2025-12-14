@@ -312,6 +312,90 @@ internal sealed class EnemyWaveConfig
                 OptimalRange: 160f,
                 WindupSeconds: 1.0f)); // Longer telegraph for boss attack
 
+    private static EnemyArchetype Act1HeadmasterBoss()
+    {
+        var baseBoss = SkeletonBoss();
+        var ranged = baseBoss.RangedAttack ?? new RangedAttackDefinition(220f, 20f, 160f, 1.0f);
+        ranged = ranged with
+        {
+            ProjectileDamage = 18f,
+            WindupSeconds = 0.9f,
+            OptimalRange = 170f
+        };
+
+        return baseBoss with
+        {
+            Id = "boss_act1_headmaster",
+            MaxHealth = 280f,
+            MoveSpeed = 72f,
+            Visual = baseBoss.Visual with { Tint = new Color(120, 60, 210) },
+            RangedAttack = ranged
+        };
+    }
+
+    private static EnemyArchetype Act2BogLichBoss()
+    {
+        var baseBoss = SkeletonBoss();
+        var ranged = baseBoss.RangedAttack ?? new RangedAttackDefinition(220f, 20f, 160f, 1.0f);
+        ranged = ranged with
+        {
+            ProjectileDamage = 22f,
+            WindupSeconds = 1.05f,
+            OptimalRange = 150f
+        };
+
+        return baseBoss with
+        {
+            Id = "boss_act2_bog_lich",
+            MaxHealth = 320f,
+            MoveSpeed = 68f,
+            Visual = baseBoss.Visual with { Tint = new Color(90, 160, 110) },
+            RangedAttack = ranged
+        };
+    }
+
+    private static EnemyArchetype Act3FrostSentinelBoss()
+    {
+        var baseBoss = SkeletonBoss();
+        var ranged = baseBoss.RangedAttack ?? new RangedAttackDefinition(220f, 20f, 160f, 1.0f);
+        ranged = ranged with
+        {
+            ProjectileDamage = 24f,
+            WindupSeconds = 1.1f,
+            OptimalRange = 185f
+        };
+
+        return baseBoss with
+        {
+            Id = "boss_act3_frost_sentinel",
+            MaxHealth = 360f,
+            MoveSpeed = 66f,
+            Visual = baseBoss.Visual with { Tint = new Color(120, 200, 255) },
+            RangedAttack = ranged
+        };
+    }
+
+    private static EnemyArchetype Act4VoidArchonBoss()
+    {
+        var baseBoss = SkeletonBoss();
+        var ranged = baseBoss.RangedAttack ?? new RangedAttackDefinition(220f, 20f, 160f, 1.0f);
+        ranged = ranged with
+        {
+            ProjectileDamage = 28f,
+            WindupSeconds = 1.15f,
+            OptimalRange = 200f
+        };
+
+        return baseBoss with
+        {
+            Id = "boss_act4_void_archon",
+            MaxHealth = 420f,
+            MoveSpeed = 64f,
+            Visual = baseBoss.Visual with { Tint = new Color(200, 70, 230) },
+            RangedAttack = ranged
+        };
+    }
+
     private static AiRoleConfig ChargerRole() =>
         new(
             Role: EnemyRole.Charger,
@@ -364,10 +448,35 @@ internal sealed class EnemyWaveConfig
     /// </summary>
     public static EnemyArchetype CreateEliteForDebug() => EliteHexer();
 
+    public static EnemyArchetype CreateBossArchetype(string bossArchetypeId) => bossArchetypeId switch
+    {
+        "boss_act1_headmaster" => Act1HeadmasterBoss(),
+        "boss_act2_bog_lich" => Act2BogLichBoss(),
+        "boss_act3_frost_sentinel" => Act3FrostSentinelBoss(),
+        "boss_act4_void_archon" => Act4VoidArchonBoss(),
+        _ => SkeletonBoss()
+    };
+
+    public static EnemyArchetype CreateArchetypeById(string archetypeId) => archetypeId switch
+    {
+        "bone_hexer" => BaseHexer(),
+        "bone_scout" => ScoutHexer(),
+        "bone_mage" => BoneMage(),
+        "charger_hexer" => ChargerHexer(),
+        "protector_hexer" => ProtectorHexer(),
+        "buffer_hexer" => BufferHexer(),
+        "elite_hexer" => EliteHexer(),
+        "skeleton_boss" => SkeletonBoss(),
+        "boss_act1_headmaster" => Act1HeadmasterBoss(),
+        "boss_act2_bog_lich" => Act2BogLichBoss(),
+        "boss_act3_frost_sentinel" => Act3FrostSentinelBoss(),
+        "boss_act4_void_archon" => Act4VoidArchonBoss(),
+        _ => BaseHexer()
+    };
+
     /// <summary>
     /// Create a boss enemy for debug spawning (F8 key).
     /// </summary>
     public static EnemyArchetype CreateBossForDebug() => SkeletonBoss();
 }
-
 

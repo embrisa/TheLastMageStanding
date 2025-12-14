@@ -20,10 +20,10 @@
 
 ### Story & Acts
 - **4 Acts**: Each act tells part of the narrative and features unique biomes, enemies, and mechanics.
-  - **Act 1**: Tutorial biome - introduction to core mechanics, basic enemies.
-  - **Act 2**: Second biome - increased difficulty, new enemy types.
-  - **Act 3**: Third biome - advanced mechanics, elite variants.
-  - **Act 4**: Final biome - endgame content, ultimate challenges.
+  - **Act 1 — The Fallen Academy**: Ruined magical academy, arcane corruption, basic undead.
+  - **Act 2 — The Ashen Mire**: Soot-choked wetlands, heavy elites and roles (charger/protector).
+  - **Act 3 — The Frostbound Ruins**: Frozen ruins, harsher ranged pressure and support enemies.
+  - **Act 4 — The Void Sanctum**: Reality-warped endgame biome, dense elite mixes and final boss.
 - **Stages per Act**: Multiple stages (maps/levels) leading to the act boss.
   - Each stage is a complete run with its own waves and difficulty curve.
   - Completing a stage unlocks the next stage within the act.
@@ -32,6 +32,10 @@
   - Bosses have multi-phase mechanics and unique attack patterns.
   - Defeating the act boss unlocks the next act.
   - Boss victories grant significant rewards (gold, equipment, meta XP).
+  - **Act 1 Boss — Corrupted Headmaster (phases)**:
+    - Phase I (100%–50%): ranged caster baseline.
+    - Phase II (≤50%): faster attacks + summon burst.
+    - Phase III (≤25%): enrage (higher speed/damage) + larger summon burst.
 
 ### Progression Systems
 #### Meta Progression (Hub)

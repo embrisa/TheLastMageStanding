@@ -51,7 +51,17 @@ internal sealed class CleanupSystem : IUpdateSystem
                         }
                         if (world.TryGetComponent<Faction>(entity, out var faction) && faction == Faction.Enemy)
                         {
-                            world.EventBus.Publish(new EnemyDiedEvent(entity, deathPosition, activeModifiers));
+                            var isElite = false;
+                            var isBoss = false;
+                            LootDropper? dropperSnapshot = null;
+                            if (world.TryGetComponent(entity, out LootDropper dropper))
+                            {
+                                isElite = dropper.IsElite;
+                                isBoss = dropper.IsBoss;
+                                dropperSnapshot = dropper;
+                            }
+
+                            world.EventBus.Publish(new EnemyDiedEvent(entity, deathPosition, activeModifiers, isElite, isBoss, dropperSnapshot));
                         }
                         toRemove.Add(entity);
                     }

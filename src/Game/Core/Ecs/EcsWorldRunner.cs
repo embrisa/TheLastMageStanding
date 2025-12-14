@@ -157,7 +157,9 @@ internal sealed class EcsWorldRunner
 
         // Hub-specific systems
         var profileService = new PlayerProfileService(new DefaultFileSystem(), _saveSlotService.GetSlotPath(_slotId));
-        var stageSelectionUI = new StageSelectionUISystem(_stageRegistry, sceneManager, profileService);
+        var campaignProgressionService = new CampaignProgressionService(_stageRegistry, profileService);
+        var stageSelectionUI = new StageSelectionUISystem(_stageRegistry, sceneManager, campaignProgressionService);
+        var runHistoryUI = new RunHistoryUISystem(_metaProgressionManager.HistoryService, _sceneStateService);
         var pauseMenuUiSystem = new PauseMenuMyraSystem(_sceneStateService);
         var levelUpChoiceUiSystem = new LevelUpChoiceMyraSystem(_sceneStateService);
         var inventoryUiSystem = new InventoryUiSystem();
@@ -168,12 +170,15 @@ internal sealed class EcsWorldRunner
         var npcRenderSystem = new NpcRenderSystem();
 
         // Stage completion system
-        var stageCompletionSystem = new StageCompletionSystem(sceneManager);
+        var stageRunInitializationSystem = new StageRunInitializationSystem(_sceneStateService, _stageRegistry);
+        var stageCompletionSystem = new StageCompletionSystem(sceneManager, _sceneStateService, campaignProgressionService);
+        var bossPhaseSystem = new BossPhaseSystem(_stageRegistry);
 
         // Stage-only systems (combat, waves, etc)
         _stageOnlyUpdateSystems =
         [
             _gameSessionSystem,  // Run timer, pause menu, wave tracking (stage-only)
+            stageRunInitializationSystem, // Sync stage run parameters
             stageCompletionSystem,  // Handle stage completion and transitions
             dashInputSystem,
             dashExecutionSystem,
@@ -187,6 +192,7 @@ internal sealed class EcsWorldRunner
             statRecalculationSystem,  // Recalculate stats before combat systems
             new WaveSchedulerSystem(_waveConfig),
             new SpawnSystem(_enemyFactory),
+            bossPhaseSystem,
             new AiSeekSystem(),
             new RangedAttackSystem(),  // Handle ranged enemy AI
             aiChargerSystem,
@@ -220,6 +226,7 @@ internal sealed class EcsWorldRunner
         _hubOnlyUpdateSystems =
         [
             stageSelectionUI,
+            runHistoryUI,
             proximityInteractionSystem,
             interactionInputSystem,
             hubMenuSystem,
@@ -282,6 +289,7 @@ internal sealed class EcsWorldRunner
         _screenSpaceUiDrawSystems =
         [
             stageSelectionUI,
+            runHistoryUI,
             pauseMenuUiSystem,
             levelUpChoiceUiSystem,
         ];

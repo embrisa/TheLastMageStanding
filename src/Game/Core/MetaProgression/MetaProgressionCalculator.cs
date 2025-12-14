@@ -51,6 +51,8 @@ public static class MetaProgressionCalculator
         // Calculate total with time multiplier bonus
         var totalXp = (baseXp + killBonus + goldBonus + damageBonus) * (1 + timeMultiplier * TimeMultiplierMax);
 
+        totalXp += Math.Max(0, run.BonusMetaXp);
+
         // Ensure at least 1 XP is awarded
         return Math.Max(1, (int)Math.Floor(totalXp));
     }
