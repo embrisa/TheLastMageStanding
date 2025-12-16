@@ -2,52 +2,36 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
+using System.Linq;
+using Myra.Graphics2D.UI;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Loot;
 using TheLastMageStanding.Game.Core.Player;
-using System.Collections.Generic;
-using System.Linq;
+using TheLastMageStanding.Game.Core.UI.Myra;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
 /// <summary>
-/// Component to track inventory UI state.
-/// </summary>
-internal struct InventoryUiState
-{
-    public bool IsOpen { get; set; }
-    public int SelectedIndex { get; set; }
-    public InventoryUiMode Mode { get; set; } // Inventory vs Equipment view
-    
-    public InventoryUiState()
-    {
-        IsOpen = false;
-        SelectedIndex = 0;
-        Mode = InventoryUiMode.Inventory;
-    }
-}
-
-internal enum InventoryUiMode
-{
-    Inventory,  // View inventory items
-    Equipment   // View equipped items
-}
-
-/// <summary>
 /// Renders and handles input for inventory/equipment UI.
 /// </summary>
-internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadContentSystem
+internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadContentSystem, System.IDisposable
 {
-    private SpriteFont _font = null!;
-    private Texture2D _pixel = null!;
     private InventoryService _inventoryService = null!;
+    private MyraInventoryScreen _screen = null!;
     
     private KeyboardState _previousKeyboardState;
     private GamePadState _previousGamePadState;
+    private bool _queuedClose;
+    private InventoryUiMode? _queuedMode;
+    private int? _queuedRowActivation;
 
     public void Initialize(EcsWorld world)
     {
         _inventoryService = new InventoryService(world);
+        _screen = new MyraInventoryScreen();
+        _screen.TabRequested += mode => _queuedMode = mode;
+        _screen.RowActivated += index => _queuedRowActivation = index;
         
         // Create UI state entity if it doesn't exist
         world.ForEach<InventoryUiState>((Entity _, ref InventoryUiState _) => { });
@@ -55,8 +39,7 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
 
     public void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content)
     {
-        _font = content.Load<SpriteFont>("Fonts/FontRegularText");
-        _pixel = CreatePixel(graphicsDevice);
+        UiFonts.Load(content);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
@@ -81,6 +64,8 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
             ? state 
             : new InventoryUiState();
 
+        ApplyQueuedUiActions(world, ref uiState);
+
         // Toggle inventory with I key (gated by scene state in InputState) or Tab or Y button
         if (context.Input.InventoryPressed || IsKeyJustPressed(keyboard, Keys.Tab) || IsButtonJustPressed(gamePad, Buttons.Y))
         {
@@ -93,6 +78,7 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
             world.SetComponent(uiEntity.Value, uiState);
             _previousKeyboardState = keyboard;
             _previousGamePadState = gamePad;
+            _screen.ApplyViewModel(new InventoryOverlayViewModel(false, uiState.Mode, uiState.SelectedIndex, System.Array.Empty<InventoryRowViewModel>()));
             return;
         }
 
@@ -120,13 +106,14 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
             world.SetComponent(uiEntity.Value, uiState);
             _previousKeyboardState = keyboard;
             _previousGamePadState = gamePad;
+            _screen.ApplyViewModel(new InventoryOverlayViewModel(true, uiState.Mode, uiState.SelectedIndex, System.Array.Empty<InventoryRowViewModel>()));
             return;
         }
 
         // Navigate with arrow keys or D-pad
         int itemCount = uiState.Mode == InventoryUiMode.Inventory
             ? _inventoryService.GetInventoryItems(player.Value).Length
-            : _inventoryService.GetEquippedItems(player.Value).Length;
+            : GetSortedEquippedItems(player.Value).Length;
 
         if (itemCount > 0)
         {
@@ -152,7 +139,7 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
                 }
                 else
                 {
-                    var equipped = _inventoryService.GetEquippedItems(player.Value);
+                    var equipped = GetSortedEquippedItems(player.Value);
                     if (uiState.SelectedIndex < equipped.Length)
                     {
                         _inventoryService.UnequipItem(player.Value, equipped[uiState.SelectedIndex].slot);
@@ -163,6 +150,7 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
         }
 
         world.SetComponent(uiEntity.Value, uiState);
+        _screen.ApplyViewModel(BuildViewModel(player.Value, uiState));
         _previousKeyboardState = keyboard;
         _previousGamePadState = gamePad;
     }
@@ -170,148 +158,28 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
     public void Draw(EcsWorld world, in EcsDrawContext context)
     {
         // Find UI state
-        Entity? uiEntity = null;
         InventoryUiState uiState = default;
-        world.ForEach<InventoryUiState>((Entity entity, ref InventoryUiState state) =>
+        var hasUiState = false;
+        world.ForEach<InventoryUiState>((Entity _, ref InventoryUiState state) =>
         {
-            uiEntity = entity;
             uiState = state;
+            hasUiState = true;
         });
 
-        if (!uiEntity.HasValue || !uiState.IsOpen)
+        if (!hasUiState || !uiState.IsOpen || !_screen.IsVisible)
+        {
             return;
-
-        // Find player
-        Entity? player = null;
-        world.ForEach<PlayerTag>((Entity entity, ref PlayerTag _) =>
-        {
-            player = entity;
-        });
-
-        if (!player.HasValue)
-            return;
-
-        var spriteBatch = context.SpriteBatch;
-        var viewport = spriteBatch.GraphicsDevice.Viewport;
-
-        // Draw semi-transparent background
-        spriteBatch.Draw(
-            _pixel,
-            new Rectangle(0, 0, viewport.Width, viewport.Height),
-            Color.Black * 0.7f);
-
-        // Draw UI panel
-        var panelWidth = 600;
-        var panelHeight = 500;
-        var panelX = (viewport.Width - panelWidth) / 2;
-        var panelY = (viewport.Height - panelHeight) / 2;
-        var panelRect = new Rectangle(panelX, panelY, panelWidth, panelHeight);
-
-        spriteBatch.Draw(_pixel, panelRect, Color.DarkSlateGray * 0.9f);
-        spriteBatch.Draw(_pixel, new Rectangle(panelX, panelY, panelWidth, 2), Color.White);
-        spriteBatch.Draw(_pixel, new Rectangle(panelX, panelY + panelHeight - 2, panelWidth, 2), Color.White);
-        spriteBatch.Draw(_pixel, new Rectangle(panelX, panelY, 2, panelHeight), Color.White);
-        spriteBatch.Draw(_pixel, new Rectangle(panelX + panelWidth - 2, panelY, 2, panelHeight), Color.White);
-
-        // Draw title
-        var titleText = uiState.Mode == InventoryUiMode.Inventory ? "INVENTORY" : "EQUIPMENT";
-        var titlePos = new Vector2(panelX + 20, panelY + 20);
-        spriteBatch.DrawString(_font, titleText, titlePos, Color.White);
-
-        // Draw mode switcher hint
-        var modeHint = "[Q] Inventory  [E] Equipment";
-        var modeHintPos = new Vector2(panelX + panelWidth - 300, panelY + 20);
-        spriteBatch.DrawString(_font, modeHint, modeHintPos, Color.Gray);
-
-        // Draw items
-        var itemY = panelY + 60;
-        if (uiState.Mode == InventoryUiMode.Inventory)
-        {
-            DrawInventoryItems(spriteBatch, player.Value, panelX, itemY, panelWidth, uiState.SelectedIndex);
-        }
-        else
-        {
-            DrawEquippedItems(spriteBatch, player.Value, panelX, itemY, panelWidth, uiState.SelectedIndex);
         }
 
-        // Draw controls hint
-        var hint = "[Tab] Close  [Up/Down] Navigate  [Enter] Equip/Unequip";
-        var hintPos = new Vector2(panelX + 20, panelY + panelHeight - 40);
-        spriteBatch.DrawString(_font, hint, hintPos, Color.Gray);
+        context.SpriteBatch.End();
+        _screen.Update(new GameTime());
+        _screen.Render();
+        context.SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
     }
 
-    private void DrawInventoryItems(SpriteBatch spriteBatch, Entity player, int x, int y, int width, int selectedIndex)
+    public void Dispose()
     {
-        var items = _inventoryService.GetInventoryItems(player);
-        if (items.Length == 0)
-        {
-            spriteBatch.DrawString(_font, "No items in inventory", new Vector2(x + 20, y), Color.Gray);
-            return;
-        }
-
-        for (int i = 0; i < items.Length; i++)
-        {
-            var item = items[i];
-            var isSelected = i == selectedIndex;
-            var itemY = y + i * 70;
-
-            // Highlight selected
-            if (isSelected)
-            {
-                spriteBatch.Draw(_pixel, new Rectangle(x + 10, itemY - 5, width - 20, 65), Color.Yellow * 0.3f);
-            }
-
-            // Draw item name with rarity color
-            var namePos = new Vector2(x + 20, itemY);
-            spriteBatch.DrawString(_font, item.Name, namePos, item.GetRarityColor());
-
-            // Draw slot and rarity
-            var infoText = $"{item.EquipSlot} - {item.Rarity}";
-            var infoPos = new Vector2(x + 20, itemY + 22);
-            spriteBatch.DrawString(_font, infoText, infoPos, Color.Gray);
-
-            // Draw affix count
-            var affixText = $"{item.Affixes.Count} affixes";
-            var affixPos = new Vector2(x + 20, itemY + 40);
-            spriteBatch.DrawString(_font, affixText, affixPos, Color.LightGray);
-        }
-    }
-
-    private void DrawEquippedItems(SpriteBatch spriteBatch, Entity player, int x, int y, int width, int selectedIndex)
-    {
-        var equipped = _inventoryService.GetEquippedItems(player);
-        if (equipped.Length == 0)
-        {
-            spriteBatch.DrawString(_font, "No items equipped", new Vector2(x + 20, y), Color.Gray);
-            return;
-        }
-
-        for (int i = 0; i < equipped.Length; i++)
-        {
-            var (slot, item) = equipped[i];
-            var isSelected = i == selectedIndex;
-            var itemY = y + i * 70;
-
-            // Highlight selected
-            if (isSelected)
-            {
-                spriteBatch.Draw(_pixel, new Rectangle(x + 10, itemY - 5, width - 20, 65), Color.Yellow * 0.3f);
-            }
-
-            // Draw item name with rarity color
-            var namePos = new Vector2(x + 20, itemY);
-            spriteBatch.DrawString(_font, item.Name, namePos, item.GetRarityColor());
-
-            // Draw slot and rarity
-            var infoText = $"{slot} - {item.Rarity}";
-            var infoPos = new Vector2(x + 20, itemY + 22);
-            spriteBatch.DrawString(_font, infoText, infoPos, Color.Gray);
-
-            // Draw affix count
-            var affixText = $"{item.Affixes.Count} affixes";
-            var affixPos = new Vector2(x + 20, itemY + 40);
-            spriteBatch.DrawString(_font, affixText, affixPos, Color.LightGray);
-        }
+        _screen.Dispose();
     }
 
     private bool IsKeyJustPressed(KeyboardState current, Keys key)
@@ -324,10 +192,93 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
         return current.IsButtonDown(button) && !_previousGamePadState.IsButtonDown(button);
     }
 
-    private static Texture2D CreatePixel(GraphicsDevice graphicsDevice)
+    private void ApplyQueuedUiActions(EcsWorld world, ref InventoryUiState uiState)
     {
-        var texture = new Texture2D(graphicsDevice, 1, 1);
-        texture.SetData(new[] { Color.White });
-        return texture;
+        if (_queuedMode.HasValue)
+        {
+            uiState.Mode = _queuedMode.Value;
+            uiState.SelectedIndex = 0;
+            _queuedMode = null;
+        }
+
+        if (_queuedRowActivation.HasValue)
+        {
+            var index = _queuedRowActivation.Value;
+            _queuedRowActivation = null;
+
+            Entity? player = null;
+            world.ForEach<PlayerTag>((Entity entity, ref PlayerTag _) => player = entity);
+            if (player.HasValue)
+            {
+                if (uiState.Mode == InventoryUiMode.Inventory)
+                {
+                    var items = _inventoryService.GetInventoryItems(player.Value);
+                    if (index >= 0 && index < items.Length)
+                    {
+                        uiState.SelectedIndex = index;
+                        _inventoryService.EquipItem(player.Value, items[index]);
+                        uiState.SelectedIndex = 0;
+                    }
+                }
+                else
+                {
+                    var equipped = GetSortedEquippedItems(player.Value);
+                    if (index >= 0 && index < equipped.Length)
+                    {
+                        uiState.SelectedIndex = index;
+                        _inventoryService.UnequipItem(player.Value, equipped[index].slot);
+                        uiState.SelectedIndex = 0;
+                    }
+                }
+            }
+        }
+
+        if (_queuedClose)
+        {
+            uiState.IsOpen = false;
+            uiState.SelectedIndex = 0;
+            _queuedClose = false;
+        }
+    }
+
+    private InventoryOverlayViewModel BuildViewModel(Entity player, InventoryUiState uiState)
+    {
+        var rows = new List<InventoryRowViewModel>();
+
+        if (uiState.Mode == InventoryUiMode.Inventory)
+        {
+            var items = _inventoryService.GetInventoryItems(player);
+            foreach (var item in items)
+            {
+                rows.Add(new InventoryRowViewModel(
+                    item.Name,
+                    item.GetRarityColor(),
+                    $"{item.EquipSlot} • {item.Rarity} • {item.Affixes.Count} affixes",
+                    "Click/Enter: Equip"));
+            }
+        }
+        else
+        {
+            var equipped = GetSortedEquippedItems(player);
+            foreach (var (slot, item) in equipped)
+            {
+                rows.Add(new InventoryRowViewModel(
+                    item.Name,
+                    item.GetRarityColor(),
+                    $"{slot} • {item.Rarity} • {item.Affixes.Count} affixes",
+                    "Click/Enter: Unequip"));
+            }
+        }
+
+        var clampedSelected = rows.Count == 0 ? 0 : Math.Clamp(uiState.SelectedIndex, 0, rows.Count - 1);
+        return new InventoryOverlayViewModel(true, uiState.Mode, clampedSelected, rows);
+    }
+
+    private (EquipSlot slot, ItemInstance item)[] GetSortedEquippedItems(Entity player)
+    {
+        var equipped = _inventoryService.GetEquippedItems(player);
+        return equipped
+            .OrderBy(entry => entry.slot)
+            .ToArray();
     }
 }

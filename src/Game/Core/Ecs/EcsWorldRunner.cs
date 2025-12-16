@@ -169,6 +169,8 @@ internal sealed class EcsWorldRunner
         var hubMenuSystem = new HubMenuSystem(_sceneStateService);
         var proximityPromptRenderSystem = new ProximityPromptRenderSystem();
         var npcRenderSystem = new NpcRenderSystem();
+        var equippedSkillsSyncSystem = new EquippedSkillsProfileSyncSystem(_sceneStateService, _metaProgressionManager);
+        var skillSelectionUI = new SkillSelectionUISystem(_sceneStateService, _metaProgressionManager, skillRegistry);
 
         // Stage completion system
         var stageRunInitializationSystem = new StageRunInitializationSystem(_sceneStateService, _stageRegistry);
@@ -227,6 +229,7 @@ internal sealed class EcsWorldRunner
         _hubOnlyUpdateSystems =
         [
             stageSelectionUI,
+            skillSelectionUI,
             runHistoryUI,
             proximityInteractionSystem,
             interactionInputSystem,
@@ -239,6 +242,7 @@ internal sealed class EcsWorldRunner
             debugInputSystem,  // Handle debug input early
             debugCommandSystem,  // Optional console-driven debug commands
             new InputSystem(),  // Read input (WASD, etc.)
+            equippedSkillsSyncSystem,
             levelUpChoiceSystem,  // Level-up choice input should work while paused
             new MovementIntentSystem(),  // Convert input to velocity
             new MovementSystem(),  // Apply velocity to position
@@ -290,7 +294,9 @@ internal sealed class EcsWorldRunner
 
         _screenSpaceUiDrawSystems =
         [
+            inventoryUiSystem,
             stageSelectionUI,
+            skillSelectionUI,
             runHistoryUI,
             pauseMenuUiSystem,
             levelUpChoiceUiSystem,
@@ -301,7 +307,6 @@ internal sealed class EcsWorldRunner
             new HudRenderSystem(),
             skillHotbarRenderer,
             perkTreeUISystem,
-            inventoryUiSystem,
         ];
 
         _loadSystems =
@@ -314,51 +319,30 @@ internal sealed class EcsWorldRunner
                 .Concat(_hubOnlyUiDrawSystems.OfType<ILoadContentSystem>())
                 .Concat(_screenSpaceUiDrawSystems.OfType<ILoadContentSystem>())
                 .Concat(_uiDrawSystems.OfType<ILoadContentSystem>())
+                .Distinct()
                 .ToList();
 
-        foreach (var system in _updateSystems)
-        {
-            system.Initialize(_world);
-        }
+        // Initialize each system once even if it appears in multiple lists.
+        var initialized = new HashSet<IEcsSystem>(ReferenceEqualityComparer.Instance);
+        InitializeOnce(_updateSystems);
+        InitializeOnce(_hubOnlyUpdateSystems);
+        InitializeOnce(_stageOnlyUpdateSystems);
+        InitializeOnce(_drawSystems);
+        InitializeOnce(_hubOnlyDrawSystems);
+        InitializeOnce(_stageOnlyDrawSystems);
+        InitializeOnce(_hubOnlyUiDrawSystems);
+        InitializeOnce(_uiDrawSystems);
+        InitializeOnce(_screenSpaceUiDrawSystems);
 
-        foreach (var system in _hubOnlyUpdateSystems)
+        void InitializeOnce(IEnumerable<IEcsSystem> systems)
         {
-            system.Initialize(_world);
-        }
-
-        foreach (var system in _stageOnlyUpdateSystems)
-        {
-            system.Initialize(_world);
-        }
-
-        foreach (var system in _drawSystems)
-        {
-            system.Initialize(_world);
-        }
-
-        foreach (var system in _hubOnlyDrawSystems)
-        {
-            system.Initialize(_world);
-        }
-
-        foreach (var system in _stageOnlyDrawSystems)
-        {
-            system.Initialize(_world);
-        }
-
-        foreach (var system in _hubOnlyUiDrawSystems)
-        {
-            system.Initialize(_world);
-        }
-
-        foreach (var system in _uiDrawSystems)
-        {
-            system.Initialize(_world);
-        }
-
-        foreach (var system in _screenSpaceUiDrawSystems)
-        {
-            system.Initialize(_world);
+            foreach (var system in systems)
+            {
+                if (initialized.Add(system))
+                {
+                    system.Initialize(_world);
+                }
+            }
         }
 
         // Create session entity with initial state

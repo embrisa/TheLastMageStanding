@@ -1,11 +1,25 @@
 # Task 042 — Skill Selection & Equipping UI
 
-**Status:** SUPERSEDED by Task 055  
+**Status:** done (implemented as hub-only modal)  
 **Priority:** ~~Medium~~ → **See Task 055**  
 **Estimated effort:** ~~3-4 hours~~ → **See Task 055**  
 **Dependencies:** ~~Task 040 (Skill hotbar UI), Task 041 (Hotkey input)~~ → **REPLACED by Task 055**
 
-**NOTE:** This task is fully replaced by Task 055 (Skill selection hub UI), which implements skill browsing/equipping in the hub scene per the new game vision.
+**NOTE:** This task was superseded by Task 055/062, but was implemented anyway as a hub-only modal UI to support the current hub workflow.
+
+## Implementation (2025-12-14)
+
+- UI is implemented as a modal Myra "scene" that pauses hub movement/input while open.
+- Open from hub via `npc_ability_loadout` interaction (`E - Skills`) or `K`.
+- Changes are staged until confirmed; `Esc` cancels without persisting.
+- Persistence is stored in `player_profile.json` (`PlayerProfile.EquippedSkills`).
+
+**Key files**
+- `src/Game/Core/Ecs/Systems/SkillSelectionUISystem.cs` (hub overlay + input + commit/cancel)
+- `src/Game/Core/UI/Myra/MyraSkillSelectionScreen.cs` (standardized Myra UI component)
+- `src/Game/Core/MetaProgression/EquippedSkillsProfile.cs` (profile schema)
+- `src/Game/Core/Skills/SkillLoadout.cs` (loadout mapping helpers)
+- `src/Game/Core/Ecs/Systems/EquippedSkillsProfileSyncSystem.cs` (apply + lock loadout on scene enter)
 
 ## Summary
 
@@ -194,10 +208,10 @@ Serialize `SkillId` as string enum for readability and version tolerance.
 
 ## Definition of Done
 
-- [ ] `K` key toggles skill selection overlay
-- [ ] Overlay shows 9 skills in 3×3 grid with element grouping
-- [ ] Clicking skill selects it and shows detail panel
-- [ ] Clicking hotbar slot with selected skill equips it
+- [x] `K` key toggles skill selection overlay
+- [x] Overlay shows 9 skills in 3×3 grid with element grouping
+- [x] Clicking skill selects it and shows detail panel
+- [x] Clicking hotbar slot with selected skill equips it
 - [ ] Equipped skills show badge/indicator
 - [ ] Escape closes overlay
 - [ ] Equipped skills persist to JSON

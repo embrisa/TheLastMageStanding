@@ -57,6 +57,11 @@ public sealed class PlayerProfile
     public List<string> UnlockedSkillIds { get; set; } = new();
 
     /// <summary>
+    /// Equipped skill loadout (primary + hotkeys).
+    /// </summary>
+    public EquippedSkillsProfile EquippedSkills { get; set; } = EquippedSkillsProfile.CreateDefault();
+
+    /// <summary>
     /// Completed stage IDs (for progression tracking).
     /// </summary>
     public List<string> CompletedStages { get; set; } = new();
@@ -110,6 +115,7 @@ public sealed class PlayerProfile
             EquipmentInventory = new(),
             UnlockedTalentNodes = new(),
             UnlockedSkillIds = new(),
+            EquippedSkills = EquippedSkillsProfile.CreateDefault(),
             CompletedStages = new(),
             CreatedAt = DateTime.UtcNow,
             LastPlayedAt = DateTime.UtcNow

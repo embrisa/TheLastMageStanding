@@ -47,8 +47,8 @@ internal sealed class HubMenuSystem : IUpdateSystem, IUiDrawSystem, ILoadContent
         if (!world.TryGetComponent<HubMenuState>(_menuEntity.Value, out var state))
             return;
 
-        // Toggle menu with ESC
-        if (context.Input.PausePressed)
+        // Toggle menu with ESC (but don't steal ESC from other modal hub overlays)
+        if (context.Input.PausePressed && !IsOtherModalOpen(world))
         {
             state.IsOpen = !state.IsOpen;
             state.SelectedIndex = 0;
@@ -141,6 +141,28 @@ internal sealed class HubMenuSystem : IUpdateSystem, IUiDrawSystem, ILoadContent
                 // TODO: Trigger quit event or game exit
                 break;
         }
+    }
+
+    private static bool IsOtherModalOpen(EcsWorld world)
+    {
+        var anyOpen = false;
+
+        world.ForEach<StageSelectionUIState>((Entity _, ref StageSelectionUIState state) =>
+        {
+            anyOpen |= state.IsOpen;
+        });
+
+        world.ForEach<SkillSelectionUIState>((Entity _, ref SkillSelectionUIState state) =>
+        {
+            anyOpen |= state.IsOpen;
+        });
+
+        world.ForEach<RunHistoryUIState>((Entity _, ref RunHistoryUIState state) =>
+        {
+            anyOpen |= state.IsOpen;
+        });
+
+        return anyOpen;
     }
 }
 

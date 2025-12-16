@@ -368,6 +368,7 @@ internal sealed class MyraSettingsScreen : MyraSettingsScreenBase
         yield return (InputActions.Skill2, "Skill 2");
         yield return (InputActions.Skill3, "Skill 3");
         yield return (InputActions.Skill4, "Skill 4");
+        yield return (InputActions.SkillSelection, "Skill Selection");
     }
 
     private void RaiseAudioChange(AudioSettingField field, float? value, bool? toggle = null)

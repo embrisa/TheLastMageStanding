@@ -3,7 +3,7 @@
 **Status:** Completed
 **Priority:** High  
 **Estimated effort:** 2-3 hours (playtesting + iteration)  
-**Dependencies:** Task 040-043 (full skill UI/input/progression)
+**Dependencies:** Task 040-042 (skill UI + input), Task 054 (meta unlock gating)
 
 ## Summary
 

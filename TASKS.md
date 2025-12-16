@@ -40,17 +40,15 @@ Use this file to track active work items. Each task should be created by copying
 - [ ] [Task: 068 - Hub tutorial and first-time UX](tasks/068-hub-tutorial-first-time-ux.md)
 
 ## Blocked / Superseded / Other
-- [ ] [Task: 030: Loot and Equipment Foundations - Summary](tasks/030-SUMMARY.md) - unknown
-- [ ] [Task: 031 - Talent/Perk Tree Implementation Summary](tasks/031-SUMMARY.md) - unknown
-- [ ] [Task: 042 — Skill Selection & Equipping UI](tasks/042-skill-selection-ui.md) - ** SUPERSEDED by Task 055
-- [ ] [Task: 043 — Skill Unlock Progression](tasks/043-skill-unlock-progression.md) - ** SUPERSEDED by Task 054
-- [ ] [Task: 045 - Meta Hub UI & Scene](tasks/045-meta-hub-ui-and-scene.md) - BLOCKED (overlaps with Task 051)
+- [x] [Task: 043 — Skill Unlock Progression](tasks/043-skill-unlock-progression.md) - SUPERSEDED by Task 054
 - [ ] [Task: 046 - Shop & Equipment Purchase UI](tasks/046-shop-and-equipment-ui.md) - NEEDS UPDATE (Task 056 covers equipment UI)
 - [ ] [Task: 047 - Talent Tree Integration & Application](tasks/047-talent-tree-integration.md) - NEEDS UPDATE + BLOCKED by Task 051
 - [ ] [Task: 048 - In-Run Inventory & Equipment Swapping](tasks/048-in-run-inventory-ui.md) - CONFLICTS WITH NEW DESIGN - RECONSIDER
 - [ ] [Hub Completion Arc — Task Summary](tasks/HUB_COMPLETION_ARC.md) - : Blocking all other hub tasks
 
 ## Completed
+- [x] [Task: 042 — Skill Selection & Equipping UI](tasks/042-skill-selection-ui.md) - superseded by Task 055 (implemented as hub modal)
+- [x] [Task: 045 - Meta Hub UI & Scene](tasks/045-meta-hub-ui-and-scene.md) - ** SUPERSEDED by Task 051 (see `tasks/HUB_COMPLETION_ARC.md`)
 - [x] [Task: 052 - Stage/act campaign system](tasks/052-stage-act-campaign-system.md)
 - [x] [Task: 049 - Run History & Stats Display UI](tasks/049-run-history-stats-ui.md)
 - [x] [Task 044 — Skill Balance & Feel Pass](tasks/044-skill-balance-and-feel-pass.md)

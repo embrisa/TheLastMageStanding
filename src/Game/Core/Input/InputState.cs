@@ -34,6 +34,7 @@ internal sealed class InputState
     public bool CastSkill2Pressed { get; private set; }
     public bool CastSkill3Pressed { get; private set; }
     public bool CastSkill4Pressed { get; private set; }
+    public bool SkillSelectionPressed { get; private set; }
     public bool InteractPressed { get; private set; }
     public bool PrimaryClickPressed { get; private set; }
 
@@ -123,9 +124,18 @@ internal sealed class InputState
         PerkTreePressed = IsNewActionPress(InputActions.PerkTree);
         InventoryPressed = IsNewActionPress(InputActions.Inventory);
 
-        // Respec (Shift+R) - gate to hub only
         LockedFeatureMessage = null;
         var isInHub = _sceneStateService?.IsInHub() ?? false;
+
+        // Skill selection (K) - gate to hub only
+        SkillSelectionPressed = IsNewActionPress(InputActions.SkillSelection);
+        if (SkillSelectionPressed && !isInHub)
+        {
+            SkillSelectionPressed = false;
+            LockedFeatureMessage ??= "Skills available in Hub";
+        }
+
+        // Respec (Shift+R) - gate to hub only
         var respecBinding = _bindings.GetBinding(InputActions.Respec);
         var respecNew = IsKeyNew(respecBinding.Primary) || (respecBinding.Alternate.HasValue && IsKeyNew(respecBinding.Alternate.Value));
         var shiftHeld = _currentKeyboard.IsKeyDown(Keys.LeftShift) || _currentKeyboard.IsKeyDown(Keys.RightShift);
@@ -139,7 +149,7 @@ internal sealed class InputState
             else
             {
                 RespecPressed = false;
-                LockedFeatureMessage = "Respec available in Hub";
+                LockedFeatureMessage ??= "Respec available in Hub";
             }
         }
         else
@@ -200,4 +210,3 @@ internal sealed class InputState
         DashPressed = dashPressed;
     }
 }
-

@@ -3,6 +3,8 @@
 
 **NOTE:** New game vision mandates hub-only equipment configuration; no mid-run swapping allowed. This task needs complete rewrite or removal. If inventory UI is needed in-run, it should be READ-ONLY stats display only.
 
+**Implementation note (current codebase):** There is an existing in-run inventory/equipment overlay in `src/Game/Core/Ecs/Systems/InventoryUiSystem.cs` primarily for debugging. UI rendering has been ported to standardized Myra components (`src/Game/Core/UI/Myra/MyraInventoryScreen.cs`), but the underlying equip/unequip behavior still reflects the older mid-run swapping model and should be revisited per the new design.
+
 ## Summary
 Create in-game inventory UI accessible during runs that allows players to swap between owned equipment. Display all equipment from profile plus new drops from current run, and apply stat changes immediately when equipment is changed.
 

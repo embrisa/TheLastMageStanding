@@ -93,6 +93,7 @@ internal sealed class InputBindingsConfig
             [InputActions.Skill2] = new(Keys.D2, Keys.NumPad2),
             [InputActions.Skill3] = new(Keys.D3, Keys.NumPad3),
             [InputActions.Skill4] = new(Keys.D4, Keys.NumPad4),
+            [InputActions.SkillSelection] = new(Keys.K, null),
         };
 
         return config;
@@ -132,5 +133,5 @@ internal static class InputActions
     public const string Skill2 = "skill.2";
     public const string Skill3 = "skill.3";
     public const string Skill4 = "skill.4";
+    public const string SkillSelection = "skill.selection";
 }
-

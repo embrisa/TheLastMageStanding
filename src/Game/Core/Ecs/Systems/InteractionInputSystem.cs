@@ -15,6 +15,9 @@ internal sealed class InteractionInputSystem : IUpdateSystem
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
+        if (!IsSessionPlaying(world))
+            return;
+
         if (!context.Input.InteractPressed)
             return;
 
@@ -41,7 +44,7 @@ internal sealed class InteractionInputSystem : IUpdateSystem
                 break;
 
             case InteractionType.OpenSkillSelection:
-                // TODO: Open skill selection UI (future task)
+                ToggleSkillSelectionUI(world);
                 break;
 
             case InteractionType.OpenShop:
@@ -52,6 +55,16 @@ internal sealed class InteractionInputSystem : IUpdateSystem
                 ToggleRunHistoryUI(world);
                 break;
         }
+    }
+
+    private static bool IsSessionPlaying(EcsWorld world)
+    {
+        var playing = true;
+        world.ForEach<GameSession>((Entity _, ref GameSession session) =>
+        {
+            playing = session.State == GameState.Playing;
+        });
+        return playing;
     }
 
     private static void ToggleRunHistoryUI(EcsWorld world)
@@ -81,6 +94,16 @@ internal sealed class InteractionInputSystem : IUpdateSystem
         // Find the StageSelectionUIState entity and toggle it
         world.ForEach<StageSelectionUIState>(
             (Entity entity, ref StageSelectionUIState state) =>
+            {
+                state.IsOpen = !state.IsOpen;
+                world.SetComponent(entity, state);
+            });
+    }
+
+    private static void ToggleSkillSelectionUI(EcsWorld world)
+    {
+        world.ForEach<SkillSelectionUIState>(
+            (Entity entity, ref SkillSelectionUIState state) =>
             {
                 state.IsOpen = !state.IsOpen;
                 world.SetComponent(entity, state);

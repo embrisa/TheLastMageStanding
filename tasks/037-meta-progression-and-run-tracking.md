@@ -361,7 +361,7 @@ milestone_bonus: Wave 10 (+50g), Wave 20 (+100g), Wave 30 (+200g)
 ### Known Limitations (Future Work)
 - **Equipment stats:** Defined but not yet applied in combat (Task 029 integration needed)
 - **Talent unlocks:** Stored in profile but not connected to perk tree (Task 047)
-- **Skill unlocks:** List maintained but not integrated with skill system (Task 043)
+- **Skill unlocks:** List maintained but not integrated with skill system (Task 054)
 - **UI:** No meta hub, shop, or stats display yet (Tasks 045-049)
 - **Gold collection:** GoldCollectedEvent defined but not yet published by loot system
 - **Equipment drops:** EquipmentCollectedEvent defined but not yet wired to loot drops
@@ -388,4 +388,3 @@ milestone_bonus: Wave 10 (+50g), Wave 20 (+100g), Wave 30 (+200g)
 ```
 
 All acceptance criteria met. Ready for UI implementation in tasks 045-049.
-

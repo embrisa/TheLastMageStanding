@@ -1,7 +1,11 @@
 # Task: 045 - Meta Hub UI & Scene
-- Status: BLOCKED (overlaps with Task 051)
+- Status: SUPERSEDED (implemented via Task 051)
 
-**NOTE:** This task overlaps significantly with Task 051 (Hub scene and scene management). Should either be merged into 051 or deferred until 051 is complete to avoid duplication.
+**NOTE (2025-12-14):** Task 051 delivered the hub + scene management (and switched the hub from a static menu to a playable hub world with NPC interactions). The remaining work described here was split into focused hub tasks; do not implement this as a separate `MetaHubState`.
+
+**Superseded by**
+- Task 051: Hub scene and scene management
+- Hub follow-ups: `tasks/HUB_COMPLETION_ARC.md` (and Tasks 061–068)
 
 ## Summary
 Create the meta hub game state and UI that serves as the central navigation point between runs. Display player meta level, XP, and gold. Provide navigation to shop, talent tree, run history, and the "Start Run" button.
