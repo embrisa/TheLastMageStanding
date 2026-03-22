@@ -11,6 +11,9 @@ internal sealed class EcsCommonRuntimeModule : IEcsRuntimeModule
     public void Register(EcsRuntimeRegistration registration, EcsRuntimeModuleContext context)
     {
         registration.RequireCapability(EcsRuntimeCapability.SessionEntity, nameof(EcsCommonRuntimeModule));
+        registration.ProvideCapability(
+            EcsRuntimeCapability.SessionSettingsState,
+            $"{nameof(EcsCommonRuntimeModule)}.{nameof(SettingsMenuSystem)}");
 
         var playerAnimationSystem = new PlayerAnimationSystem();
         var playerRenderSystem = new PlayerRenderSystem();

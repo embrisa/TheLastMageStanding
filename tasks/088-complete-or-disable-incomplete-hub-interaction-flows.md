@@ -50,8 +50,8 @@ The hub currently exposes interactions and menu actions that are still TODOs, in
   - `src/Game/Core/Ecs/Systems/HubSettingsMyraSystem.cs`
   - `docs/game-design-document.md`
 - Tests/build/manual checks run:
+  - `dotnet run --project src/Game` reached the `MainMenu -> Hub` transition, loaded `Tiles/Maps/HubMap`, collision, and NPC spawn without the previous duplicate `SessionSettingsState` runtime exception
   - `dotnet build` succeeded
-  - Manual play check not run in this pass
 - Next concrete step:
   - Manual smoke-test the hub flows in-game: ESC menu -> settings open/close, return to main menu, vendor lock messaging, and hub modal blocking
 - Decisions made:
@@ -60,3 +60,4 @@ The hub currently exposes interactions and menu actions that are still TODOs, in
   - Left the vendor visible but explicitly locked with `Shop coming soon` feedback until the real shop UI exists
 - Risks/blockers:
   - The modal-blocking pass covers the touched hub entry points, but broader hub/manual UX validation is still needed in the running game
+  - Follow-up runtime composition cleanup was required after wiring hub settings into the shared `SettingsMenuSystem`; `SessionSettingsState` ownership now lives in `EcsCommonRuntimeModule` so hub and stage both consume the same session-scoped settings state without duplicate registration.

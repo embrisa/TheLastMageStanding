@@ -11,7 +11,7 @@ internal sealed class EcsHubRuntimeModule : IEcsRuntimeModule
     public void Register(EcsRuntimeRegistration registration, EcsRuntimeModuleContext context)
     {
         registration.RequireCapability(EcsRuntimeCapability.SessionEntity, nameof(EcsHubRuntimeModule));
-        registration.ProvideCapability(
+        registration.RequireCapability(
             EcsRuntimeCapability.SessionSettingsState,
             $"{nameof(EcsHubRuntimeModule)}.{nameof(SettingsMenuSystem)}");
 

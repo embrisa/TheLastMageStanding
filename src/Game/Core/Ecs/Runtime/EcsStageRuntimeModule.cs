@@ -25,7 +25,7 @@ internal sealed class EcsStageRuntimeModule : IEcsRuntimeModule
         var hitEffectSystem = new HitEffectSystem();
         var telegraphSystem = new TelegraphSystem();
 
-        registration.ProvideCapability(
+        registration.RequireCapability(
             EcsRuntimeCapability.SessionSettingsState,
             $"{nameof(EcsStageRuntimeModule)}.{nameof(SettingsMenuSystem)}");
         registration.ProvideCapability(
