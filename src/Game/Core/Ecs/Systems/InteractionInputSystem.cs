@@ -18,6 +18,9 @@ internal sealed class InteractionInputSystem : IUpdateSystem
         if (!IsSessionPlaying(world))
             return;
 
+        if (HubModalState.HasBlockingModalOpen(world))
+            return;
+
         if (!context.Input.InteractPressed)
             return;
 
@@ -48,7 +51,7 @@ internal sealed class InteractionInputSystem : IUpdateSystem
                 break;
 
             case InteractionType.OpenShop:
-                // TODO: Open shop UI (future task)
+                ShowLockedFeatureMessage(world, "Shop coming soon");
                 break;
 
             case InteractionType.OpenStats:
@@ -108,5 +111,13 @@ internal sealed class InteractionInputSystem : IUpdateSystem
                 state.IsOpen = !state.IsOpen;
                 world.SetComponent(entity, state);
             });
+    }
+
+    private static void ShowLockedFeatureMessage(EcsWorld world, string message)
+    {
+        world.ForEach<GameSession>((Entity entity, ref GameSession _) =>
+        {
+            world.SetComponent(entity, new LockedFeatureMessage(message));
+        });
     }
 }

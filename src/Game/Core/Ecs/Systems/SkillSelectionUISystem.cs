@@ -108,6 +108,12 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
 
         if (context.Input.SkillSelectionPressed)
         {
+            if (!uiState.IsOpen && HubModalState.HasBlockingModalOpen(world))
+            {
+                world.SetComponent(_uiEntity.Value, uiState);
+                return;
+            }
+
             uiState.IsOpen = !uiState.IsOpen;
             world.SetComponent(_uiEntity.Value, uiState);
         }

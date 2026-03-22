@@ -60,7 +60,7 @@ internal sealed class ProximityPromptRenderSystem : IDrawSystem, ILoadContentSys
             InteractionType.OpenTalentTree => "E - Talent Tree",
             InteractionType.OpenStageSelection => "E - Stage Select",
             InteractionType.OpenSkillSelection => "E - Skills",
-            InteractionType.OpenShop => "E - Shop",
+            InteractionType.OpenShop => "E - Shop (Soon)",
             InteractionType.OpenStats => "E - Stats",
             _ => "E - Interact"
         };

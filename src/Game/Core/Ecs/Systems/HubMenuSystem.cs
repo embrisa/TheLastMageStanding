@@ -15,11 +15,13 @@ internal sealed class HubMenuSystem : IUpdateSystem, IUiDrawSystem, ILoadContent
     private SpriteFont? _font;
     private Texture2D? _whitePixel;
     private readonly SceneStateService _sceneStateService;
-    private readonly string[] _menuOptions = ["Settings", "Quit to Desktop"];
+    private readonly SceneManager _sceneManager;
+    private readonly string[] _menuOptions = ["Settings", "Return to Main Menu"];
 
-    public HubMenuSystem(SceneStateService sceneStateService)
+    public HubMenuSystem(SceneStateService sceneStateService, SceneManager sceneManager)
     {
         _sceneStateService = sceneStateService;
+        _sceneManager = sceneManager;
     }
 
     public void Initialize(EcsWorld world)
@@ -47,11 +49,8 @@ internal sealed class HubMenuSystem : IUpdateSystem, IUiDrawSystem, ILoadContent
         if (!world.TryGetComponent<HubMenuState>(_menuEntity.Value, out var state))
             return;
 
-        // Toggle menu with ESC (but don't steal ESC from other modal hub overlays)
-        if (context.Input.PausePressed && !IsOtherModalOpen(world))
+        if (TryHandleBackAction(world, context, ref state))
         {
-            state.IsOpen = !state.IsOpen;
-            state.SelectedIndex = 0;
             world.SetComponent(_menuEntity.Value, state);
             return;
         }
@@ -75,7 +74,8 @@ internal sealed class HubMenuSystem : IUpdateSystem, IUiDrawSystem, ILoadContent
         // Confirm selection
         if (context.Input.MenuConfirmPressed)
         {
-            HandleMenuSelection(state.SelectedIndex);
+            HandleMenuSelection(world, ref state, state.SelectedIndex);
+            world.SetComponent(_menuEntity.Value, state);
         }
     }
 
@@ -130,39 +130,61 @@ internal sealed class HubMenuSystem : IUpdateSystem, IUiDrawSystem, ILoadContent
         _whitePixel?.Dispose();
     }
 
-    private static void HandleMenuSelection(int index)
+    private static bool TryHandleBackAction(EcsWorld world, in EcsUpdateContext context, ref HubMenuState state)
+    {
+        if (IsSettingsOpen(world) && (context.Input.PausePressed || context.Input.MenuBackPressed))
+        {
+            SetSettingsOpen(world, isOpen: false);
+            return true;
+        }
+
+        if (!context.Input.PausePressed)
+        {
+            return false;
+        }
+
+        if (!state.IsOpen && HubModalState.HasBlockingModalOpen(world))
+        {
+            return false;
+        }
+
+        state.IsOpen = !state.IsOpen;
+        state.SelectedIndex = 0;
+        return true;
+    }
+
+    private void HandleMenuSelection(EcsWorld world, ref HubMenuState state, int index)
     {
         switch (index)
         {
-            case 0: // Settings
-                // TODO: Open settings UI (future task)
+            case 0:
+                state.IsOpen = false;
+                SetSettingsOpen(world, isOpen: true, activeTab: "audio");
                 break;
-            case 1: // Quit to Desktop
-                // TODO: Trigger quit event or game exit
+            case 1:
+                state.IsOpen = false;
+                _sceneManager.TransitionToMainMenu();
                 break;
         }
     }
 
-    private static bool IsOtherModalOpen(EcsWorld world)
+    private static bool IsSettingsOpen(EcsWorld world)
     {
-        var anyOpen = false;
+        return HubModalState.IsSettingsOpen(world);
+    }
 
-        world.ForEach<StageSelectionUIState>((Entity _, ref StageSelectionUIState state) =>
+    private static void SetSettingsOpen(EcsWorld world, bool isOpen, string? activeTab = null)
+    {
+        world.ForEach<SettingsMenuState>((Entity entity, ref SettingsMenuState state) =>
         {
-            anyOpen |= state.IsOpen;
-        });
+            state.IsOpen = isOpen;
+            if (isOpen && !string.IsNullOrWhiteSpace(activeTab))
+            {
+                state.ActiveTab = activeTab;
+            }
 
-        world.ForEach<SkillSelectionUIState>((Entity _, ref SkillSelectionUIState state) =>
-        {
-            anyOpen |= state.IsOpen;
+            world.SetComponent(entity, state);
         });
-
-        world.ForEach<RunHistoryUIState>((Entity _, ref RunHistoryUIState state) =>
-        {
-            anyOpen |= state.IsOpen;
-        });
-
-        return anyOpen;
     }
 }
 

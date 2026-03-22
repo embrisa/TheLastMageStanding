@@ -69,6 +69,14 @@ internal sealed class InventoryUiSystem : IUpdateSystem, IUiDrawSystem, ILoadCon
         // Toggle inventory with I key (gated by scene state in InputState) or Tab or Y button
         if (context.Input.InventoryPressed || IsKeyJustPressed(keyboard, Keys.Tab) || IsButtonJustPressed(gamePad, Buttons.Y))
         {
+            if (!uiState.IsOpen && HubModalState.HasBlockingModalOpen(world))
+            {
+                world.SetComponent(uiEntity.Value, uiState);
+                _previousKeyboardState = keyboard;
+                _previousGamePadState = gamePad;
+                return;
+            }
+
             uiState.IsOpen = !uiState.IsOpen;
             uiState.SelectedIndex = 0;
         }

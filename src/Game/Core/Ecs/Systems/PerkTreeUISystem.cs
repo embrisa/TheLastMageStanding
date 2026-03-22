@@ -77,6 +77,12 @@ internal sealed class PerkTreeUISystem : IUpdateSystem, IUiDrawSystem, ILoadCont
         // Toggle perk tree with 'P' key (only when not game over)
         if (session.State != GameState.GameOver && context.Input.PerkTreePressed)
         {
+            if (!perkUI.IsOpen && HubModalState.HasBlockingModalOpen(world))
+            {
+                world.SetComponent(_sessionEntity.Value, perkUI);
+                return;
+            }
+
             perkUI.IsOpen = !perkUI.IsOpen;
             if (perkUI.IsOpen)
             {

@@ -81,10 +81,11 @@
     - `npc_tome_scribe` (purple) → Opens Talent Tree
     - `npc_arena_master` (red) → Opens Stage Selection
     - `npc_ability_loadout` (blue) → Opens Skill Selection
-    - `npc_vendor` (gold) → Opens Shop
+    - `npc_vendor` (gold) → Shows `E - Shop (Soon)` and a temporary "Shop coming soon" lock message until the shop UI ships
     - `npc_archivist` (green) → Opens Stats/History
   - **Keyboard shortcuts**: P (talent tree), I (inventory) work directly without NPC interaction (available in both hub and stage for viewing, changes only in hub).
-  - **ESC menu**: Opens hub-specific menu with Settings and Quit options (different from stage pause menu).
+  - **ESC menu**: Opens hub-specific menu with Settings and Return to Main Menu options (different from stage pause menu).
+  - **Hub settings overlay**: Reuses the shared tabbed settings screen (audio, video, controls) from in-run settings and closes on Escape before reopening the hub menu.
   - All meta progression activities (skill selection, talent tree, equipment, shop) accessible only in hub.
   - Camera follows player smoothly; collision with walls enabled.
 - **Stage Scene**:
@@ -158,7 +159,7 @@
 - **Skill Selection**: Browse unlocked skills, equip to hotbar slots 0-4.
 - **Talent Tree**: Navigate talent nodes; allocate points; cannot respec (permanent choices).
 - **Equipment**: Browse collection; equip to 5 slots; view stat comparisons.
-- **Shop**: Browse items for sale; purchase with gold.
+- **Shop**: Temporarily disabled in hub. The vendor remains visible but clearly communicates that the shop is coming soon instead of opening a placeholder flow.
 - **Stage Select**: Choose act/stage; view requirements and rewards.
 
 ### Stage Controls (Combat Scene)

@@ -11,14 +11,20 @@ internal sealed class EcsHubRuntimeModule : IEcsRuntimeModule
     public void Register(EcsRuntimeRegistration registration, EcsRuntimeModuleContext context)
     {
         registration.RequireCapability(EcsRuntimeCapability.SessionEntity, nameof(EcsHubRuntimeModule));
+        registration.ProvideCapability(
+            EcsRuntimeCapability.SessionSettingsState,
+            $"{nameof(EcsHubRuntimeModule)}.{nameof(SettingsMenuSystem)}");
 
         var stageSelectionUi = new StageSelectionUISystem(context.StageRegistry, context.SceneManager, context.CampaignProgressionService);
         var skillSelectionUi = new SkillSelectionUISystem(context.SceneStateService, context.MetaProgressionManager, context.SkillRegistry);
         var runHistoryUi = new RunHistoryUISystem(context.MetaProgressionManager.HistoryService, context.SceneStateService);
-        var hubMenuSystem = new HubMenuSystem(context.SceneStateService);
+        var hubMenuSystem = new HubMenuSystem(context.SceneStateService, context.SceneManager);
+        var hubSettingsUi = new HubSettingsMyraSystem(context.SceneStateService);
         var npcRenderSystem = new NpcRenderSystem();
         var proximityPromptRenderSystem = new ProximityPromptRenderSystem();
 
+        registration.Update.Add(EcsSceneScope.Hub, context.SettingsMenuSystem);
+        registration.Update.Add(EcsSceneScope.Hub, context.SessionNotificationSystem);
         registration.Update.Add(EcsSceneScope.Hub, stageSelectionUi);
         registration.Update.Add(EcsSceneScope.Hub, skillSelectionUi);
         registration.Update.Add(EcsSceneScope.Hub, runHistoryUi);
@@ -31,11 +37,12 @@ internal sealed class EcsHubRuntimeModule : IEcsRuntimeModule
 
         registration.UiDraw.Add(EcsSceneScope.Hub, hubMenuSystem);
 
+        registration.ScreenSpaceUiDraw.Add(EcsSceneScope.Hub, hubSettingsUi);
         registration.ScreenSpaceUiDraw.Add(EcsSceneScope.Hub, stageSelectionUi);
         registration.ScreenSpaceUiDraw.Add(EcsSceneScope.Hub, skillSelectionUi);
         registration.ScreenSpaceUiDraw.Add(EcsSceneScope.Hub, runHistoryUi);
 
-        RegisterLoadContent(registration, stageSelectionUi, skillSelectionUi, runHistoryUi, hubMenuSystem, npcRenderSystem, proximityPromptRenderSystem);
+        RegisterLoadContent(registration, stageSelectionUi, skillSelectionUi, runHistoryUi, hubMenuSystem, hubSettingsUi, npcRenderSystem, proximityPromptRenderSystem);
     }
 
     private static void RegisterLoadContent(EcsRuntimeRegistration registration, params ILoadContentSystem[] systems)
