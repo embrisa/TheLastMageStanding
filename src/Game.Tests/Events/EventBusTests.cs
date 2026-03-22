@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.SceneState;
 using Xunit;
 
 namespace TheLastMageStanding.Game.Tests.Events;
@@ -60,5 +61,42 @@ public sealed class EventBusTests
         {
             RuntimeLog.ResetToDefaults();
         }
+    }
+
+    [Fact]
+    public void SubscriptionDispose_UnsubscribesHandler()
+    {
+        var eventBus = new EventBus();
+        var handled = 0;
+        var subscription = eventBus.Subscribe<int>(_ => handled++);
+
+        eventBus.Publish(1);
+        eventBus.ProcessEvents();
+        subscription.Dispose();
+        eventBus.Publish(2);
+        eventBus.ProcessEvents();
+
+        Assert.Equal(1, handled);
+    }
+
+    [Fact]
+    public void GetDiagnosticsSnapshot_ReturnsPendingQueuesAndSubscribers()
+    {
+        var eventBus = new EventBus(maxPasses: 3);
+        eventBus.Subscribe<int>(_ => { });
+        eventBus.Subscribe<SceneEnterEvent>(_ => { });
+        eventBus.Publish(42);
+
+        var diagnostics = eventBus.GetDiagnosticsSnapshot();
+
+        Assert.Equal(3, diagnostics.MaxPasses);
+        Assert.Equal(1, diagnostics.PendingEventCount);
+        Assert.Equal(2, diagnostics.SubscriberCount);
+        Assert.Contains(
+            diagnostics.EventTypes,
+            entry => entry.EventType == typeof(int) && entry.PendingCount == 1 && entry.SubscriberCount == 1);
+        Assert.Contains(
+            diagnostics.EventTypes,
+            entry => entry.EventType == typeof(SceneEnterEvent) && entry.PendingCount == 0 && entry.SubscriberCount == 1);
     }
 }

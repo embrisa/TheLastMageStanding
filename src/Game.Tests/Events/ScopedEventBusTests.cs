@@ -34,4 +34,27 @@ public sealed class ScopedEventBusTests
         Assert.Equal(1, firstCount);
         Assert.Equal(1, secondCount);
     }
+
+    [Fact]
+    public void RecreatingScope_DoesNotLeakHandlersFromDisposedScope()
+    {
+        var bus = new EventBus();
+        var firstScopeCount = 0;
+        var secondScopeCount = 0;
+
+        using (var firstScope = new ScopedEventBus(bus))
+        {
+            firstScope.Subscribe<int>(_ => firstScopeCount++);
+        }
+
+        using (var secondScope = new ScopedEventBus(bus))
+        {
+            secondScope.Subscribe<int>(_ => secondScopeCount++);
+            bus.Publish(1);
+            bus.ProcessEvents();
+        }
+
+        Assert.Equal(0, firstScopeCount);
+        Assert.Equal(1, secondScopeCount);
+    }
 }

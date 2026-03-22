@@ -10,6 +10,7 @@ namespace TheLastMageStanding.Game.Core.MetaProgression;
 public sealed class MetaProgressionManager : IDisposable
 {
     private const string LogCategory = "MetaProgression";
+    private readonly EventSubscriptionScope _subscriptions = new();
     private readonly PlayerProfileService _profileService;
     private readonly RunHistoryService _historyService;
     private readonly IEventBus _eventBus;
@@ -35,17 +36,17 @@ public sealed class MetaProgressionManager : IDisposable
         _currentProfile = _profileService.LoadProfile();
 
         // Subscribe to events
-        _eventBus.Subscribe<RunStartedEvent>(OnRunStarted);
-        _eventBus.Subscribe<RunEndedEvent>(OnRunEnded);
-        _eventBus.Subscribe<GoldCollectedEvent>(OnGoldCollected);
-        _eventBus.Subscribe<EquipmentCollectedEvent>(OnEquipmentCollected);
-        _eventBus.Subscribe<SessionRestartedEvent>(OnSessionRestarted);
-        _eventBus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
-        _eventBus.Subscribe<WaveCompletedEvent>(OnWaveCompleted);
-        _eventBus.Subscribe<EntityDamagedEvent>(OnEntityDamaged);
-        _eventBus.Subscribe<StageRunStartedEvent>(OnStageRunStarted);
-        _eventBus.Subscribe<StageRunCompletedEvent>(OnStageRunCompleted);
-        _eventBus.Subscribe<RunMetaXpBonusEvent>(OnRunMetaXpBonus);
+        _subscriptions.Subscribe<RunStartedEvent>(eventBus, OnRunStarted);
+        _subscriptions.Subscribe<RunEndedEvent>(eventBus, OnRunEnded);
+        _subscriptions.Subscribe<GoldCollectedEvent>(eventBus, OnGoldCollected);
+        _subscriptions.Subscribe<EquipmentCollectedEvent>(eventBus, OnEquipmentCollected);
+        _subscriptions.Subscribe<SessionRestartedEvent>(eventBus, OnSessionRestarted);
+        _subscriptions.Subscribe<PlayerDiedEvent>(eventBus, OnPlayerDied);
+        _subscriptions.Subscribe<WaveCompletedEvent>(eventBus, OnWaveCompleted);
+        _subscriptions.Subscribe<EntityDamagedEvent>(eventBus, OnEntityDamaged);
+        _subscriptions.Subscribe<StageRunStartedEvent>(eventBus, OnStageRunStarted);
+        _subscriptions.Subscribe<StageRunCompletedEvent>(eventBus, OnStageRunCompleted);
+        _subscriptions.Subscribe<RunMetaXpBonusEvent>(eventBus, OnRunMetaXpBonus);
     }
 
     /// <summary>
@@ -99,17 +100,7 @@ public sealed class MetaProgressionManager : IDisposable
 
         _disposed = true;
 
-        _eventBus.Unsubscribe<RunStartedEvent>(OnRunStarted);
-        _eventBus.Unsubscribe<RunEndedEvent>(OnRunEnded);
-        _eventBus.Unsubscribe<GoldCollectedEvent>(OnGoldCollected);
-        _eventBus.Unsubscribe<EquipmentCollectedEvent>(OnEquipmentCollected);
-        _eventBus.Unsubscribe<SessionRestartedEvent>(OnSessionRestarted);
-        _eventBus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
-        _eventBus.Unsubscribe<WaveCompletedEvent>(OnWaveCompleted);
-        _eventBus.Unsubscribe<EntityDamagedEvent>(OnEntityDamaged);
-        _eventBus.Unsubscribe<StageRunStartedEvent>(OnStageRunStarted);
-        _eventBus.Unsubscribe<StageRunCompletedEvent>(OnStageRunCompleted);
-        _eventBus.Unsubscribe<RunMetaXpBonusEvent>(OnRunMetaXpBonus);
+        _subscriptions.Dispose();
 
         _currentRun = null;
     }

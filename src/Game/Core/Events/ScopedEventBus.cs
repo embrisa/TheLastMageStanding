@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-
 namespace TheLastMageStanding.Game.Core.Events;
 
 /// <summary>
@@ -9,28 +7,8 @@ namespace TheLastMageStanding.Game.Core.Events;
 /// </summary>
 internal sealed class ScopedEventBus : IEventBus, IDisposable
 {
-    private interface ITrackedSubscription
-    {
-        bool Matches(Delegate handler);
-        void Unsubscribe(EventBus eventBus);
-    }
-
-    private sealed class TrackedSubscription<T> : ITrackedSubscription where T : struct
-    {
-        private readonly Action<T> _handler;
-
-        public TrackedSubscription(Action<T> handler)
-        {
-            _handler = handler;
-        }
-
-        public bool Matches(Delegate handler) => _handler.Equals(handler);
-
-        public void Unsubscribe(EventBus eventBus) => eventBus.Unsubscribe(_handler);
-    }
-
     private readonly EventBus _eventBus;
-    private readonly List<ITrackedSubscription> _subscriptions = [];
+    private readonly EventSubscriptionScope _subscriptions = new();
     private bool _disposed;
 
     public ScopedEventBus(EventBus eventBus)
@@ -44,11 +22,10 @@ internal sealed class ScopedEventBus : IEventBus, IDisposable
         _eventBus.Publish(eventData);
     }
 
-    public void Subscribe<T>(Action<T> handler) where T : struct
+    public EventSubscription Subscribe<T>(Action<T> handler) where T : struct
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _eventBus.Subscribe(handler);
-        _subscriptions.Add(new TrackedSubscription<T>(handler));
+        return _subscriptions.Track(_eventBus.Subscribe(handler));
     }
 
     public void Unsubscribe<T>(Action<T> handler) where T : struct
@@ -59,13 +36,18 @@ internal sealed class ScopedEventBus : IEventBus, IDisposable
         }
 
         _eventBus.Unsubscribe(handler);
-        RemoveTrackedSubscription(handler);
     }
 
     public void ProcessEvents()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _eventBus.ProcessEvents();
+    }
+
+    public EventBusDiagnostics GetDiagnosticsSnapshot()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        return _eventBus.GetDiagnosticsSnapshot();
     }
 
     public void Dispose()
@@ -75,24 +57,7 @@ internal sealed class ScopedEventBus : IEventBus, IDisposable
             return;
         }
 
-        for (var i = _subscriptions.Count - 1; i >= 0; i--)
-        {
-            _subscriptions[i].Unsubscribe(_eventBus);
-        }
-
-        _subscriptions.Clear();
+        _subscriptions.Dispose();
         _disposed = true;
-    }
-
-    private void RemoveTrackedSubscription(Delegate handler)
-    {
-        for (var i = _subscriptions.Count - 1; i >= 0; i--)
-        {
-            if (_subscriptions[i].Matches(handler))
-            {
-                _subscriptions.RemoveAt(i);
-                break;
-            }
-        }
     }
 }

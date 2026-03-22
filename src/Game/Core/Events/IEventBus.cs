@@ -13,7 +13,7 @@ public interface IEventBus
     /// <summary>
     /// Subscribes to an event type.
     /// </summary>
-    void Subscribe<T>(Action<T> handler) where T : struct;
+    EventSubscription Subscribe<T>(Action<T> handler) where T : struct;
 
     /// <summary>
     /// Unsubscribes from an event type.
@@ -24,4 +24,9 @@ public interface IEventBus
     /// Processes all queued events for the current frame.
     /// </summary>
     void ProcessEvents();
+
+    /// <summary>
+    /// Returns a lightweight snapshot of current subscriber and queue state.
+    /// </summary>
+    EventBusDiagnostics GetDiagnosticsSnapshot();
 }

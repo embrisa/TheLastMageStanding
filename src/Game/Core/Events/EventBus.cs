@@ -85,7 +85,7 @@ public sealed class EventBus : IEventBus
         ((EventQueue<T>)queue).Enqueue(eventData);
     }
 
-    public void Subscribe<T>(Action<T> handler) where T : struct
+    public EventSubscription Subscribe<T>(Action<T> handler) where T : struct
     {
         var type = typeof(T);
         if (!_subscribers.TryGetValue(type, out var list))
@@ -109,6 +109,8 @@ public sealed class EventBus : IEventBus
         {
             list.Add(handler);
         }
+
+        return new EventSubscription(type, () => Unsubscribe(handler));
     }
 
     public void Unsubscribe<T>(Action<T> handler) where T : struct
@@ -152,12 +154,8 @@ public sealed class EventBus : IEventBus
 
         if (HasPendingEvents())
         {
-            var pendingEvents = string.Join(
-                ", ",
-                _activeQueues
-                    .Where(queue => queue.PendingCount > 0)
-                    .OrderByDescending(queue => queue.PendingCount)
-                    .Select(queue => $"{queue.EventType.Name}={queue.PendingCount}"));
+            var pendingEvents = FormatEventTypeDiagnostics(
+                GetDiagnosticsSnapshot().EventTypes.Where(entry => entry.PendingCount > 0));
 
             var message =
                 $"Event processing exceeded the configured max of {_maxPasses} passes " +
@@ -175,6 +173,51 @@ public sealed class EventBus : IEventBus
         {
             CleanupSubscribers();
         }
+    }
+
+    public EventBusDiagnostics GetDiagnosticsSnapshot()
+    {
+        if (_dirtySubscribers)
+        {
+            CleanupSubscribers();
+        }
+
+        var eventTypes = new Dictionary<Type, EventBusEventTypeDiagnostics>();
+
+        foreach (var queue in _activeQueues)
+        {
+            eventTypes[queue.EventType] = new EventBusEventTypeDiagnostics(
+                queue.EventType,
+                queue.PendingCount,
+                SubscriberCountFor(queue.EventType));
+        }
+
+        foreach (var (eventType, list) in _subscribers)
+        {
+            if (!eventTypes.TryGetValue(eventType, out var entry))
+            {
+                eventTypes[eventType] = new EventBusEventTypeDiagnostics(eventType, 0, list.Count);
+                continue;
+            }
+
+            eventTypes[eventType] = entry with { SubscriberCount = list.Count };
+        }
+
+        var orderedEventTypes = eventTypes.Values
+            .OrderByDescending(entry => entry.PendingCount)
+            .ThenByDescending(entry => entry.SubscriberCount)
+            .ThenBy(entry => entry.EventType.Name, StringComparer.Ordinal)
+            .ToArray();
+
+        var pendingEventCount = 0;
+        var subscriberCount = 0;
+        for (var i = 0; i < orderedEventTypes.Length; i++)
+        {
+            pendingEventCount += orderedEventTypes[i].PendingCount;
+            subscriberCount += orderedEventTypes[i].SubscriberCount;
+        }
+
+        return new EventBusDiagnostics(_maxPasses, pendingEventCount, subscriberCount, orderedEventTypes);
     }
 
     internal void Dispatch<T>(T eventData) where T : struct
@@ -213,5 +256,17 @@ public sealed class EventBus : IEventBus
         }
 
         return false;
+    }
+
+    private int SubscriberCountFor(Type eventType)
+    {
+        return _subscribers.TryGetValue(eventType, out var list) ? list.Count : 0;
+    }
+
+    private static string FormatEventTypeDiagnostics(IEnumerable<EventBusEventTypeDiagnostics> entries)
+    {
+        return string.Join(
+            ", ",
+            entries.Select(entry => $"{entry.EventType.Name}(pending={entry.PendingCount}, subscribers={entry.SubscriberCount})"));
     }
 }

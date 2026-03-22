@@ -12,7 +12,7 @@ namespace TheLastMageStanding.Game.Core.Config;
 /// </summary>
 internal sealed class GameSettingsController : IDisposable
 {
-    private readonly EventBus _eventBus;
+    private readonly EventSubscriptionScope _subscriptions = new();
     private readonly RuntimeSettingsService _runtimeSettingsService;
     private readonly VideoSettingsConfig _videoSettings;
     private readonly InputBindingsConfig _inputBindings;
@@ -33,7 +33,6 @@ internal sealed class GameSettingsController : IDisposable
         VideoSettingsApplier videoSettingsApplier,
         IUiSoundPlayer? uiSoundPlayer = null)
     {
-        _eventBus = eventBus;
         _runtimeSettingsService = runtimeSettingsService;
         _videoSettings = videoSettings;
         _inputBindings = inputBindings;
@@ -46,8 +45,8 @@ internal sealed class GameSettingsController : IDisposable
         _settingsScreen.InputBindingChanged += OnScreenInputBindingChanged;
         _settingsScreen.TabChangedEvent += OnTabChanged;
 
-        _eventBus.Subscribe<VideoSettingChangedEvent>(OnRuntimeVideoSettingChanged);
-        _eventBus.Subscribe<InputBindingChangedEvent>(OnRuntimeInputBindingChanged);
+        _subscriptions.Subscribe<VideoSettingChangedEvent>(eventBus, OnRuntimeVideoSettingChanged);
+        _subscriptions.Subscribe<InputBindingChangedEvent>(eventBus, OnRuntimeInputBindingChanged);
 
         RefreshViewModel();
     }
@@ -98,8 +97,7 @@ internal sealed class GameSettingsController : IDisposable
 
     public void Dispose()
     {
-        _eventBus.Unsubscribe<VideoSettingChangedEvent>(OnRuntimeVideoSettingChanged);
-        _eventBus.Unsubscribe<InputBindingChangedEvent>(OnRuntimeInputBindingChanged);
+        _subscriptions.Dispose();
         _settingsScreen.AudioSettingChanged -= OnScreenAudioSettingChanged;
         _settingsScreen.VideoSettingChanged -= OnScreenVideoSettingChanged;
         _settingsScreen.InputBindingChanged -= OnScreenInputBindingChanged;
