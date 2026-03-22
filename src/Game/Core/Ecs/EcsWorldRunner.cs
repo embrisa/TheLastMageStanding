@@ -35,27 +35,14 @@ internal sealed class EcsWorldRunner : IDisposable
     private readonly List<IDisposable> _disposables = new();
     private bool _disposed;
 
-    public EcsWorldRunner(
-        Camera2D camera,
-        AudioSettingsConfig audioSettings,
-        AudioSettingsStore audioSettingsStore,
-        VideoSettingsConfig videoSettings,
-        VideoSettingsStore videoSettingsStore,
-        InputBindingsConfig inputBindings,
-        InputBindingsStore inputBindingsStore,
-        MusicService musicService,
-        EventBus eventBus,
-        StageRegistry stageRegistry,
-        SceneStateService sceneStateService,
-        SceneManager sceneManager,
-        SlotPersistenceScope slotPersistence)
+    public EcsWorldRunner(EcsWorldRunnerDependencies dependencies)
     {
-        _eventBus = eventBus;
+        _eventBus = dependencies.EventBus;
         _worldEventBus = new ScopedEventBus(_eventBus);
         _world.EventBus = _worldEventBus;
-        _camera = camera;
-        _sceneStateService = sceneStateService;
-        _slotPersistence = slotPersistence;
+        _camera = dependencies.Camera;
+        _sceneStateService = dependencies.SceneStateService;
+        _slotPersistence = dependencies.SlotPersistence;
 
         var waveConfig = EnemyWaveConfig.Default;
         var progressionConfig = ProgressionConfig.Default;
@@ -69,23 +56,25 @@ internal sealed class EcsWorldRunner : IDisposable
 
         var playerFactory = new PlayerEntityFactory(_world, progressionConfig);
         var enemyFactory = new EnemyEntityFactory(_world);
+        var stageRunCleanupService = new StageRunEntityCleanupService();
+        var stageRunResetService = new StageRunResetService(playerFactory);
         playerFactory.CreatePlayer(Vector2.Zero);
 
         var metaProgressionManager = new MetaProgressionManager(_worldEventBus, _slotPersistence);
         var profileService = _slotPersistence.PlayerProfile;
-        var campaignProgressionService = new CampaignProgressionService(stageRegistry, profileService);
+        var campaignProgressionService = new CampaignProgressionService(dependencies.StageRegistry, profileService);
 
-        var sfxSystem = new SfxSystem(audioSettings);
+        var sfxSystem = new SfxSystem(dependencies.AudioSettings);
         var settingsService = new RuntimeSettingsService(
-            audioSettings,
-            audioSettingsStore,
-            videoSettings,
-            videoSettingsStore,
-            inputBindings,
-            inputBindingsStore,
-            musicService,
+            dependencies.AudioSettings,
+            dependencies.AudioSettingsStore,
+            dependencies.VideoSettings,
+            dependencies.VideoSettingsStore,
+            dependencies.InputBindings,
+            dependencies.InputBindingsStore,
+            dependencies.MusicService,
             sfxSystem);
-        _sessionStateSystem = new SessionStateSystem();
+        _sessionStateSystem = new SessionStateSystem(stageRunCleanupService, stageRunResetService);
         _pauseMenuSystem = new PauseMenuSystem();
         _hitStopSystem = new HitStopSystem();
         var settingsMenuSystem = new SettingsMenuSystem(settingsService);
@@ -93,22 +82,22 @@ internal sealed class EcsWorldRunner : IDisposable
 
         var context = new EcsRuntimeModuleContext(
             _world,
-            _eventBus,
+            dependencies.EventBus,
             _camera,
-            sceneStateService,
-            sceneManager,
-            stageRegistry,
+            dependencies.SceneStateService,
+            dependencies.SceneManager,
+            dependencies.StageRegistry,
             playerFactory,
             enemyFactory,
             waveConfig,
             progressionConfig,
-            audioSettings,
-            audioSettingsStore,
-            videoSettings,
-            videoSettingsStore,
-            inputBindings,
-            inputBindingsStore,
-            musicService,
+            dependencies.AudioSettings,
+            dependencies.AudioSettingsStore,
+            dependencies.VideoSettings,
+            dependencies.VideoSettingsStore,
+            dependencies.InputBindings,
+            dependencies.InputBindingsStore,
+            dependencies.MusicService,
             _slotPersistence,
             metaProgressionManager,
             campaignProgressionService,
@@ -371,3 +360,18 @@ internal sealed class EcsWorldRunner : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }
+
+internal sealed record EcsWorldRunnerDependencies(
+    Camera2D Camera,
+    AudioSettingsConfig AudioSettings,
+    AudioSettingsStore AudioSettingsStore,
+    VideoSettingsConfig VideoSettings,
+    VideoSettingsStore VideoSettingsStore,
+    InputBindingsConfig InputBindings,
+    InputBindingsStore InputBindingsStore,
+    MusicService MusicService,
+    EventBus EventBus,
+    StageRegistry StageRegistry,
+    SceneStateService SceneStateService,
+    SceneManager SceneManager,
+    SlotPersistenceScope SlotPersistence);

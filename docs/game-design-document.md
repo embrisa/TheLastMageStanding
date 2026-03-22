@@ -93,15 +93,19 @@
   - P and I keys still work to view talent tree/inventory (read-only, no changes allowed).
   - ESC key opens pause menu with Resume/Restart/Settings/Quit options.
   - Player exists in stage map with dynamic map loading based on selected stage.
+  - Stage entry and restart always rebuild run-scoped state from configured player defaults while preserving slot-scoped loadout, perks, equipment, and stage unlock progress.
   - Run Timer tracks elapsed time (does NOT run in hub).
   - Run ends on player death or stage completion → transition back to hub.
 - **Scene Transitions**:
   - Managed by `SceneManager` with deferred transitions via `ProcessPendingTransition()`.
   - Publishes `SceneExitEvent` and `SceneEnterEvent` on transitions.
+  - `Game1` remains the top-level MonoGame lifecycle host; runtime service wiring is assembled by a dedicated game composition root instead of being constructed inline in `Game1`.
   - Map reloading handled by `SceneRuntimeService` based on scene type.
+  - Active save-slot selection is tracked separately from scene bootstrap. Changing the active slot invalidates the current ECS world so the next hub/stage load rebuilds slot-scoped state from that slot only.
   - Stage map resolution is strict: missing stage ids, unknown stages, or stages without a `MapAssetPath` fail loudly instead of falling back to the hub map.
   - NPC entities spawned via `EcsWorldRunner.SpawnHubNpcs()` when entering hub scene.
   - ECS runtime subscriptions are scoped per world instance and are torn down when the world is replaced or disposed.
+  - ECS world construction is delegated to an explicit factory so slot-scoped persistence, shared runtime settings, and scene services are composed in one place.
   - `EcsWorldRunner` conditionally runs scene-specific systems:
     - `_hubOnlyUpdateSystems` / `_hubOnlyDrawSystems` for hub logic.
     - `_stageOnlyUpdateSystems` / `_stageOnlyDrawSystems` for combat logic.

@@ -7,6 +7,11 @@ namespace TheLastMageStanding.Game.Core.Ecs;
 
 internal sealed class PlayerEntityFactory
 {
+    private const float DefaultMoveSpeed = 220f;
+    private const float DefaultAttackDamage = 20f;
+    private const float DefaultAttackCooldownSeconds = 0.35f;
+    private const float DefaultAttackRange = 42f;
+    private const float DefaultHealth = 100f;
     private readonly EcsWorld _world;
     private readonly ProgressionConfig _progressionConfig;
 
@@ -18,6 +23,7 @@ internal sealed class PlayerEntityFactory
 
     public Entity CreatePlayer(Vector2 spawnPosition)
     {
+        var defaults = CreateRunScopedDefaults();
         var entity = _world.CreateEntity();
 
         _world.SetComponent(entity, new PlayerTag());
@@ -25,8 +31,8 @@ internal sealed class PlayerEntityFactory
         _world.SetComponent(entity, Faction.Player);
         _world.SetComponent(entity, new Position(spawnPosition));
         _world.SetComponent(entity, new Velocity(Vector2.Zero));
-        _world.SetComponent(entity, new MoveSpeed(220f));
-        _world.SetComponent(entity, new BaseMoveSpeed(220f));
+        _world.SetComponent(entity, defaults.MoveSpeed);
+        _world.SetComponent(entity, defaults.BaseMoveSpeed);
         _world.SetComponent(entity, new InputIntent());
         _world.SetComponent(entity, new DashConfig
         {
@@ -36,10 +42,10 @@ internal sealed class PlayerEntityFactory
             IFrameWindow = DashConfig.DefaultIFrameWindow,
             InputBufferWindow = DashConfig.DefaultInputBufferWindow
         });
-        _world.SetComponent(entity, new DashCooldown(0f));
+        _world.SetComponent(entity, defaults.DashCooldown);
         _world.SetComponent(entity, new DashInputBuffer());
-        _world.SetComponent(entity, new AttackStats(damage: 20f, cooldownSeconds: 0.35f, range: 42f));
-        _world.SetComponent(entity, new Health(current: 100f, max: 100f));
+        _world.SetComponent(entity, defaults.AttackStats);
+        _world.SetComponent(entity, defaults.Health);
         _world.SetComponent(entity, new Hitbox(radius: 6f));
         _world.SetComponent(entity, new Mass(1.0f)); // Standard player mass
 
@@ -65,18 +71,16 @@ internal sealed class PlayerEntityFactory
         _world.SetComponent(entity, Collider.CreateCircle(6f, CollisionLayer.Player, CollisionLayer.Enemy | CollisionLayer.Pickup | CollisionLayer.WorldStatic, isTrigger: false));
 
         // Combat hitbox/hurtbox components
-        _world.SetComponent(entity, new Hurtbox { IsInvulnerable = false, InvulnerabilityEndsAt = 0f });
+        _world.SetComponent(entity, defaults.Hurtbox);
         _world.SetComponent(entity, new MeleeAttackConfig(hitboxRadius: 42f, hitboxOffset: Vector2.Zero, duration: 0.15f));
 
         // Animation-driven attack components
         _world.SetComponent(entity, new AnimationDrivenAttack("PlayerMelee"));
         _world.SetComponent(entity, DirectionalHitboxConfig.CreateDefault(forwardDistance: 24f));
-        _world.SetComponent(entity, new AnimationEventState(0f, false));
+        _world.SetComponent(entity, defaults.AnimationEventState);
 
         // Initialize XP/level progression
-        var startingLevel = 1;
-        var xpToNextLevel = _progressionConfig.CalculateXpForLevel(startingLevel + 1);
-        _world.SetComponent(entity, new PlayerXp(currentXp: 0, level: startingLevel, xpToNextLevel: xpToNextLevel));
+        _world.SetComponent(entity, defaults.PlayerXp);
 
         // Initialize perk system
         _world.SetComponent(entity, new PerkPoints(0, 0));
@@ -95,5 +99,29 @@ internal sealed class PlayerEntityFactory
 
         return entity;
     }
+
+    public PlayerRunScopedDefaults CreateRunScopedDefaults()
+    {
+        var startingLevel = 1;
+        var xpToNextLevel = _progressionConfig.CalculateXpForLevel(startingLevel + 1);
+        return new PlayerRunScopedDefaults(
+            new MoveSpeed(DefaultMoveSpeed),
+            new BaseMoveSpeed(DefaultMoveSpeed),
+            new AttackStats(DefaultAttackDamage, DefaultAttackCooldownSeconds, DefaultAttackRange),
+            new Health(DefaultHealth, DefaultHealth),
+            new PlayerXp(0, startingLevel, xpToNextLevel),
+            new DashCooldown(0f),
+            new Hurtbox { IsInvulnerable = false, InvulnerabilityEndsAt = 0f },
+            new AnimationEventState(0f, false));
+    }
 }
 
+internal readonly record struct PlayerRunScopedDefaults(
+    MoveSpeed MoveSpeed,
+    BaseMoveSpeed BaseMoveSpeed,
+    AttackStats AttackStats,
+    Health Health,
+    PlayerXp PlayerXp,
+    DashCooldown DashCooldown,
+    Hurtbox Hurtbox,
+    AnimationEventState AnimationEventState);

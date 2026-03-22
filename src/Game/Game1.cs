@@ -1,16 +1,8 @@
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Myra;
-using TheLastMageStanding.Game.Core.Camera;
-using TheLastMageStanding.Game.Core.Audio;
-using TheLastMageStanding.Game.Core.Config;
-using TheLastMageStanding.Game.Core.Campaign;
-using TheLastMageStanding.Game.Core.Events;
-using TheLastMageStanding.Game.Core.Input;
-using TheLastMageStanding.Game.Core.Diagnostics;
+using TheLastMageStanding.Game.Core.Composition;
 using TheLastMageStanding.Game.Core.SceneState;
-using TheLastMageStanding.Game.Core.MetaProgression;
 using TheLastMageStanding.Game.Core.UI;
 using TheLastMageStanding.Game.Core.UI.Myra;
 
@@ -25,26 +17,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch = null!;
     private RenderTarget2D _renderTarget = null!;
-    private Camera2D _camera = null!;
-    private SceneStateService _sceneStateService = null!;
-    private SceneManager _sceneManager = null!;
-    private InputState _input = null!;
-    private AudioSettingsStore _audioSettingsStore = null!;
-    private AudioSettingsConfig _audioSettings = null!;
-    private VideoSettingsStore _videoSettingsStore = null!;
-    private VideoSettingsConfig _videoSettings = null!;
-    private InputBindingsStore _inputBindingsStore = null!;
-    private InputBindingsConfig _inputBindings = null!;
-    private RuntimeSettingsService _runtimeSettingsService = null!;
-    private MusicService _musicService = null!;
-    private VideoSettingsApplier _videoSettingsApplier = null!;
-    private EventBus _eventBus = null!;
-    private PersistenceRoot _persistenceRoot = null!;
-    private SaveSlotService _saveSlotService = null!;
-    private StageRegistry _stageRegistry = null!;
-    private SceneRuntimeService _sceneRuntimeService = null!;
-    private MyraMainMenuScreen _myraMenu = null!;
-    private GameSettingsController _settingsController = null!;
+    private GameRuntime _runtime = null!;
 
     public Game1()
     {
@@ -62,50 +35,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
 
     protected override void Initialize()
     {
-        MyraEnvironment.Game = this;
-
-        _camera = new Camera2D(VirtualWidth, VirtualHeight);
-        _audioSettingsStore = new AudioSettingsStore();
-        _audioSettings = _audioSettingsStore.LoadOrDefault();
-        _videoSettingsStore = new VideoSettingsStore();
-        _videoSettings = _videoSettingsStore.LoadOrDefault();
-        _inputBindingsStore = new InputBindingsStore();
-        _inputBindings = _inputBindingsStore.LoadOrDefault();
-        _videoSettingsApplier = new VideoSettingsApplier(_graphics, Window);
-        _videoSettingsApplier.Apply(_videoSettings, applyChanges: false);
-        _musicService = new MusicService(_audioSettings);
-        RuntimeLog.Configure(new ConsoleRuntimeLogger(RuntimeLogSettings.FromEnvironment()));
-        _runtimeSettingsService = new RuntimeSettingsService(
-            _audioSettings,
-            _audioSettingsStore,
-            _videoSettings,
-            _videoSettingsStore,
-            _inputBindings,
-            _inputBindingsStore,
-            _musicService);
-        _eventBus = new EventBus();
-        _sceneStateService = new SceneStateService();
-        _sceneManager = new SceneManager(_sceneStateService, _eventBus);
-        _stageRegistry = new StageRegistry();
-        _input = new InputState(_sceneStateService, VirtualWidth, VirtualHeight, _inputBindings);
-        _persistenceRoot = new PersistenceRoot(new DefaultFileSystem());
-        _saveSlotService = _persistenceRoot.CreateSaveSlotService();
-        _sceneRuntimeService = new SceneRuntimeService(
-            _camera,
-            _audioSettings,
-            _audioSettingsStore,
-            _videoSettings,
-            _videoSettingsStore,
-            _inputBindings,
-            _inputBindingsStore,
-            _musicService,
-            _eventBus,
-            _stageRegistry,
-            _sceneStateService,
-            _sceneManager,
-            _persistenceRoot,
-            _saveSlotService);
-        _myraMenu = new MyraMainMenuScreen(_saveSlotService);
+        _runtime = GameRuntimeFactory.Create(this, _graphics, VirtualWidth, VirtualHeight);
 
         base.Initialize();
     }
@@ -115,21 +45,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _renderTarget = new RenderTarget2D(GraphicsDevice, VirtualWidth, VirtualHeight);
 
-        _videoSettingsApplier.Apply(_videoSettings, applyChanges: true);
-
-        UiFonts.Load(Content);
-        var uiSoundPlayer = new DirectUiSoundPlayer(Content, _audioSettings);
-        _myraMenu.SetSoundPlayer(uiSoundPlayer);
-        _myraMenu.Initialize(this);
-        _settingsController = new GameSettingsController(
-            _eventBus,
-            _runtimeSettingsService,
-            _videoSettings,
-            _inputBindings,
-            _input,
-            _videoSettingsApplier,
-            uiSoundPlayer);
-        _sceneRuntimeService.LoadContent(Content);
+        _runtime.LoadContent(this, Content);
     }
 
     protected override void Update(GameTime gameTime)
@@ -138,20 +54,20 @@ public class Game1 : Microsoft.Xna.Framework.Game
         // whereas GraphicsDevice.Viewport returns backbuffer coordinates (pixels).
         // On HiDPI (Retina), these differ.
         var clientBounds = Window.ClientBounds;
-        _input.Update(clientBounds.Width, clientBounds.Height);
+        _runtime.Input.Update(clientBounds.Width, clientBounds.Height);
 
         // Process pending scene transitions
-        _sceneRuntimeService.ProcessPendingSceneTransition(Content, GraphicsDevice);
+        _runtime.SceneRuntimeService.ProcessPendingSceneTransition(Content, GraphicsDevice);
 
-        if (_sceneStateService.IsInMainMenu())
+        if (_runtime.SceneStateService.IsInMainMenu())
         {
-            if (_settingsController.IsOpen)
+            if (_runtime.SettingsController.IsOpen)
             {
-                _settingsController.Update(gameTime, _input);
+                _runtime.SettingsController.Update(gameTime, _runtime.Input);
             }
             else
             {
-                var menuResult = _myraMenu.Update(gameTime, _input);
+                var menuResult = _runtime.MainMenu.Update(gameTime, _runtime.Input);
                 HandleMainMenuResult(menuResult);
             }
 
@@ -159,10 +75,10 @@ public class Game1 : Microsoft.Xna.Framework.Game
             return;
         }
 
-        _sceneRuntimeService.EnsureSceneReady(Content, GraphicsDevice);
-        _sceneRuntimeService.Update(gameTime, _input);
+        _runtime.SceneRuntimeService.EnsureSceneReady(Content, GraphicsDevice);
+        _runtime.SceneRuntimeService.Update(gameTime, _runtime.Input);
 
-        if (_sceneRuntimeService.ExitRequested)
+        if (_runtime.SceneRuntimeService.ExitRequested)
         {
             Exit();
         }
@@ -175,17 +91,17 @@ public class Game1 : Microsoft.Xna.Framework.Game
         GraphicsDevice.SetRenderTarget(_renderTarget);
         GraphicsDevice.Clear(ClearOptions.Target, Color.CornflowerBlue, 1f, 0);
 
-        if (!_sceneStateService.IsInMainMenu())
+        if (!_runtime.SceneStateService.IsInMainMenu())
         {
-            _sceneRuntimeService.MapService?.Draw(_camera.Transform);
+            _runtime.SceneRuntimeService.MapService?.Draw(_runtime.Camera.Transform);
 
-            _spriteBatch.Begin(transformMatrix: _camera.Transform, samplerState: SamplerState.PointClamp);
-            _sceneRuntimeService.WorldRunner?.Draw(_spriteBatch);
+            _spriteBatch.Begin(transformMatrix: _runtime.Camera.Transform, samplerState: SamplerState.PointClamp);
+            _runtime.SceneRuntimeService.WorldRunner?.Draw(_spriteBatch);
             _spriteBatch.End();
 
             // Draw UI to render target (screen space relative to virtual resolution)
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-            _sceneRuntimeService.WorldRunner?.DrawUI(_spriteBatch);
+            _runtime.SceneRuntimeService.WorldRunner?.DrawUI(_spriteBatch);
             _spriteBatch.End();
         }
 
@@ -199,17 +115,17 @@ public class Game1 : Microsoft.Xna.Framework.Game
             color: Color.White);
         _spriteBatch.End();
 
-        if (!_sceneStateService.IsInMainMenu())
+        if (!_runtime.SceneStateService.IsInMainMenu())
         {
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-            _sceneRuntimeService.WorldRunner?.DrawScreenSpaceUI(_spriteBatch);
+            _runtime.SceneRuntimeService.WorldRunner?.DrawScreenSpaceUI(_spriteBatch);
             _spriteBatch.End();
         }
 
-        if (_sceneStateService.IsInMainMenu())
+        if (_runtime.SceneStateService.IsInMainMenu())
         {
-            _myraMenu.Draw();
-            _settingsController.Draw();
+            _runtime.MainMenu.Draw();
+            _runtime.SettingsController.Draw();
         }
 
         base.Draw(gameTime);
@@ -219,9 +135,7 @@ public class Game1 : Microsoft.Xna.Framework.Game
     {
         if (disposing)
         {
-            _sceneRuntimeService?.Dispose();
-            _myraMenu?.Dispose();
-            _settingsController?.Dispose();
+            _runtime?.Dispose();
         }
 
         base.Dispose(disposing);
@@ -232,20 +146,20 @@ public class Game1 : Microsoft.Xna.Framework.Game
         switch (result.Action)
         {
             case MainMenuAction.StartSlot when !string.IsNullOrEmpty(result.SlotId):
-                _sceneRuntimeService.ActivateSlot(result.SlotId);
-                _settingsController.Close();
-                _sceneManager.TransitionToHub();
+                _runtime.SceneRuntimeService.ActivateSlot(result.SlotId);
+                _runtime.SettingsController.Close();
+                _runtime.SceneManager.TransitionToHub();
                 break;
             case MainMenuAction.CreateNewSlot:
-                _sceneRuntimeService.CreateNextSlot();
-                _settingsController.Close();
-                _sceneManager.TransitionToHub();
+                _runtime.SceneRuntimeService.CreateNextSlot();
+                _runtime.SettingsController.Close();
+                _runtime.SceneManager.TransitionToHub();
                 break;
             case MainMenuAction.Settings:
-                _settingsController.Open("audio");
+                _runtime.SettingsController.Open("audio");
                 break;
             case MainMenuAction.Quit:
-                _settingsController.Close();
+                _runtime.SettingsController.Close();
                 Exit();
                 break;
         }

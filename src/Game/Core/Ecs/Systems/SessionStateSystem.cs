@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 
@@ -10,8 +8,18 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// </summary>
 internal sealed class SessionStateSystem : IUpdateSystem
 {
+    private readonly StageRunEntityCleanupService _cleanupService;
+    private readonly StageRunResetService _resetService;
     private EcsWorld _world = null!;
     private Entity? _sessionEntity;
+
+    public SessionStateSystem(
+        StageRunEntityCleanupService cleanupService,
+        StageRunResetService resetService)
+    {
+        _cleanupService = cleanupService;
+        _resetService = resetService;
+    }
 
     public void Initialize(EcsWorld world)
     {
@@ -135,91 +143,8 @@ internal sealed class SessionStateSystem : IUpdateSystem
             return;
         }
 
-        var enemiesToRemove = new List<Entity>();
-        world.ForEach<Faction>((Entity entity, ref Faction faction) =>
-        {
-            if (faction == Faction.Enemy)
-            {
-                enemiesToRemove.Add(entity);
-            }
-        });
-
-        foreach (var entity in enemiesToRemove)
-        {
-            world.DestroyEntity(entity);
-        }
-
-        var orbsToRemove = new List<Entity>();
-        world.ForEach<XpOrb>((Entity entity, ref XpOrb _) =>
-        {
-            orbsToRemove.Add(entity);
-        });
-
-        foreach (var entity in orbsToRemove)
-        {
-            world.DestroyEntity(entity);
-        }
-
-        world.ForEach<PlayerTag, Position, Velocity>((Entity entity, ref PlayerTag _, ref Position position, ref Velocity velocity) =>
-        {
-            position.Value = System.Numerics.Vector2.Zero;
-            velocity.Value = System.Numerics.Vector2.Zero;
-            world.SetComponent(entity, position);
-            world.SetComponent(entity, velocity);
-        });
-
-        world.ForEach<PlayerTag, MoveSpeed, AttackStats>(
-            (Entity entity, ref PlayerTag _, ref MoveSpeed moveSpeed, ref AttackStats attackStats) =>
-            {
-                moveSpeed.Value = 220f;
-                if (world.TryGetComponent(entity, out BaseMoveSpeed baseMove))
-                {
-                    baseMove.Value = 220f;
-                    world.SetComponent(entity, baseMove);
-                }
-
-                attackStats.Damage = 20f;
-                attackStats.CooldownTimer = 0f;
-
-                world.SetComponent(entity, moveSpeed);
-                world.SetComponent(entity, attackStats);
-                world.RemoveComponent<ActiveStatusEffects>(entity);
-                world.RemoveComponent<StatusEffectModifiers>(entity);
-
-                if (world.TryGetComponent(entity, out ComputedStats computed))
-                {
-                    computed.IsDirty = true;
-                    world.SetComponent(entity, computed);
-                }
-            });
-
-        world.ForEach<PlayerTag, Health, PlayerXp>(
-            (Entity entity, ref PlayerTag _, ref Health health, ref PlayerXp playerXp) =>
-            {
-                health.Max = 100f;
-                health.Current = 100f;
-
-                playerXp.Level = 1;
-                playerXp.CurrentXp = 0;
-                playerXp.XpToNextLevel = 10;
-
-                world.SetComponent(entity, health);
-                world.SetComponent(entity, playerXp);
-            });
-
-        session.State = GameState.Playing;
-        session.CurrentWave = 0;
-        session.WaveTimer = 0f;
-        session.EnemiesKilled = 0;
-        session.TimeSurvived = 0f;
-        world.SetComponent(sessionEntity, session);
-
-        if (world.TryGetComponent(sessionEntity, out PauseMenu pauseMenu))
-        {
-            pauseMenu.SelectedIndex = 0;
-            world.SetComponent(sessionEntity, pauseMenu);
-        }
-
+        _cleanupService.RemoveTransientStageEntities(world);
+        _resetService.RestoreDefaults(world, sessionEntity, ref session);
         world.EventBus.Publish(new SessionRestartedEvent());
     }
 

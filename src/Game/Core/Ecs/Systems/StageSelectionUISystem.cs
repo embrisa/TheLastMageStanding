@@ -3,7 +3,6 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using TheLastMageStanding.Game.Core.Campaign;
 using TheLastMageStanding.Game.Core.Ecs.Components;
-using TheLastMageStanding.Game.Core.MetaProgression;
 using TheLastMageStanding.Game.Core.SceneState;
 using TheLastMageStanding.Game.Core.UI;
 using TheLastMageStanding.Game.Core.UI.Myra;
@@ -35,10 +34,9 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
     private readonly StageRegistry _stageRegistry;
     private readonly SceneManager _sceneManager;
     private readonly CampaignProgressionService _campaignProgressionService;
+    private readonly StageSelectionController _controller = new();
 
     private MyraStageSelectionScreen _ui = null!;
-    private string? _queuedStartStageId;
-    private bool _queuedClose;
 
     public StageSelectionUISystem(
         StageRegistry stageRegistry,
@@ -61,9 +59,11 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         world.SetComponent(uiEntity, new StageSelectionUIState());
 
         var uiSoundPlayer = new EventBusUiSoundPlayer(world.EventBus);
-        _ui = new MyraStageSelectionScreen(_stageRegistry, _campaignProgressionService, uiSoundPlayer: uiSoundPlayer);
-        _ui.StartRequested += stageId => _queuedStartStageId = stageId;
-        _ui.BackRequested += () => _queuedClose = true;
+        _ui = new MyraStageSelectionScreen(uiSoundPlayer: uiSoundPlayer);
+        _ui.ActChangeRequested += delta => _controller.ChangeAct(delta, BuildCatalog());
+        _ui.StageSelected += index => _controller.SelectStage(index, BuildCatalog());
+        _ui.StartRequested += _controller.RequestStart;
+        _ui.BackRequested += () => _controller.RequestBack();
     }
 
     public void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content)
@@ -86,26 +86,17 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
             return;
         }
 
-        // Clamp act index to available acts
-        var maxActIndex = Math.Max(0, _stageRegistry.GetAllStages()
-            .Select(s => s.ActNumber)
-            .DefaultIfEmpty(1)
-            .Max() - 1);
-        uiState.SelectedActIndex = Math.Clamp(uiState.SelectedActIndex, 0, maxActIndex);
-
-        if (_queuedClose)
-        {
-            uiState.IsOpen = false;
-            _queuedClose = false;
-        }
+        var catalog = BuildCatalog();
 
         if (!uiState.IsOpen)
         {
-            _queuedStartStageId = null;
             if (_ui.IsVisible)
             {
                 _ui.Hide();
             }
+
+            _controller.Close();
+            _ui.ApplyState(default);
 
             world.SetComponent(uiEntity.Value, uiState);
             return;
@@ -113,16 +104,40 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
 
         if (!_ui.IsVisible)
         {
-            _ui.Show(uiState.SelectedActIndex, uiState.SelectedStageIndex);
+            _controller.Open(uiState.SelectedActIndex, uiState.SelectedStageIndex, catalog);
         }
 
         _ui.Update(context.GameTime);
+        var result = _controller.Update(catalog, new StageSelectionControllerInput(
+            MoveLeft: context.Input.MenuLeftPressed,
+            MoveRight: context.Input.MenuRightPressed,
+            MoveUp: context.Input.MenuUpPressed,
+            MoveDown: context.Input.MenuDownPressed,
+            Confirm: context.Input.MenuConfirmPressed,
+            Back: context.Input.MenuBackPressed));
 
-        HandleNavigation(ref uiState, context);
-        ProcessQueuedStart(ref uiState);
+        if (result.CloseRequested)
+        {
+            uiState.IsOpen = false;
+            _controller.Close();
+            _ui.ApplyState(default);
+            world.SetComponent(uiEntity.Value, uiState);
+            return;
+        }
 
-        uiState.SelectedActIndex = _ui.SelectedActIndex;
-        uiState.SelectedStageIndex = _ui.SelectedStageIndex;
+        if (!string.IsNullOrEmpty(result.StartStageId))
+        {
+            ProcessQueuedStart(result.StartStageId);
+            uiState.IsOpen = false;
+            _controller.Close();
+            _ui.ApplyState(default);
+            world.SetComponent(uiEntity.Value, uiState);
+            return;
+        }
+
+        _ui.ApplyState(result.ViewState);
+        uiState.SelectedActIndex = _controller.SelectedActIndex;
+        uiState.SelectedStageIndex = _controller.SelectedStageIndex;
 
         world.SetComponent(uiEntity.Value, uiState);
     }
@@ -153,75 +168,50 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         });
     }
 
-    private void HandleNavigation(ref StageSelectionUIState uiState, in EcsUpdateContext context)
+    private StageSelectionCatalog BuildCatalog()
     {
-        var actStages = _stageRegistry.GetStagesForAct(uiState.SelectedActIndex + 1);
+        var profile = _campaignProgressionService.LoadProfile();
+        var acts = _stageRegistry.GetAllActs()
+            .Select(act => new StageSelectionActOption(
+                ActNumber: act.ActNumber,
+                Title: act.DisplayName,
+                Stages: act.Stages
+                    .Select(stage => new StageSelectionStageOption(
+                        StageId: stage.StageId,
+                        DisplayName: stage.DisplayName,
+                        Description: stage.Description,
+                        IsUnlocked: CampaignProgressionService.IsStageUnlocked(stage, profile),
+                        IsCompleted: CampaignProgressionService.IsStageCompleted(stage.StageId, profile),
+                        LockedReason: _campaignProgressionService.GetLockReason(stage, profile)))
+                    .ToArray()))
+            .ToArray();
 
-        if (context.Input.MenuLeftPressed)
-        {
-            _ui.ChangeAct(-1);
-            actStages = _stageRegistry.GetStagesForAct(_ui.SelectedActIndex + 1);
-        }
-        else if (context.Input.MenuRightPressed)
-        {
-            _ui.ChangeAct(1);
-            actStages = _stageRegistry.GetStagesForAct(_ui.SelectedActIndex + 1);
-        }
-
-        if (actStages.Count > 0)
-        {
-            if (context.Input.MenuDownPressed)
-            {
-                _ui.MoveSelection(1);
-            }
-            else if (context.Input.MenuUpPressed)
-            {
-                _ui.MoveSelection(-1);
-            }
-        }
-
-        if (context.Input.MenuConfirmPressed)
-        {
-            _ui.StartSelectedStage();
-        }
-
-        if (context.Input.MenuBackPressed)
-        {
-            _ui.Close();
-        }
+        return new StageSelectionCatalog($"Meta Level: {profile.MetaLevel}", acts);
     }
 
-    private void ProcessQueuedStart(ref StageSelectionUIState uiState)
+    private void ProcessQueuedStart(string? stageId)
     {
-        if (string.IsNullOrEmpty(_queuedStartStageId))
+        if (string.IsNullOrEmpty(stageId))
         {
             return;
         }
 
-        var stage = _stageRegistry.GetStage(_queuedStartStageId);
+        var stage = _stageRegistry.GetStage(stageId);
         if (stage == null)
         {
-            _queuedStartStageId = null;
             return;
         }
 
         var profile = _campaignProgressionService.LoadProfile();
         if (!CampaignProgressionService.IsStageUnlocked(stage, profile))
         {
-            _queuedStartStageId = null;
             return;
         }
 
         _sceneManager.TransitionToStage(stage.StageId);
-        uiState.IsOpen = false;
         _ui.Hide();
-        _queuedStartStageId = null;
-        _queuedClose = false;
     }
 }
-
-
-
 
 
 

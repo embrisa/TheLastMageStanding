@@ -1,5 +1,4 @@
 using System;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -7,6 +6,7 @@ using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.MetaProgression;
 using TheLastMageStanding.Game.Core.SceneState;
 using TheLastMageStanding.Game.Core.Skills;
+using TheLastMageStanding.Game.Core.UI;
 using TheLastMageStanding.Game.Core.UI.Myra;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
@@ -30,31 +30,16 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
     private readonly SceneStateService _sceneStateService;
     private readonly MetaProgressionManager _metaProgressionManager;
     private readonly SkillRegistry _skillRegistry;
+    private readonly SkillSelectionController _controller = new();
 
     private MyraSkillSelectionScreen _ui = null!;
     private Entity? _uiEntity;
     private Entity? _sessionEntity;
 
-    private SkillLoadout _snapshot;
-    private SkillLoadout _pending;
-    private SkillId? _selectedSkill;
-    private int _cursorRow;
-    private int _cursorCol;
-    private SkillSelectionFocusArea _focusArea = SkillSelectionFocusArea.SkillGrid;
-    private int _focusedSlot = 1;
-    private bool _queuedConfirm;
-    private bool _queuedCancel;
     private bool _capturedSessionState;
     private GameState _previousSessionState;
 
     private KeyboardState _previousKeyboardState;
-
-    private static readonly SkillId[,] SkillGrid =
-    {
-        { SkillId.Firebolt, SkillId.ArcaneMissile, SkillId.FrostBolt },
-        { SkillId.Fireball, SkillId.ArcaneBurst, SkillId.FrostNova },
-        { SkillId.FlameWave, SkillId.ArcaneBarrage, SkillId.Blizzard }
-    };
 
     public SkillSelectionUISystem(SceneStateService sceneStateService, MetaProgressionManager metaProgressionManager, SkillRegistry skillRegistry)
     {
@@ -70,11 +55,11 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
 
         var uiSoundPlayer = new EventBusUiSoundPlayer(world.EventBus);
         _ui = new MyraSkillSelectionScreen(uiSoundPlayer);
-        _ui.SkillClicked += OnSkillClicked;
-        _ui.SlotClicked += OnSlotClicked;
-        _ui.ClearSlotRequested += OnClearSlotRequested;
-        _ui.ConfirmRequested += () => _queuedConfirm = true;
-        _ui.CancelRequested += () => _queuedCancel = true;
+        _ui.SkillClicked += skillId => _controller.SelectSkill(skillId);
+        _ui.SlotClicked += slotIndex => _controller.SelectSlot(slotIndex);
+        _ui.ClearSlotRequested += slotIndex => _controller.ClearSlot(slotIndex);
+        _ui.ConfirmRequested += _controller.RequestConfirm;
+        _ui.CancelRequested += _controller.RequestCancel;
     }
 
     public void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content)
@@ -131,12 +116,8 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         {
             RestoreHubPause(world);
             _capturedSessionState = false;
-            _queuedConfirm = false;
-            _queuedCancel = false;
-            _selectedSkill = null;
-            _snapshot = default;
-            _pending = default;
-            _ui.ApplyState(default);
+            _controller.Close();
+            _ui.ApplyState(default, detailSkill: null);
             _previousKeyboardState = Keyboard.GetState();
             return;
         }
@@ -152,21 +133,17 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
                             (keyboard.IsKeyDown(Keys.Back) && !_previousKeyboardState.IsKeyDown(Keys.Back));
         _previousKeyboardState = keyboard;
 
-        if (tabPressed)
-        {
-            _focusArea = _focusArea == SkillSelectionFocusArea.SkillGrid
-                ? SkillSelectionFocusArea.Hotbar
-                : SkillSelectionFocusArea.SkillGrid;
-        }
+        var result = _controller.Update(new SkillSelectionControllerInput(
+            ToggleFocusRequested: tabPressed,
+            DeleteRequested: deletePressed,
+            MenuBackPressed: context.Input.MenuBackPressed,
+            MenuLeftPressed: context.Input.MenuLeftPressed,
+            MenuRightPressed: context.Input.MenuRightPressed,
+            MenuUpPressed: context.Input.MenuUpPressed,
+            MenuDownPressed: context.Input.MenuDownPressed,
+            MenuConfirmPressed: context.Input.MenuConfirmPressed));
 
-        if (context.Input.MenuBackPressed)
-        {
-            _queuedCancel = true;
-        }
-
-        HandleKeyboardNavigation(context, deletePressed);
-
-        if (_queuedCancel)
+        if (result.CancelRequested)
         {
             ForceClose(world, persistChanges: false);
             uiState.IsOpen = false;
@@ -174,7 +151,7 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
             return;
         }
 
-        if (_queuedConfirm)
+        if (result.ConfirmRequested)
         {
             CommitLoadout(world);
             ForceClose(world, persistChanges: true);
@@ -183,19 +160,8 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
             return;
         }
 
-        var hasChanges = _pending != _snapshot;
-        var detailSkill = ResolveDetailSkill();
-
-        _ui.ApplyState(new SkillSelectionScreenState(
-            IsOpen: true,
-            CursorRow: _cursorRow,
-            CursorColumn: _cursorCol,
-            SelectedSkill: _selectedSkill,
-            FocusArea: _focusArea,
-            FocusedSlot: _focusedSlot,
-            Loadout: _pending,
-            HasChanges: hasChanges,
-            DetailSkill: detailSkill));
+        var detailSkill = ResolveDetailSkill(result.ViewState.DetailSkillId);
+        _ui.ApplyState(result.ViewState, detailSkill);
     }
 
     public void Draw(EcsWorld world, in EcsDrawContext context)
@@ -228,160 +194,23 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
 
         _capturedSessionState = true;
         _previousSessionState = TryGetSessionState(world, out var state) ? state : GameState.Playing;
-
-        _snapshot = SkillLoadout.FromProfile(_metaProgressionManager.CurrentProfile.EquippedSkills);
-        _pending = _snapshot;
-        _selectedSkill = null;
-        _cursorRow = 0;
-        _cursorCol = 0;
-        _focusArea = SkillSelectionFocusArea.SkillGrid;
-        _focusedSlot = 1;
+        _controller.Open(SkillLoadout.FromProfile(_metaProgressionManager.CurrentProfile.EquippedSkills));
     }
 
-    private void HandleKeyboardNavigation(in EcsUpdateContext context, bool deletePressed)
+    private SkillDefinition? ResolveDetailSkill(SkillId detailSkillId)
     {
-        if (_focusArea == SkillSelectionFocusArea.SkillGrid)
-        {
-            if (context.Input.MenuLeftPressed) _cursorCol = Math.Max(0, _cursorCol - 1);
-            if (context.Input.MenuRightPressed) _cursorCol = Math.Min(2, _cursorCol + 1);
-            if (context.Input.MenuUpPressed) _cursorRow = Math.Max(0, _cursorRow - 1);
-            if (context.Input.MenuDownPressed) _cursorRow = Math.Min(2, _cursorRow + 1);
-
-            if (context.Input.MenuConfirmPressed)
-            {
-                _selectedSkill = SkillGrid[_cursorRow, _cursorCol];
-            }
-
-            return;
-        }
-
-        if (context.Input.MenuLeftPressed) _focusedSlot = Math.Max(0, _focusedSlot - 1);
-        if (context.Input.MenuRightPressed) _focusedSlot = Math.Min(4, _focusedSlot + 1);
-
-        if (deletePressed && _focusedSlot is >= 1 and <= 4)
-        {
-            _pending = _pending.SetSlot(_focusedSlot, SkillId.None);
-        }
-
-        if (!context.Input.MenuConfirmPressed)
-        {
-            return;
-        }
-
-        if (_selectedSkill.HasValue)
-        {
-            EquipSelectedSkillToSlot(_focusedSlot);
-        }
-        else
-        {
-            var slotSkill = _pending.GetSlot(_focusedSlot);
-            if (slotSkill != SkillId.None)
-            {
-                _selectedSkill = slotSkill;
-            }
-        }
-    }
-
-    private void OnSkillClicked(SkillId skillId)
-    {
-        _selectedSkill = skillId;
-        _focusArea = SkillSelectionFocusArea.SkillGrid;
-        TrySetCursorToSkill(skillId);
-    }
-
-    private void OnSlotClicked(int slotIndex)
-    {
-        _focusArea = SkillSelectionFocusArea.Hotbar;
-        _focusedSlot = Math.Clamp(slotIndex, 0, 4);
-
-        if (_selectedSkill.HasValue)
-        {
-            EquipSelectedSkillToSlot(_focusedSlot);
-        }
-    }
-
-    private void OnClearSlotRequested(int slotIndex)
-    {
-        if (slotIndex is < 1 or > 4)
-        {
-            return;
-        }
-
-        _pending = _pending.SetSlot(slotIndex, SkillId.None);
-    }
-
-    private void EquipSelectedSkillToSlot(int slotIndex)
-    {
-        if (!_selectedSkill.HasValue)
-        {
-            return;
-        }
-
-        var selected = _selectedSkill.Value;
-        if (selected == SkillId.None)
-        {
-            return;
-        }
-
-        if (slotIndex == 0 && selected == SkillId.None)
-        {
-            return;
-        }
-
-        // If the selected skill is already equipped, swap it from its old slot into the target slot.
-        var existingSlot = FindSlotContaining(_pending, selected);
-        if (existingSlot >= 0 && existingSlot != slotIndex)
-        {
-            var targetSkill = _pending.GetSlot(slotIndex);
-            _pending = _pending.SetSlot(existingSlot, targetSkill);
-            _pending = _pending.SetSlot(slotIndex, selected);
-            return;
-        }
-
-        _pending = _pending.SetSlot(slotIndex, selected);
-    }
-
-    private static int FindSlotContaining(SkillLoadout loadout, SkillId skillId)
-    {
-        if (loadout.Primary == skillId) return 0;
-        if (loadout.Hotkey1 == skillId) return 1;
-        if (loadout.Hotkey2 == skillId) return 2;
-        if (loadout.Hotkey3 == skillId) return 3;
-        if (loadout.Hotkey4 == skillId) return 4;
-        return -1;
-    }
-
-    private void TrySetCursorToSkill(SkillId skillId)
-    {
-        for (var row = 0; row < 3; row++)
-        {
-            for (var col = 0; col < 3; col++)
-            {
-                if (SkillGrid[row, col] == skillId)
-                {
-                    _cursorRow = row;
-                    _cursorCol = col;
-                    return;
-                }
-            }
-        }
-    }
-
-    private SkillDefinition? ResolveDetailSkill()
-    {
-        var detailSkillId = _selectedSkill ?? SkillGrid[_cursorRow, _cursorCol];
         return _skillRegistry.GetSkill(detailSkillId);
     }
 
     private void CommitLoadout(EcsWorld world)
     {
         var profile = _metaProgressionManager.CurrentProfile;
-        profile.EquippedSkills = _pending.ToProfile();
+        profile.EquippedSkills = _controller.PendingLoadout.ToProfile();
         _metaProgressionManager.SaveProfile();
 
         world.ForEach<PlayerTag, EquippedSkills>((Entity entity, ref PlayerTag _, ref EquippedSkills equipped) =>
         {
-            equipped = SkillLoadout.ApplyToEquippedSkills(equipped, _pending);
+            equipped = SkillLoadout.ApplyToEquippedSkills(equipped, _controller.PendingLoadout);
             equipped.IsLocked = false;
             world.SetComponent(entity, equipped);
         });
@@ -389,20 +218,12 @@ internal sealed class SkillSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
 
     private void ForceClose(EcsWorld world, bool persistChanges)
     {
-        _queuedConfirm = false;
-        _queuedCancel = false;
+        _ = persistChanges;
         _capturedSessionState = false;
 
         RestoreHubPause(world);
-
-        if (!persistChanges)
-        {
-            _pending = default;
-            _snapshot = default;
-            _selectedSkill = null;
-        }
-
-        _ui.ApplyState(default);
+        _controller.Close();
+        _ui.ApplyState(default, detailSkill: null);
     }
 
     private void EnsureHubPaused(EcsWorld world)

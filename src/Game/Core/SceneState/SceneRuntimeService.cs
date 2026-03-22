@@ -6,12 +6,9 @@ using Microsoft.Xna.Framework.Media;
 using TheLastMageStanding.Game.Core.Audio;
 using TheLastMageStanding.Game.Core.Camera;
 using TheLastMageStanding.Game.Core.Campaign;
-using TheLastMageStanding.Game.Core.Config;
 using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Ecs;
-using TheLastMageStanding.Game.Core.Events;
 using TheLastMageStanding.Game.Core.Input;
-using TheLastMageStanding.Game.Core.MetaProgression;
 using TheLastMageStanding.Game.Core.World.Map;
 
 namespace TheLastMageStanding.Game.Core.SceneState;
@@ -25,58 +22,34 @@ internal sealed class SceneRuntimeService : IDisposable
     private const string LogCategory = "SceneRuntime";
 
     private readonly Camera2D _camera;
-    private readonly AudioSettingsConfig _audioSettings;
-    private readonly AudioSettingsStore _audioSettingsStore;
-    private readonly VideoSettingsConfig _videoSettings;
-    private readonly VideoSettingsStore _videoSettingsStore;
-    private readonly InputBindingsConfig _inputBindings;
-    private readonly InputBindingsStore _inputBindingsStore;
     private readonly MusicService _musicService;
-    private readonly EventBus _eventBus;
-    private readonly StageRegistry _stageRegistry;
     private readonly SceneStateService _sceneStateService;
     private readonly SceneManager _sceneManager;
-    private readonly PersistenceRoot _persistenceRoot;
-    private readonly SaveSlotService _saveSlotService;
+    private readonly ActiveSaveSlotController _slotController;
+    private readonly IEcsWorldFactory _worldFactory;
     private readonly StageContentResolver _stageContentResolver;
 
     private EcsWorldRunner? _ecs;
     private TiledMapService? _mapService;
     private Song? _menuSong;
     private Song? _gameplaySong;
-    private string? _activeSlotId;
     private string? _worldSlotId;
 
     public SceneRuntimeService(
         Camera2D camera,
-        AudioSettingsConfig audioSettings,
-        AudioSettingsStore audioSettingsStore,
-        VideoSettingsConfig videoSettings,
-        VideoSettingsStore videoSettingsStore,
-        InputBindingsConfig inputBindings,
-        InputBindingsStore inputBindingsStore,
         MusicService musicService,
-        EventBus eventBus,
         StageRegistry stageRegistry,
         SceneStateService sceneStateService,
         SceneManager sceneManager,
-        PersistenceRoot persistenceRoot,
-        SaveSlotService saveSlotService)
+        ActiveSaveSlotController slotController,
+        IEcsWorldFactory worldFactory)
     {
         _camera = camera;
-        _audioSettings = audioSettings;
-        _audioSettingsStore = audioSettingsStore;
-        _videoSettings = videoSettings;
-        _videoSettingsStore = videoSettingsStore;
-        _inputBindings = inputBindings;
-        _inputBindingsStore = inputBindingsStore;
         _musicService = musicService;
-        _eventBus = eventBus;
-        _stageRegistry = stageRegistry;
         _sceneStateService = sceneStateService;
         _sceneManager = sceneManager;
-        _persistenceRoot = persistenceRoot;
-        _saveSlotService = saveSlotService;
+        _slotController = slotController;
+        _worldFactory = worldFactory;
         _stageContentResolver = new StageContentResolver(stageRegistry);
     }
 
@@ -93,25 +66,17 @@ internal sealed class SceneRuntimeService : IDisposable
 
     public void ActivateSlot(string slotId)
     {
-        if (string.IsNullOrWhiteSpace(slotId))
-        {
-            throw new ArgumentException("Slot id is required.", nameof(slotId));
-        }
-
-        if (!string.Equals(_activeSlotId, slotId, StringComparison.Ordinal))
+        if (_slotController.ActivateSlot(slotId))
         {
             DisposeWorldRunner();
         }
-
-        _activeSlotId = slotId;
     }
 
     public string CreateNextSlot()
     {
-        var newSlot = _saveSlotService.CreateNextSlot();
+        var newSlot = _slotController.CreateNextSlot();
         DisposeWorldRunner();
-        _activeSlotId = newSlot.SlotId;
-        return newSlot.SlotId;
+        return newSlot;
     }
 
     public bool ProcessPendingSceneTransition(ContentManager content, GraphicsDevice graphicsDevice)
@@ -190,18 +155,33 @@ internal sealed class SceneRuntimeService : IDisposable
 
         if (currentScene == SceneType.MainMenu)
         {
-            _mapService?.Dispose();
-            _mapService = null;
-            DisposeWorldRunner();
-            PlayMenuMusic();
+            TransitionToMainMenu();
             return;
         }
 
+        var ecs = EnsureWorldInitialized(content, graphicsDevice);
+        LoadGameplayScene(content, graphicsDevice, currentScene, currentStageId, ecs);
+    }
+
+    private void TransitionToMainMenu()
+    {
+        _mapService?.Dispose();
+        _mapService = null;
+        DisposeWorldRunner();
+        PlayMenuMusic();
+    }
+
+    private void LoadGameplayScene(
+        ContentManager content,
+        GraphicsDevice graphicsDevice,
+        SceneType currentScene,
+        string? currentStageId,
+        EcsWorldRunner ecs)
+    {
         var mapAsset = currentScene == SceneType.Stage
             ? _stageContentResolver.ResolveMapAssetForStage(currentStageId)
             : HubMapAsset;
 
-        var ecs = EnsureWorldInitialized(content, graphicsDevice);
         if (currentScene == SceneType.Stage)
         {
             ecs.ResetStageStateForNewRun();
@@ -227,27 +207,14 @@ internal sealed class SceneRuntimeService : IDisposable
 
     private EcsWorldRunner EnsureWorldInitialized(ContentManager content, GraphicsDevice graphicsDevice)
     {
-        EnsureActiveSlot();
+        var activeSlotId = _slotController.EnsureActiveSlot();
 
-        if (_ecs != null && string.Equals(_worldSlotId, _activeSlotId, StringComparison.Ordinal))
+        if (_ecs != null && string.Equals(_worldSlotId, activeSlotId, StringComparison.Ordinal))
         {
             return _ecs;
         }
 
-        var nextEcs = new EcsWorldRunner(
-            _camera,
-            _audioSettings,
-            _audioSettingsStore,
-            _videoSettings,
-            _videoSettingsStore,
-            _inputBindings,
-            _inputBindingsStore,
-            _musicService,
-            _eventBus,
-            _stageRegistry,
-            _sceneStateService,
-            _sceneManager,
-            _persistenceRoot.ForSlot(_activeSlotId!));
+        var nextEcs = _worldFactory.Create(activeSlotId);
 
         try
         {
@@ -261,7 +228,7 @@ internal sealed class SceneRuntimeService : IDisposable
 
         var previousEcs = _ecs;
         _ecs = nextEcs;
-        _worldSlotId = _activeSlotId;
+        _worldSlotId = activeSlotId;
         previousEcs?.Dispose();
         return _ecs;
     }
@@ -271,23 +238,6 @@ internal sealed class SceneRuntimeService : IDisposable
         _ecs?.Dispose();
         _ecs = null;
         _worldSlotId = null;
-    }
-
-    private void EnsureActiveSlot()
-    {
-        if (!string.IsNullOrEmpty(_activeSlotId))
-        {
-            return;
-        }
-
-        var existing = _saveSlotService.GetMostRecentSlot();
-        if (existing != null)
-        {
-            _activeSlotId = existing.SlotId;
-            return;
-        }
-
-        _activeSlotId = _saveSlotService.CreateNextSlot().SlotId;
     }
 
     private void PlayMenuMusic()

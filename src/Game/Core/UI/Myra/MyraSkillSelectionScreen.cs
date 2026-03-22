@@ -4,25 +4,9 @@ using Myra.Graphics2D;
 using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI;
 using TheLastMageStanding.Game.Core.Skills;
+using TheLastMageStanding.Game.Core.UI;
 
 namespace TheLastMageStanding.Game.Core.UI.Myra;
-
-internal enum SkillSelectionFocusArea
-{
-    SkillGrid = 0,
-    Hotbar = 1
-}
-
-internal readonly record struct SkillSelectionScreenState(
-    bool IsOpen,
-    int CursorRow,
-    int CursorColumn,
-    SkillId? SelectedSkill,
-    SkillSelectionFocusArea FocusArea,
-    int FocusedSlot,
-    SkillLoadout Loadout,
-    bool HasChanges,
-    SkillDefinition? DetailSkill);
 
 internal sealed class MyraSkillSelectionScreen : MyraMenuScreenBase
 {
@@ -212,7 +196,7 @@ internal sealed class MyraSkillSelectionScreen : MyraMenuScreenBase
 
     private SkillSelectionScreenState _lastState;
 
-    public void ApplyState(SkillSelectionScreenState state)
+    public void ApplyState(SkillSelectionScreenState state, SkillDefinition? detailSkill)
     {
         _lastState = state;
         Desktop.Root.Visible = state.IsOpen;
@@ -228,7 +212,7 @@ internal sealed class MyraSkillSelectionScreen : MyraMenuScreenBase
 
         UpdateSkillButtons(state);
         UpdateHotbarButtons(state);
-        UpdateDetails(state);
+        UpdateDetails(state, detailSkill);
     }
 
     private Grid BuildSkillGrid()
@@ -418,9 +402,9 @@ internal sealed class MyraSkillSelectionScreen : MyraMenuScreenBase
         }
     }
 
-    private void UpdateDetails(SkillSelectionScreenState state)
+    private void UpdateDetails(SkillSelectionScreenState state, SkillDefinition? detailSkill)
     {
-        var definition = state.DetailSkill;
+        var definition = detailSkill;
         if (definition == null)
         {
             _detailTitle.Text = "Select a skill";
