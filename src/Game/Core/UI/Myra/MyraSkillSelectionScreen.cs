@@ -270,7 +270,7 @@ internal sealed class MyraSkillSelectionScreen : MyraMenuScreenBase
         return container;
     }
 
-    private void AddElementHeader(Grid grid, int column, string text, Color color)
+    private static void AddElementHeader(Grid grid, int column, string text, Color color)
     {
         var label = UiStyles.SectionTitle(text, 1.05f);
         label.TextColor = color;

@@ -368,9 +368,6 @@ internal sealed class EcsWorldRunner : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(EcsWorldRunner));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }

@@ -165,7 +165,7 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         var selectedStage = GetSelectedStage();
         if (selectedStage == null) return;
 
-        if (!_campaignProgressionService.IsStageUnlocked(selectedStage, _profile)) return;
+        if (!CampaignProgressionService.IsStageUnlocked(selectedStage, _profile)) return;
 
         UiSoundBinder.PlayKeyboardActivate(_uiSoundPlayer);
         StartRequested?.Invoke(selectedStage.StageId);
@@ -419,7 +419,7 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         for (int i = 0; i < _currentStages.Count; i++)
         {
             var stage = _currentStages[i];
-            var isUnlocked = _campaignProgressionService.IsStageUnlocked(stage, _profile);
+            var isUnlocked = CampaignProgressionService.IsStageUnlocked(stage, _profile);
             var isCompleted = _profile.CompletedStages.Contains(stage.StageId);
             
             _stageListGrid.RowsProportions.Add(new Proportion(ProportionType.Auto));
@@ -510,7 +510,7 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         _detailsTitle.Text = stage.DisplayName;
         _detailsDescription.Text = stage.Description;
 
-        var isUnlocked = IsStageUnlocked(stage, _profile);
+        var isUnlocked = CampaignProgressionService.IsStageUnlocked(stage, _profile);
         var isCompleted = _profile.CompletedStages.Contains(stage.StageId);
 
         if (isCompleted)
@@ -584,6 +584,4 @@ internal sealed class MyraStageSelectionScreen : IDisposable
         return Math.Max(0, maxAct - 1);
     }
 
-    private bool IsStageUnlocked(StageDefinition stage, PlayerProfile profile) =>
-        _campaignProgressionService.IsStageUnlocked(stage, profile);
 }

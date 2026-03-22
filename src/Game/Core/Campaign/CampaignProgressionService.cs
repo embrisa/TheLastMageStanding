@@ -19,10 +19,10 @@ public sealed class CampaignProgressionService
 
     public PlayerProfile LoadProfile() => _profileService.LoadProfile();
 
-    public bool IsStageCompleted(string stageId, PlayerProfile profile) =>
+    public static bool IsStageCompleted(string stageId, PlayerProfile profile) =>
         profile.CompletedStages.Contains(stageId);
 
-    public bool IsStageUnlocked(StageDefinition stage, PlayerProfile profile)
+    public static bool IsStageUnlocked(StageDefinition stage, PlayerProfile profile)
     {
         if (profile.MetaLevel < stage.RequiredMetaLevel)
         {
@@ -96,4 +96,3 @@ public sealed class CampaignProgressionService
         return "Locked";
     }
 }
-

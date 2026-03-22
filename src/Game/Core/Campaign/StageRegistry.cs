@@ -7,6 +7,40 @@ namespace TheLastMageStanding.Game.Core.Campaign;
 /// </summary>
 public sealed class StageRegistry
 {
+    private static readonly string[] Act1EnemyArchetypeIds =
+    [
+        "bone_hexer",
+        "bone_scout",
+        "bone_mage",
+        "elite_hexer"
+    ];
+
+    private static readonly string[] Act2EnemyArchetypeIds =
+    [
+        "bone_hexer",
+        "charger_hexer",
+        "protector_hexer",
+        "bone_mage",
+        "elite_hexer"
+    ];
+
+    private static readonly string[] Act3EnemyArchetypeIds =
+    [
+        "bone_scout",
+        "bone_mage",
+        "buffer_hexer",
+        "elite_hexer"
+    ];
+
+    private static readonly string[] Act4EnemyArchetypeIds =
+    [
+        "bone_hexer",
+        "charger_hexer",
+        "buffer_hexer",
+        "protector_hexer",
+        "elite_hexer"
+    ];
+
     private readonly Dictionary<string, StageDefinition> _stages = new();
     private readonly List<ActDefinition> _acts = new();
     
@@ -31,28 +65,28 @@ public sealed class StageRegistry
             DisplayName: "The Fallen Academy",
             PrimaryColor: new Color(160, 160, 175),
             SecondaryColor: new Color(120, 70, 160),
-            EnemyArchetypeIds: new[] { "bone_hexer", "bone_scout", "bone_mage", "elite_hexer" });
+            EnemyArchetypeIds: Act1EnemyArchetypeIds);
 
         var act2Biome = new BiomeDefinition(
             BiomeId: "act2_ashen_mire",
             DisplayName: "The Ashen Mire",
             PrimaryColor: new Color(85, 110, 90),
             SecondaryColor: new Color(200, 120, 60),
-            EnemyArchetypeIds: new[] { "bone_hexer", "charger_hexer", "protector_hexer", "bone_mage", "elite_hexer" });
+            EnemyArchetypeIds: Act2EnemyArchetypeIds);
 
         var act3Biome = new BiomeDefinition(
             BiomeId: "act3_frostbound_ruins",
             DisplayName: "The Frostbound Ruins",
             PrimaryColor: new Color(160, 210, 235),
             SecondaryColor: new Color(60, 120, 210),
-            EnemyArchetypeIds: new[] { "bone_scout", "bone_mage", "buffer_hexer", "elite_hexer" });
+            EnemyArchetypeIds: Act3EnemyArchetypeIds);
 
         var act4Biome = new BiomeDefinition(
             BiomeId: "act4_void_sanctum",
             DisplayName: "The Void Sanctum",
             PrimaryColor: new Color(35, 25, 50),
             SecondaryColor: new Color(200, 60, 220),
-            EnemyArchetypeIds: new[] { "bone_hexer", "charger_hexer", "buffer_hexer", "protector_hexer", "elite_hexer" });
+            EnemyArchetypeIds: Act4EnemyArchetypeIds);
 
         var act1Boss = new BossDefinition(
             BossId: "act1_boss_corrupted_headmaster",

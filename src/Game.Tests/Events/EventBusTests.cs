@@ -9,6 +9,8 @@ namespace TheLastMageStanding.Game.Tests.Events;
 
 public sealed class EventBusTests
 {
+    private static readonly int[] ExpectedSelfRepublishedEvents = [1, 2, 3];
+
     [Fact]
     public void ProcessEvents_ProcessesSelfRepublishedEventsAcrossMultiplePasses()
     {
@@ -27,7 +29,7 @@ public sealed class EventBusTests
         eventBus.Publish(1);
         eventBus.ProcessEvents();
 
-        Assert.Equal(new[] { 1, 2, 3 }, handled);
+        Assert.Equal(ExpectedSelfRepublishedEvents, handled);
     }
 
     [Fact]

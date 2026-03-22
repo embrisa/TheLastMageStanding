@@ -206,7 +206,7 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         }
 
         var profile = _campaignProgressionService.LoadProfile();
-        if (!_campaignProgressionService.IsStageUnlocked(stage, profile))
+        if (!CampaignProgressionService.IsStageUnlocked(stage, profile))
         {
             _queuedStartStageId = null;
             return;
@@ -219,7 +219,6 @@ internal sealed class StageSelectionUISystem : IUpdateSystem, IUiDrawSystem, ILo
         _queuedClose = false;
     }
 }
-
 
 
 
