@@ -4,6 +4,13 @@ using TheLastMageStanding.Game.Core.Ecs.Systems;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Runtime;
 
+internal enum EcsRuntimeCapability
+{
+    SessionEntity,
+    SessionSettingsState,
+    StageRunState,
+}
+
 internal enum EcsSceneScope
 {
     Common,
@@ -60,6 +67,9 @@ internal sealed class EcsLoadContentPhase
 
 internal sealed class EcsRuntimeRegistration
 {
+    private readonly List<string> _moduleOrder = [];
+    private readonly Dictionary<EcsRuntimeCapability, string> _capabilityProviders = [];
+
     public EcsScopedPhase<IUpdateSystem> Update { get; } = new();
     public EcsScopedPhase<IUpdateSystem> StageSessionUpdate { get; } = new();
     public EcsScopedPhase<IUpdateSystem> StagePreGameplayUpdate { get; } = new();
@@ -69,6 +79,35 @@ internal sealed class EcsRuntimeRegistration
     public EcsScopedPhase<IUiDrawSystem> UiDraw { get; } = new();
     public EcsScopedPhase<IUiDrawSystem> ScreenSpaceUiDraw { get; } = new();
     public EcsLoadContentPhase LoadContent { get; } = new();
+    public IReadOnlyList<string> ModuleOrder => _moduleOrder;
+    public IReadOnlyDictionary<EcsRuntimeCapability, string> CapabilityProviders => _capabilityProviders;
+
+    public void RegisterModule(string moduleName)
+    {
+        _moduleOrder.Add(moduleName);
+    }
+
+    public void ProvideCapability(EcsRuntimeCapability capability, string provider)
+    {
+        if (_capabilityProviders.TryGetValue(capability, out var existingProvider))
+        {
+            throw new InvalidOperationException(
+                $"Runtime capability '{capability}' is already provided by '{existingProvider}' and cannot also be provided by '{provider}'.");
+        }
+
+        _capabilityProviders.Add(capability, provider);
+    }
+
+    public void RequireCapability(EcsRuntimeCapability capability, string consumer)
+    {
+        if (_capabilityProviders.ContainsKey(capability))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Runtime composition missing capability '{capability}' required by '{consumer}'.");
+    }
 
     public IEnumerable<IEcsSystem> EnumerateSystemsForInitialization()
     {

@@ -116,6 +116,9 @@ internal sealed class EcsWorldRunner : IDisposable
 
         _runtime = EcsRuntimeComposer.Compose(context);
 
+        var sessionEntity = _world.CreateEntity();
+        _world.SetComponent(sessionEntity, new GameSession(waveConfig.WaveIntervalSeconds));
+
         foreach (var system in _runtime.EnumerateSystemsForInitialization())
         {
             system.Initialize(_world);
@@ -125,10 +128,9 @@ internal sealed class EcsWorldRunner : IDisposable
             }
         }
 
-        _disposables.Add(metaProgressionManager);
+        InitializeSessionState(sessionEntity);
 
-        var sessionEntity = _world.CreateEntity();
-        _world.SetComponent(sessionEntity, new GameSession(waveConfig.WaveIntervalSeconds));
+        _disposables.Add(metaProgressionManager);
 
         _eventBus.Publish(new RunStartedEvent());
     }
@@ -358,6 +360,18 @@ internal sealed class EcsWorldRunner : IDisposable
     private void ThrowIfDisposed()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+    }
+
+    private void InitializeSessionState(Entity sessionEntity)
+    {
+        var initialized = new HashSet<object>(ReferenceEqualityComparer.Instance);
+        foreach (var initializer in _runtime.EnumerateSystemsForInitialization().OfType<ISessionStateInitializer>())
+        {
+            if (initialized.Add(initializer))
+            {
+                initializer.InitializeSession(_world, sessionEntity);
+            }
+        }
     }
 }
 

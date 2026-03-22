@@ -10,6 +10,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// Owns session-scoped settings menu state plus shared config synchronization.
 /// </summary>
 internal sealed class SettingsMenuSystem : IUpdateSystem
+    , ISessionStateInitializer
 {
     private const float SampleCooldownSeconds = 0.2f;
 
@@ -61,6 +62,22 @@ internal sealed class SettingsMenuSystem : IUpdateSystem
 
         world.SetComponent(sessionEntity, audioMenu);
         world.SetComponent(sessionEntity, audioState);
+        world.SetComponent(sessionEntity, videoState);
+        world.SetComponent(sessionEntity, settingsMenu);
+    }
+
+    public void InitializeSession(EcsWorld world, Entity sessionEntity)
+    {
+        EnsureSessionSettingsState(
+            world,
+            sessionEntity,
+            out var audioState,
+            out var audioMenu,
+            out var videoState,
+            out var settingsMenu);
+
+        world.SetComponent(sessionEntity, audioState);
+        world.SetComponent(sessionEntity, audioMenu);
         world.SetComponent(sessionEntity, videoState);
         world.SetComponent(sessionEntity, settingsMenu);
     }

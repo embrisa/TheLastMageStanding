@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using TheLastMageStanding.Game.Core.Events;
 
@@ -88,6 +87,22 @@ internal sealed class ComponentPool<T> : IComponentPool where T : struct
         return false;
     }
 
+    public T GetByDenseIndex(int denseIndex) => _components[denseIndex];
+
+    public void WriteBackIfPresent(int entityId, int originalDenseIndex, T component)
+    {
+        if ((uint)originalDenseIndex < (uint)_count && _entityIds[originalDenseIndex] == entityId)
+        {
+            _components[originalDenseIndex] = component;
+            return;
+        }
+
+        if (TryGetDenseIndex(entityId, out var currentDenseIndex))
+        {
+            _components[currentDenseIndex] = component;
+        }
+    }
+
     private bool Remove(int entityId)
     {
         if (!TryGetDenseIndex(entityId, out var denseIndex))
@@ -137,6 +152,183 @@ internal sealed class ComponentPool<T> : IComponentPool where T : struct
     }
 }
 
+internal sealed class EcsQuery<T1>(EcsWorld world)
+    where T1 : struct
+{
+    private readonly EcsWorld _world = world;
+    private readonly ComponentPool<T1> _pool1 = world.GetPool<T1>();
+    private int[] _entityIds = [];
+
+    public void ForEach(EcsAction<T1> action)
+    {
+        var count = _pool1.Count;
+        if (count == 0)
+        {
+            return;
+        }
+
+        var entityIds = EnsureEntityBuffer(count).AsSpan(0, count);
+        _pool1.CopyEntityIds(entityIds);
+
+        foreach (var entityId in entityIds)
+        {
+            if (!_pool1.TryGetDenseIndex(entityId, out var denseIndex))
+            {
+                continue;
+            }
+
+            var component1 = _pool1.GetByDenseIndex(denseIndex);
+            var entity = new Entity(entityId);
+            action(entity, ref component1);
+            if (!_world.IsAlive(entity))
+            {
+                continue;
+            }
+
+            _pool1.WriteBackIfPresent(entityId, denseIndex, component1);
+        }
+    }
+
+    private int[] EnsureEntityBuffer(int count)
+    {
+        if (_entityIds.Length < count)
+        {
+            Array.Resize(ref _entityIds, count);
+        }
+
+        return _entityIds;
+    }
+}
+
+internal sealed class EcsQuery<T1, T2>(EcsWorld world)
+    where T1 : struct
+    where T2 : struct
+{
+    private readonly EcsWorld _world = world;
+    private readonly ComponentPool<T1> _pool1 = world.GetPool<T1>();
+    private readonly ComponentPool<T2> _pool2 = world.GetPool<T2>();
+    private int[] _entityIds = [];
+
+    public void ForEach(EcsAction<T1, T2> action)
+    {
+        var sourceCount = Math.Min(_pool1.Count, _pool2.Count);
+        if (sourceCount == 0)
+        {
+            return;
+        }
+
+        var entityIds = EnsureEntityBuffer(sourceCount).AsSpan(0, sourceCount);
+        if (_pool1.Count <= _pool2.Count)
+        {
+            _pool1.CopyEntityIds(entityIds);
+        }
+        else
+        {
+            _pool2.CopyEntityIds(entityIds);
+        }
+
+        foreach (var entityId in entityIds)
+        {
+            if (!_pool1.TryGetDenseIndex(entityId, out var denseIndex1) ||
+                !_pool2.TryGetDenseIndex(entityId, out var denseIndex2))
+            {
+                continue;
+            }
+
+            var component1 = _pool1.GetByDenseIndex(denseIndex1);
+            var component2 = _pool2.GetByDenseIndex(denseIndex2);
+            var entity = new Entity(entityId);
+            action(entity, ref component1, ref component2);
+            if (!_world.IsAlive(entity))
+            {
+                continue;
+            }
+
+            _pool1.WriteBackIfPresent(entityId, denseIndex1, component1);
+            _pool2.WriteBackIfPresent(entityId, denseIndex2, component2);
+        }
+    }
+
+    private int[] EnsureEntityBuffer(int count)
+    {
+        if (_entityIds.Length < count)
+        {
+            Array.Resize(ref _entityIds, count);
+        }
+
+        return _entityIds;
+    }
+}
+
+internal sealed class EcsQuery<T1, T2, T3>(EcsWorld world)
+    where T1 : struct
+    where T2 : struct
+    where T3 : struct
+{
+    private readonly EcsWorld _world = world;
+    private readonly ComponentPool<T1> _pool1 = world.GetPool<T1>();
+    private readonly ComponentPool<T2> _pool2 = world.GetPool<T2>();
+    private readonly ComponentPool<T3> _pool3 = world.GetPool<T3>();
+    private int[] _entityIds = [];
+
+    public void ForEach(EcsAction<T1, T2, T3> action)
+    {
+        var sourceCount = Math.Min(_pool1.Count, Math.Min(_pool2.Count, _pool3.Count));
+        if (sourceCount == 0)
+        {
+            return;
+        }
+
+        var entityIds = EnsureEntityBuffer(sourceCount).AsSpan(0, sourceCount);
+        if (_pool1.Count <= _pool2.Count && _pool1.Count <= _pool3.Count)
+        {
+            _pool1.CopyEntityIds(entityIds);
+        }
+        else if (_pool2.Count <= _pool3.Count)
+        {
+            _pool2.CopyEntityIds(entityIds);
+        }
+        else
+        {
+            _pool3.CopyEntityIds(entityIds);
+        }
+
+        foreach (var entityId in entityIds)
+        {
+            if (!_pool1.TryGetDenseIndex(entityId, out var denseIndex1) ||
+                !_pool2.TryGetDenseIndex(entityId, out var denseIndex2) ||
+                !_pool3.TryGetDenseIndex(entityId, out var denseIndex3))
+            {
+                continue;
+            }
+
+            var component1 = _pool1.GetByDenseIndex(denseIndex1);
+            var component2 = _pool2.GetByDenseIndex(denseIndex2);
+            var component3 = _pool3.GetByDenseIndex(denseIndex3);
+            var entity = new Entity(entityId);
+            action(entity, ref component1, ref component2, ref component3);
+            if (!_world.IsAlive(entity))
+            {
+                continue;
+            }
+
+            _pool1.WriteBackIfPresent(entityId, denseIndex1, component1);
+            _pool2.WriteBackIfPresent(entityId, denseIndex2, component2);
+            _pool3.WriteBackIfPresent(entityId, denseIndex3, component3);
+        }
+    }
+
+    private int[] EnsureEntityBuffer(int count)
+    {
+        if (_entityIds.Length < count)
+        {
+            Array.Resize(ref _entityIds, count);
+        }
+
+        return _entityIds;
+    }
+}
+
 internal sealed class EcsWorld
 {
     public IEventBus EventBus { get; set; } = null!;
@@ -144,6 +336,9 @@ internal sealed class EcsWorld
     private int _nextEntityId;
     private bool[] _alive = [];
     private readonly Dictionary<Type, IComponentPool> _componentPools = new();
+    private readonly Dictionary<Type, object> _queryCache1 = new();
+    private readonly Dictionary<(Type, Type), object> _queryCache2 = new();
+    private readonly Dictionary<(Type, Type, Type), object> _queryCache3 = new();
 
     public Entity CreateEntity()
     {
@@ -199,160 +394,59 @@ internal sealed class EcsWorld
 
     public bool RemoveComponent<T>(Entity entity) where T : struct => GetPool<T>().Remove(entity);
 
-    public void ForEach<T1>(EcsAction<T1> action) where T1 : struct
+    public EcsQuery<T1> Query<T1>() where T1 : struct
     {
-        var pool1 = GetPool<T1>();
-        var entityIds = ArrayPool<int>.Shared.Rent(pool1.Count);
-        try
+        var type = typeof(T1);
+        if (!_queryCache1.TryGetValue(type, out var query))
         {
-            var span = entityIds.AsSpan(0, pool1.Count);
-            pool1.CopyEntityIds(span);
-            foreach (var entityId in span)
-            {
-                var entity = new Entity(entityId);
-                if (!pool1.TryGet(entity, out var comp1))
-                {
-                    continue;
-                }
-
-                var c1 = comp1;
-                action(entity, ref c1);
-                if (!IsAlive(entity))
-                {
-                    continue;
-                }
-
-                if (pool1.TryGet(entity, out _))
-                {
-                    pool1.Set(entity, c1);
-                }
-            }
+            query = new EcsQuery<T1>(this);
+            _queryCache1[type] = query;
         }
-        finally
-        {
-            ArrayPool<int>.Shared.Return(entityIds);
-        }
+
+        return (EcsQuery<T1>)query;
     }
+
+    public EcsQuery<T1, T2> Query<T1, T2>()
+        where T1 : struct
+        where T2 : struct
+    {
+        var key = (typeof(T1), typeof(T2));
+        if (!_queryCache2.TryGetValue(key, out var query))
+        {
+            query = new EcsQuery<T1, T2>(this);
+            _queryCache2[key] = query;
+        }
+
+        return (EcsQuery<T1, T2>)query;
+    }
+
+    public EcsQuery<T1, T2, T3> Query<T1, T2, T3>()
+        where T1 : struct
+        where T2 : struct
+        where T3 : struct
+    {
+        var key = (typeof(T1), typeof(T2), typeof(T3));
+        if (!_queryCache3.TryGetValue(key, out var query))
+        {
+            query = new EcsQuery<T1, T2, T3>(this);
+            _queryCache3[key] = query;
+        }
+
+        return (EcsQuery<T1, T2, T3>)query;
+    }
+
+    public void ForEach<T1>(EcsAction<T1> action) where T1 : struct => Query<T1>().ForEach(action);
 
     public void ForEach<T1, T2>(EcsAction<T1, T2> action)
         where T1 : struct
         where T2 : struct
-    {
-        var pool1 = GetPool<T1>();
-        var pool2 = GetPool<T2>();
-        var sourceCount = Math.Min(pool1.Count, pool2.Count);
-        var entityIds = ArrayPool<int>.Shared.Rent(sourceCount);
-        try
-        {
-            var span = entityIds.AsSpan(0, sourceCount);
-            if (pool1.Count <= pool2.Count)
-            {
-                pool1.CopyEntityIds(span);
-            }
-            else
-            {
-                pool2.CopyEntityIds(span);
-            }
-
-            foreach (var entityId in span)
-            {
-                var entity = new Entity(entityId);
-                if (!pool1.TryGet(entity, out var comp1) || !pool2.TryGet(entity, out var comp2))
-                {
-                    continue;
-                }
-
-                var c1 = comp1;
-                var c2 = comp2;
-                action(entity, ref c1, ref c2);
-                if (!IsAlive(entity))
-                {
-                    continue;
-                }
-
-                if (pool1.TryGet(entity, out _))
-                {
-                    pool1.Set(entity, c1);
-                }
-
-                if (pool2.TryGet(entity, out _))
-                {
-                    pool2.Set(entity, c2);
-                }
-            }
-        }
-        finally
-        {
-            ArrayPool<int>.Shared.Return(entityIds);
-        }
-    }
+        => Query<T1, T2>().ForEach(action);
 
     public void ForEach<T1, T2, T3>(EcsAction<T1, T2, T3> action)
         where T1 : struct
         where T2 : struct
         where T3 : struct
-    {
-        var pool1 = GetPool<T1>();
-        var pool2 = GetPool<T2>();
-        var pool3 = GetPool<T3>();
-        var sourceCount = Math.Min(pool1.Count, Math.Min(pool2.Count, pool3.Count));
-        var entityIds = ArrayPool<int>.Shared.Rent(sourceCount);
-        try
-        {
-            var span = entityIds.AsSpan(0, sourceCount);
-            if (pool1.Count <= pool2.Count && pool1.Count <= pool3.Count)
-            {
-                pool1.CopyEntityIds(span);
-            }
-            else if (pool2.Count <= pool3.Count)
-            {
-                pool2.CopyEntityIds(span);
-            }
-            else
-            {
-                pool3.CopyEntityIds(span);
-            }
-
-            foreach (var entityId in span)
-            {
-                var entity = new Entity(entityId);
-                if (!pool1.TryGet(entity, out var comp1) ||
-                    !pool2.TryGet(entity, out var comp2) ||
-                    !pool3.TryGet(entity, out var comp3))
-                {
-                    continue;
-                }
-
-                var c1 = comp1;
-                var c2 = comp2;
-                var c3 = comp3;
-                action(entity, ref c1, ref c2, ref c3);
-                if (!IsAlive(entity))
-                {
-                    continue;
-                }
-
-                if (pool1.TryGet(entity, out _))
-                {
-                    pool1.Set(entity, c1);
-                }
-
-                if (pool2.TryGet(entity, out _))
-                {
-                    pool2.Set(entity, c2);
-                }
-
-                if (pool3.TryGet(entity, out _))
-                {
-                    pool3.Set(entity, c3);
-                }
-            }
-        }
-        finally
-        {
-            ArrayPool<int>.Shared.Return(entityIds);
-        }
-    }
+        => Query<T1, T2, T3>().ForEach(action);
 
     private void EnsureAliveCapacity(int minimumSize)
     {

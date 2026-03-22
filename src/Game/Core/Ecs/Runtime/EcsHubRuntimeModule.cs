@@ -4,8 +4,14 @@ namespace TheLastMageStanding.Game.Core.Ecs.Runtime;
 
 internal sealed class EcsHubRuntimeModule : IEcsRuntimeModule
 {
+    public EcsRuntimeModuleDefinition Definition { get; } = new(
+        nameof(EcsHubRuntimeModule),
+        nameof(EcsCommonRuntimeModule));
+
     public void Register(EcsRuntimeRegistration registration, EcsRuntimeModuleContext context)
     {
+        registration.RequireCapability(EcsRuntimeCapability.SessionEntity, nameof(EcsHubRuntimeModule));
+
         var stageSelectionUi = new StageSelectionUISystem(context.StageRegistry, context.SceneManager, context.CampaignProgressionService);
         var skillSelectionUi = new SkillSelectionUISystem(context.SceneStateService, context.MetaProgressionManager, context.SkillRegistry);
         var runHistoryUi = new RunHistoryUISystem(context.MetaProgressionManager.HistoryService, context.SceneStateService);

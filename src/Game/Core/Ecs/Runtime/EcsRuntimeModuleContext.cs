@@ -16,8 +16,14 @@ namespace TheLastMageStanding.Game.Core.Ecs.Runtime;
 
 internal interface IEcsRuntimeModule
 {
+    EcsRuntimeModuleDefinition Definition { get; }
+
     void Register(EcsRuntimeRegistration registration, EcsRuntimeModuleContext context);
 }
+
+internal sealed record EcsRuntimeModuleDefinition(
+    string Name,
+    params string[] Dependencies);
 
 internal sealed record EcsRuntimeModuleContext(
     EcsWorld World,

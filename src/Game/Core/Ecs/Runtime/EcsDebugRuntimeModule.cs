@@ -5,6 +5,8 @@ namespace TheLastMageStanding.Game.Core.Ecs.Runtime;
 
 internal sealed class EcsDebugRuntimeModule : IEcsRuntimeModule
 {
+    public EcsRuntimeModuleDefinition Definition { get; } = new(nameof(EcsDebugRuntimeModule));
+
     public void Register(EcsRuntimeRegistration registration, EcsRuntimeModuleContext context)
     {
         var collisionDebugRenderSystem = new CollisionDebugRenderSystem();

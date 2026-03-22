@@ -6,8 +6,12 @@ namespace TheLastMageStanding.Game.Core.Ecs.Runtime;
 
 internal sealed class EcsCommonRuntimeModule : IEcsRuntimeModule
 {
+    public EcsRuntimeModuleDefinition Definition { get; } = new(nameof(EcsCommonRuntimeModule));
+
     public void Register(EcsRuntimeRegistration registration, EcsRuntimeModuleContext context)
     {
+        registration.RequireCapability(EcsRuntimeCapability.SessionEntity, nameof(EcsCommonRuntimeModule));
+
         var playerAnimationSystem = new PlayerAnimationSystem();
         var playerRenderSystem = new PlayerRenderSystem();
         var inventoryUiSystem = new InventoryUiSystem();

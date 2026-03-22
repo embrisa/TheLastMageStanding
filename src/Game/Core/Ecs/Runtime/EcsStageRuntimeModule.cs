@@ -4,8 +4,14 @@ namespace TheLastMageStanding.Game.Core.Ecs.Runtime;
 
 internal sealed class EcsStageRuntimeModule : IEcsRuntimeModule
 {
+    public EcsRuntimeModuleDefinition Definition { get; } = new(
+        nameof(EcsStageRuntimeModule),
+        nameof(EcsCommonRuntimeModule));
+
     public void Register(EcsRuntimeRegistration registration, EcsRuntimeModuleContext context)
     {
+        registration.RequireCapability(EcsRuntimeCapability.SessionEntity, nameof(EcsStageRuntimeModule));
+
         var enemyRenderSystem = new EnemyRenderSystem();
         var enemyAnimationSystem = new EnemyAnimationSystem(enemyRenderSystem);
         var damageNumberLifecycleSystem = new DamageNumberLifecycleSystem();
@@ -19,12 +25,25 @@ internal sealed class EcsStageRuntimeModule : IEcsRuntimeModule
         var hitEffectSystem = new HitEffectSystem();
         var telegraphSystem = new TelegraphSystem();
 
+        registration.ProvideCapability(
+            EcsRuntimeCapability.SessionSettingsState,
+            $"{nameof(EcsStageRuntimeModule)}.{nameof(SettingsMenuSystem)}");
+        registration.ProvideCapability(
+            EcsRuntimeCapability.StageRunState,
+            $"{nameof(EcsStageRuntimeModule)}.{nameof(StageRunInitializationSystem)}");
+
         registration.StageSessionUpdate.Add(EcsSceneScope.Stage, context.SettingsMenuSystem);
         registration.StageSessionUpdate.Add(EcsSceneScope.Stage, context.SessionStateSystem);
         registration.StageSessionUpdate.Add(EcsSceneScope.Stage, context.SessionNotificationSystem);
+        registration.RequireCapability(
+            EcsRuntimeCapability.SessionSettingsState,
+            $"{nameof(EcsStageRuntimeModule)}.{nameof(PauseMenuSystem)}");
         registration.StageSessionUpdate.Add(EcsSceneScope.Stage, context.PauseMenuSystem);
 
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new StageRunInitializationSystem(context.SceneStateService, context.StageRegistry));
+        registration.RequireCapability(
+            EcsRuntimeCapability.StageRunState,
+            $"{nameof(EcsStageRuntimeModule)}.{nameof(StageCompletionSystem)}");
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new StageCompletionSystem(context.SceneManager, context.SceneStateService, context.CampaignProgressionService));
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new DashInputSystem());
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new DashExecutionSystem(context.HitStopSystem));
@@ -37,7 +56,13 @@ internal sealed class EcsStageRuntimeModule : IEcsRuntimeModule
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new StatusEffectTickSystem());
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new EliteModifierSystem());
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new StatRecalculationSystem());
+        registration.RequireCapability(
+            EcsRuntimeCapability.StageRunState,
+            $"{nameof(EcsStageRuntimeModule)}.{nameof(WaveSchedulerSystem)}");
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new WaveSchedulerSystem(context.WaveConfig));
+        registration.RequireCapability(
+            EcsRuntimeCapability.StageRunState,
+            $"{nameof(EcsStageRuntimeModule)}.{nameof(SpawnSystem)}");
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new SpawnSystem(context.EnemyFactory));
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new BossPhaseSystem(context.StageRegistry));
         registration.StageGameplayUpdate.Add(EcsSceneScope.Stage, new AiSeekSystem());

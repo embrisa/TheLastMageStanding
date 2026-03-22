@@ -45,7 +45,6 @@ Use this file to track active work items. Each task should be created by copying
 - [ ] [Task: 078 - Improve ECS storage and query performance](tasks/078-ecs-storage-and-query-performance.md)
 - [ ] [Task: 079 - Unify persistence and save-slot boundaries](tasks/079-persistence-and-save-boundary-unification.md)
 - [ ] [Task: 080 - Harden event bus behavior and runtime diagnostics](tasks/080-event-bus-hardening-and-runtime-diagnostics.md)
-- [ ] [Task: 085 - Explicit ECS runtime module dependencies](tasks/085-explicit-ecs-runtime-module-dependencies.md)
 - [ ] [Task: 086 - ECS query, iteration, and hot-path optimization](tasks/086-ecs-query-iteration-and-hot-path-optimization.md)
 - [ ] [Task: 087 - Event bus subscription lifecycle and diagnostics](tasks/087-event-bus-subscription-lifecycle-and-diagnostics.md)
 - [ ] [Task: 088 - Complete or disable incomplete hub interaction flows](tasks/088-complete-or-disable-incomplete-hub-interaction-flows.md)
@@ -56,6 +55,7 @@ Use this file to track active work items. Each task should be created by copying
 ## Completed
 - [x] [Task: 083 - Stage run reset service and default state restoration](tasks/083-stage-run-reset-service-and-default-state-restoration.md)
 - [x] [Task: 084 - UI feature state, controller, and view split](tasks/084-ui-feature-state-controller-and-view-split.md)
+- [x] [Task: 085 - Explicit ECS runtime module dependencies](tasks/085-explicit-ecs-runtime-module-dependencies.md)
 - [x] [Task: 081 - Hitbox debug visualization](tasks/081-hitbox-debug-visualization.md)
 - [x] [Task: 052 - Stage/act campaign system](tasks/052-stage-act-campaign-system.md)
 - [x] [Task: 049 - Run History & Stats Display UI](tasks/049-run-history-stats-ui.md)

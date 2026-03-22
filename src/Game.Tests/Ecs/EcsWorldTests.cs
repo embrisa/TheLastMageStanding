@@ -114,12 +114,64 @@ public class EcsWorldTests
         Assert.Equal(42, updatedValue.Value);
     }
 
+    [Fact]
+    public void Query_ReturnsCachedInstancePerComponentSignature()
+    {
+        var world = new EcsWorld();
+
+        var singleA = world.Query<TestMarker>();
+        var singleB = world.Query<TestMarker>();
+        var pairA = world.Query<TestMarker, TestValue>();
+        var pairB = world.Query<TestMarker, TestValue>();
+        var tripleA = world.Query<TestMarker, TestValue, TestThird>();
+        var tripleB = world.Query<TestMarker, TestValue, TestThird>();
+
+        Assert.Same(singleA, singleB);
+        Assert.Same(pairA, pairB);
+        Assert.Same(tripleA, tripleB);
+    }
+
+    [Fact]
+    public void Query_ForEach_PreservesWriteBackForEntityMovedByRemoval()
+    {
+        var world = new EcsWorld();
+
+        var first = world.CreateEntity();
+        world.SetComponent(first, new TestMarker(1));
+        world.SetComponent(first, new TestValue(10));
+
+        var second = world.CreateEntity();
+        world.SetComponent(second, new TestMarker(2));
+        world.SetComponent(second, new TestValue(20));
+
+        world.Query<TestMarker, TestValue>().ForEach((Entity entity, ref TestMarker marker, ref TestValue value) =>
+        {
+            if (entity == first)
+            {
+                world.RemoveComponent<TestMarker>(second);
+                marker.Value = 99;
+                value.Value = 77;
+            }
+        });
+
+        Assert.True(world.TryGetComponent(first, out TestMarker updatedMarker));
+        Assert.True(world.TryGetComponent(first, out TestValue updatedValue));
+        Assert.Equal(99, updatedMarker.Value);
+        Assert.Equal(77, updatedValue.Value);
+        Assert.False(world.TryGetComponent(second, out TestMarker _));
+    }
+
     private struct TestMarker(int value)
     {
         public int Value { get; set; } = value;
     }
 
     private struct TestValue(int value)
+    {
+        public int Value { get; set; } = value;
+    }
+
+    private struct TestThird(int value)
     {
         public int Value { get; set; } = value;
     }

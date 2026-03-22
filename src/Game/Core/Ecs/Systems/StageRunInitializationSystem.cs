@@ -9,9 +9,11 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// Keeps <see cref="StageRunState"/> in sync with the currently active stage.
 /// </summary>
 internal sealed class StageRunInitializationSystem : IUpdateSystem
+    , ISessionStateInitializer
 {
     private readonly SceneStateService _sceneStateService;
     private readonly StageRegistry _stageRegistry;
+    private EcsWorld _world = null!;
     private Entity? _sessionEntity;
     private string? _lastStageId;
 
@@ -23,16 +25,62 @@ internal sealed class StageRunInitializationSystem : IUpdateSystem
 
     public void Initialize(EcsWorld world)
     {
+        _world = world;
+        world.EventBus.Subscribe<SceneEnterEvent>(OnSceneEnter);
+    }
+
+    public void InitializeSession(EcsWorld world, Entity sessionEntity)
+    {
+        EnsureStageRunState(world, sessionEntity);
     }
 
     public void Update(EcsWorld world, in EcsUpdateContext context)
     {
-        if (!_sceneStateService.IsInStage())
+        if (!TryGetSessionEntity(world, out var sessionEntity))
         {
             return;
         }
 
-        if (!TryGetSessionEntity(world, out var sessionEntity))
+        EnsureStageRunState(world, sessionEntity);
+    }
+
+    private bool TryGetSessionEntity(EcsWorld world, out Entity sessionEntity)
+    {
+        if (_sessionEntity.HasValue && world.IsAlive(_sessionEntity.Value))
+        {
+            sessionEntity = _sessionEntity.Value;
+            return true;
+        }
+
+        _sessionEntity = null;
+        world.ForEach<GameSession>((Entity entity, ref GameSession _) =>
+        {
+            _sessionEntity = entity;
+        });
+
+        if (_sessionEntity.HasValue)
+        {
+            sessionEntity = _sessionEntity.Value;
+            return true;
+        }
+
+        sessionEntity = default;
+        return false;
+    }
+
+    private void OnSceneEnter(SceneEnterEvent evt)
+    {
+        if (!_sceneStateService.IsInStage() || !TryGetSessionEntity(_world, out var sessionEntity))
+        {
+            return;
+        }
+
+        EnsureStageRunState(_world, sessionEntity);
+    }
+
+    private void EnsureStageRunState(EcsWorld world, Entity sessionEntity)
+    {
+        if (!_sceneStateService.IsInStage())
         {
             return;
         }
@@ -70,29 +118,4 @@ internal sealed class StageRunInitializationSystem : IUpdateSystem
         world.SetComponent(sessionEntity, state);
         world.EventBus.Publish(new StageRunStartedEvent(state.StageId));
     }
-
-    private bool TryGetSessionEntity(EcsWorld world, out Entity sessionEntity)
-    {
-        if (_sessionEntity.HasValue && world.IsAlive(_sessionEntity.Value))
-        {
-            sessionEntity = _sessionEntity.Value;
-            return true;
-        }
-
-        _sessionEntity = null;
-        world.ForEach<GameSession>((Entity entity, ref GameSession _) =>
-        {
-            _sessionEntity = entity;
-        });
-
-        if (_sessionEntity.HasValue)
-        {
-            sessionEntity = _sessionEntity.Value;
-            return true;
-        }
-
-        sessionEntity = default;
-        return false;
-    }
 }
-

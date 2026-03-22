@@ -30,3 +30,7 @@ internal interface ILoadContentSystem : IEcsSystem
     void LoadContent(EcsWorld world, GraphicsDevice graphicsDevice, ContentManager content);
 }
 
+internal interface ISessionStateInitializer : IEcsSystem
+{
+    void InitializeSession(EcsWorld world, Entity sessionEntity);
+}
