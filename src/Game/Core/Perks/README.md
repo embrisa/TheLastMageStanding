@@ -173,7 +173,7 @@ Player stats updated!
 
 Perks are auto-saved every 30 seconds and when changed. Save location:
 ```
-%LocalAppData%/TheLastMageStanding/current_run_perks.json
+<save-root>/Slots/<slot-id>/current_run_perks.json
 ```
 
 Save is cleared on run restart to keep progression run-specific.

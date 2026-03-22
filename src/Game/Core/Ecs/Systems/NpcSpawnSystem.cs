@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Xna.Framework;
 using MonoGame.Extended.Tiled;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
@@ -11,6 +12,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// </summary>
 internal sealed class NpcSpawnSystem : IUpdateSystem
 {
+    private const string LogCategory = "Ecs.NpcSpawn";
     private bool _hasSpawned;
     private readonly TiledMap _map;
 
@@ -29,13 +31,13 @@ internal sealed class NpcSpawnSystem : IUpdateSystem
         if (_hasSpawned)
             return;
 
-        System.Console.WriteLine($"[NpcSpawnSystem] Spawning NPCs from {_map.ObjectLayers.Count} object layers");
+        RuntimeLog.Debug(LogCategory, $"Spawning NPCs from {_map.ObjectLayers.Count} object layers.");
 
         var spawnCount = 0;
         // Spawn all NPCs from object layers
         foreach (var layer in _map.ObjectLayers)
         {
-            System.Console.WriteLine($"[NpcSpawnSystem] Checking layer '{layer.Name}' with {layer.Objects.Length} objects");
+            RuntimeLog.Debug(LogCategory, $"Checking layer '{layer.Name}' with {layer.Objects.Length} objects.");
             foreach (var obj in layer.Objects)
             {
                 if (obj.Name is null || !obj.Name.StartsWith("npc_", StringComparison.OrdinalIgnoreCase))
@@ -44,7 +46,7 @@ internal sealed class NpcSpawnSystem : IUpdateSystem
                 var interactionType = MapNpcNameToInteractionType(obj.Name);
                 if (interactionType == InteractionType.None)
                 {
-                    System.Console.WriteLine($"[NpcSpawnSystem] Unknown NPC type: {obj.Name}");
+                    RuntimeLog.Warning(LogCategory, $"Unknown NPC type '{obj.Name}'.");
                     continue;
                 }
 
@@ -65,11 +67,11 @@ internal sealed class NpcSpawnSystem : IUpdateSystem
                 });
                 
                 spawnCount++;
-                System.Console.WriteLine($"[NpcSpawnSystem] Spawned {obj.Name} ({interactionType}) at {position}");
+                RuntimeLog.Debug(LogCategory, $"Spawned {obj.Name} ({interactionType}) at {position}.");
             }
         }
 
-        System.Console.WriteLine($"[NpcSpawnSystem] Spawned {spawnCount} NPCs total");
+        RuntimeLog.Info(LogCategory, $"Spawned {spawnCount} NPCs total.");
         _hasSpawned = true;
     }
 

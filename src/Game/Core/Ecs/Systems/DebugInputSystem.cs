@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Ecs.Config;
 using TheLastMageStanding.Game.Core.Ecs.Systems.Collision;
@@ -11,6 +12,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// </summary>
 internal sealed class DebugInputSystem : IUpdateSystem
 {
+    private const string LogCategory = "Debug.Input";
     private readonly CollisionDebugRenderSystem _collisionDebugRender;
     private readonly EnemyEntityFactory _enemyFactory;
     private readonly StatusEffectDebugSystem _statusDebugSystem;
@@ -49,7 +51,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         if (context.Input.DebugTogglePressed)
         {
             _collisionDebugRender.Enabled = !_collisionDebugRender.Enabled;
-            System.Console.WriteLine($"[Debug] Collision visualization: {(_collisionDebugRender.Enabled ? "ON" : "OFF")}");
+            RuntimeLog.Debug(LogCategory, $"Collision/hitbox visualization: {(_collisionDebugRender.Enabled ? "ON" : "OFF")}");
         }
 
         var keyboardState = Keyboard.GetState();
@@ -65,7 +67,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         if (f4Pressed && !_previousF4State)
         {
             HitStopSystem.EnableHitStop = !HitStopSystem.EnableHitStop;
-            System.Console.WriteLine($"[Debug] Hit-stop: {(HitStopSystem.EnableHitStop ? "ON" : "OFF")}");
+            RuntimeLog.Debug(LogCategory, $"Hit-stop: {(HitStopSystem.EnableHitStop ? "ON" : "OFF")}");
         }
         _previousF4State = f4Pressed;
 
@@ -74,7 +76,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         if (f5Pressed && !_previousF5State)
         {
             HitStopSystem.EnableCameraShake = !HitStopSystem.EnableCameraShake;
-            System.Console.WriteLine($"[Debug] Camera shake: {(HitStopSystem.EnableCameraShake ? "ON" : "OFF")}");
+            RuntimeLog.Debug(LogCategory, $"Camera shake: {(HitStopSystem.EnableCameraShake ? "ON" : "OFF")}");
         }
         _previousF5State = f5Pressed;
 
@@ -83,7 +85,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         if (f6Pressed && !_previousF6State)
         {
             VfxSystem.EnableVfx = !VfxSystem.EnableVfx;
-            System.Console.WriteLine($"[Debug] VFX: {(VfxSystem.EnableVfx ? "ON" : "OFF")}");
+            RuntimeLog.Debug(LogCategory, $"VFX: {(VfxSystem.EnableVfx ? "ON" : "OFF")}");
         }
         _previousF6State = f6Pressed;
 
@@ -108,7 +110,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         if (f9Pressed && !_previousF9State)
         {
             _collisionDebugRender.ShowDashDebug = !_collisionDebugRender.ShowDashDebug;
-            System.Console.WriteLine($"[Debug] Dash debug: {(_collisionDebugRender.ShowDashDebug ? "ON" : "OFF")}");
+            RuntimeLog.Debug(LogCategory, $"Dash debug: {(_collisionDebugRender.ShowDashDebug ? "ON" : "OFF")}");
         }
         _previousF9State = f9Pressed;
 
@@ -117,7 +119,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         if (f10Pressed && !_previousF10State)
         {
             _statusDebugSystem.Enabled = !_statusDebugSystem.Enabled;
-            System.Console.WriteLine($"[Debug] Status overlay: {(_statusDebugSystem.Enabled ? "ON" : "OFF")}");
+            RuntimeLog.Debug(LogCategory, $"Status overlay: {(_statusDebugSystem.Enabled ? "ON" : "OFF")}");
         }
         _previousF10State = f10Pressed;
 
@@ -126,7 +128,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         if (f11Pressed && !_previousF11State)
         {
             _aiDebugRenderSystem.Enabled = !_aiDebugRenderSystem.Enabled;
-            System.Console.WriteLine($"[Debug] AI overlay: {(_aiDebugRenderSystem.Enabled ? "ON" : "OFF")}");
+            RuntimeLog.Debug(LogCategory, $"AI overlay: {(_aiDebugRenderSystem.Enabled ? "ON" : "OFF")}");
         }
         _previousF11State = f11Pressed;
     }
@@ -142,7 +144,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         var spawnPosition = playerPosition + new Vector2(80f, 0f);
         var eliteArchetype = EnemyWaveConfig.CreateEliteForDebug();
         _enemyFactory.CreateEnemy(spawnPosition, eliteArchetype);
-        System.Console.WriteLine($"[Debug] Spawned elite enemy at {spawnPosition}");
+        RuntimeLog.Debug(LogCategory, $"Spawned elite enemy at {spawnPosition}.");
     }
 
     private void SpawnDebugBoss(EcsWorld world)
@@ -156,7 +158,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         var spawnPosition = playerPosition + new Vector2(120f, 0f);
         var bossArchetype = EnemyWaveConfig.CreateBossForDebug();
         _enemyFactory.CreateEnemy(spawnPosition, bossArchetype);
-        System.Console.WriteLine($"[Debug] Spawned boss enemy at {spawnPosition}");
+        RuntimeLog.Debug(LogCategory, $"Spawned boss enemy at {spawnPosition}.");
     }
 
     private void HandleModifierHotkey(
@@ -186,7 +188,7 @@ internal sealed class DebugInputSystem : IUpdateSystem
         var spawnPosition = playerPosition + new Vector2(100f, 40f);
         var eliteArchetype = EnemyWaveConfig.CreateEliteForDebug();
         _enemyFactory.CreateEnemy(spawnPosition, eliteArchetype, modifiers);
-        System.Console.WriteLine($"[Debug] Spawned elite with modifiers: {string.Join(",", modifiers)} at {spawnPosition}");
+        RuntimeLog.Debug(LogCategory, $"Spawned elite with modifiers {string.Join(",", modifiers)} at {spawnPosition}.");
     }
 
     private static bool TryGetPlayerPosition(EcsWorld world, out Vector2 position)

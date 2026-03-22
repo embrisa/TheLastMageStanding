@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using TheLastMageStanding.Game.Core.Diagnostics;
 
 namespace TheLastMageStanding.Game.Core.Config;
 
@@ -11,6 +12,7 @@ namespace TheLastMageStanding.Game.Core.Config;
 internal sealed class InputBindingsStore
 {
     private const string FileName = "input-bindings.json";
+    private const string LogCategory = "Config.Input";
     private readonly string _settingsPath;
     private readonly JsonSerializerOptions _serializerOptions = new()
     {
@@ -55,7 +57,8 @@ internal sealed class InputBindingsStore
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[InputBindingsStore] Failed to load settings, using defaults. Error: {ex.Message}");
+            RuntimeLog.Warning(LogCategory, "Failed to load input bindings. Falling back to defaults.");
+            RuntimeLog.Error(LogCategory, $"Input bindings load failed for '{_settingsPath}'.", ex);
             return InputBindingsConfig.Default;
         }
     }
@@ -70,8 +73,7 @@ internal sealed class InputBindingsStore
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[InputBindingsStore] Failed to save settings: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to save input bindings to '{_settingsPath}'.", ex);
         }
     }
 }
-

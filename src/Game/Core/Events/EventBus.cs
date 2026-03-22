@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using TheLastMageStanding.Game.Core.Diagnostics;
 
 namespace TheLastMageStanding.Game.Core.Events;
 
@@ -7,7 +9,9 @@ public sealed class EventBus : IEventBus
 {
     private interface IEventQueue
     {
-        bool Process(EventBus bus);
+        int PendingCount { get; }
+        Type EventType { get; }
+        int Process(EventBus bus);
         void Clear();
     }
 
@@ -15,26 +19,31 @@ public sealed class EventBus : IEventBus
     {
         private readonly Queue<T> _queue = new();
 
+        public int PendingCount => _queue.Count;
+
+        public Type EventType => typeof(T);
+
         public void Enqueue(T eventData)
         {
             _queue.Enqueue(eventData);
         }
 
-        public bool Process(EventBus bus)
+        public int Process(EventBus bus)
         {
-            bool processedAny = false;
-            // Process currently queued items. 
-            // We capture count to avoid infinite loops within a single type's processing if it republishes itself.
+            // Each pass only processes the events that were already waiting when the pass started.
+            // Handlers can publish more events, but those are deferred to a later pass in the same frame.
+            var processedCount = 0;
             int count = _queue.Count;
             for (int i = 0; i < count; i++)
             {
                 if (_queue.TryDequeue(out var eventData))
                 {
                     bus.Dispatch(eventData);
-                    processedAny = true;
+                    processedCount++;
                 }
             }
-            return processedAny;
+
+            return processedCount;
         }
 
         public void Clear() => _queue.Clear();
@@ -44,7 +53,25 @@ public sealed class EventBus : IEventBus
     private readonly List<IEventQueue> _activeQueues = new();
     private readonly Dictionary<Type, List<object?>> _subscribers = new();
     private bool _dirtySubscribers;
-    private const int MaxPasses = 10;
+    private readonly int _maxPasses;
+    private const string LogCategory = "EventBus";
+    private const int DefaultMaxPasses = 10;
+
+    /// <summary>
+    /// Creates a deferred event bus.
+    /// Each call to <see cref="ProcessEvents"/> drains queued events in passes until the queues are empty.
+    /// Events published by handlers are never re-entered into the same queue pass; they are deferred to a later pass.
+    /// If handlers keep producing more work than can be drained within <paramref name="maxPasses"/>, processing fails loudly.
+    /// </summary>
+    public EventBus(int maxPasses = DefaultMaxPasses)
+    {
+        if (maxPasses <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxPasses), maxPasses, "Event bus max passes must be positive.");
+        }
+
+        _maxPasses = maxPasses;
+    }
 
     public void Publish<T>(T eventData) where T : struct
     {
@@ -103,20 +130,46 @@ public sealed class EventBus : IEventBus
 
     public void ProcessEvents()
     {
-        int passes = 0;
-        bool processedAny;
-        do
+        var passesExecuted = 0;
+        var totalDispatched = 0;
+
+        while (passesExecuted < _maxPasses)
         {
-            processedAny = false;
+            var dispatchedThisPass = 0;
             for (int i = 0; i < _activeQueues.Count; i++)
             {
-                if (_activeQueues[i].Process(this))
-                {
-                    processedAny = true;
-                }
+                dispatchedThisPass += _activeQueues[i].Process(this);
             }
-            passes++;
-        } while (processedAny && passes < MaxPasses);
+
+            if (dispatchedThisPass == 0)
+            {
+                break;
+            }
+
+            totalDispatched += dispatchedThisPass;
+            passesExecuted++;
+        }
+
+        if (HasPendingEvents())
+        {
+            var pendingEvents = string.Join(
+                ", ",
+                _activeQueues
+                    .Where(queue => queue.PendingCount > 0)
+                    .OrderByDescending(queue => queue.PendingCount)
+                    .Select(queue => $"{queue.EventType.Name}={queue.PendingCount}"));
+
+            var message =
+                $"Event processing exceeded the configured max of {_maxPasses} passes " +
+                $"after dispatching {totalDispatched} events. Pending queues: {pendingEvents}.";
+            RuntimeLog.Error(LogCategory, message);
+            throw new EventBusOverflowException(message);
+        }
+
+        if (passesExecuted > 1)
+        {
+            RuntimeLog.Debug(LogCategory, $"Processed {totalDispatched} events across {passesExecuted} passes.");
+        }
 
         if (_dirtySubscribers)
         {
@@ -147,5 +200,18 @@ public sealed class EventBus : IEventBus
             list.RemoveAll(x => x == null);
         }
         _dirtySubscribers = false;
+    }
+
+    private bool HasPendingEvents()
+    {
+        for (int i = 0; i < _activeQueues.Count; i++)
+        {
+            if (_activeQueues[i].PendingCount > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

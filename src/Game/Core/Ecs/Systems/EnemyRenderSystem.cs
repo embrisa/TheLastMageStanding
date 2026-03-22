@@ -7,7 +7,7 @@ using TheLastMageStanding.Game.Core.Ecs.Components;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 
-internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadContentSystem
+internal sealed class EnemyRenderSystem : IDrawSystem, ILoadContentSystem
 {
     private Texture2D? _pixel;
     private ContentManager? _content;
@@ -24,57 +24,6 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
         _pixel ??= CreatePixel(graphicsDevice);
         _content = content;
         _contentLoaded = true;
-    }
-
-    public void Update(EcsWorld world, in EcsUpdateContext context)
-    {
-        if (!_contentLoaded)
-        {
-            return;
-        }
-
-        var deltaSeconds = context.DeltaSeconds;
-
-        world.ForEach<EnemyAnimationState, EnemySpriteAssets, Velocity>(
-            (Entity entity, ref EnemyAnimationState state, ref EnemySpriteAssets assets, ref Velocity velocity) =>
-            {
-                if (!world.TryGetComponent(entity, out EnemyVisual visual))
-                {
-                    return;
-                }
-
-                EnsureSpriteSet(world, entity, assets, visual.FrameSize);
-
-                var isMoving = velocity.Value.LengthSquared() > 0.0001f;
-                var facing = isMoving ? ToFacing(velocity.Value) : state.Facing;
-                var clip = isMoving ? EnemyAnimationClip.Run : EnemyAnimationClip.Idle;
-
-                if (clip != state.ActiveClip)
-                {
-                    state.ActiveClip = clip;
-                    state.FrameIndex = 0;
-                    state.Timer = 0f;
-                }
-
-                state.IsMoving = isMoving;
-                state.Facing = facing;
-
-                if (!world.TryGetComponent(entity, out EnemySpriteSet spriteSet))
-                {
-                    return;
-                }
-
-                var animation = GetAnimation(spriteSet, state.ActiveClip);
-                var frameDuration = animation.FrameDurationSeconds <= 0f ? 0.1f : animation.FrameDurationSeconds;
-                var frameCount = Math.Max(1, animation.Columns);
-
-                state.Timer += deltaSeconds;
-                while (state.Timer >= frameDuration)
-                {
-                    state.Timer -= frameDuration;
-                    state.FrameIndex = (state.FrameIndex + 1) % frameCount;
-                }
-            });
     }
 
     public void Draw(EcsWorld world, in EcsDrawContext context)
@@ -128,9 +77,7 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
                     SpriteEffects.None,
                     0f);
 
-                // Draw elite/boss indicators
                 DrawTierIndicator(world, entity, spriteBatch, position.Value, visual);
-
                 DrawHealthBar(world, entity, spriteBatch, position.Value, visual);
             });
     }
@@ -150,8 +97,7 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
             return;
         }
 
-        // Draw a ring around elite/boss enemies
-        var color = hasElite ? new Color(255, 200, 50, 180) : new Color(150, 50, 200, 200); // Gold for elite, purple for boss
+        var color = hasElite ? new Color(255, 200, 50, 180) : new Color(150, 50, 200, 200);
         var radius = visual.Scale * 20f;
         var thickness = hasElite ? 2f : 3f;
         var segments = 32;
@@ -172,7 +118,7 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
         }
     }
 
-    private void EnsureSpriteSet(EcsWorld world, Entity entity, EnemySpriteAssets assets, int frameSize)
+    internal void EnsureSpriteSet(EcsWorld world, Entity entity, EnemySpriteAssets assets, int frameSize)
     {
         if (_content is null)
         {
@@ -244,7 +190,7 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
             0f);
     }
 
-    private static SpriteAnimation GetAnimation(EnemySpriteSet sprites, EnemyAnimationClip clip) =>
+    internal static SpriteAnimation GetAnimation(EnemySpriteSet sprites, EnemyAnimationClip clip) =>
         clip switch
         {
             EnemyAnimationClip.Run => sprites.Run,
@@ -265,7 +211,7 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
             _ => 0,
         };
 
-    private static PlayerFacingDirection ToFacing(Vector2 movement)
+    internal static PlayerFacingDirection ToFacing(Vector2 movement)
     {
         const float dead = 0.0001f;
         if (movement.LengthSquared() <= dead)
@@ -313,4 +259,3 @@ internal sealed class EnemyRenderSystem : IUpdateSystem, IDrawSystem, ILoadConte
 
     private readonly record struct EnemySpriteKey(string Idle, string Run, int FrameSize);
 }
-

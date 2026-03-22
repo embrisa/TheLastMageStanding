@@ -1,4 +1,5 @@
 using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Diagnostics;
 
 namespace TheLastMageStanding.Game.Core.MetaProgression;
 
@@ -6,30 +7,28 @@ namespace TheLastMageStanding.Game.Core.MetaProgression;
 /// Manages meta progression state during gameplay.
 /// Coordinates profile loading/saving, run tracking, and XP calculation.
 /// </summary>
-public sealed class MetaProgressionManager
+public sealed class MetaProgressionManager : IDisposable
 {
+    private const string LogCategory = "MetaProgression";
     private readonly PlayerProfileService _profileService;
     private readonly RunHistoryService _historyService;
     private readonly IEventBus _eventBus;
-    private readonly SaveSlotService _saveSlotService;
     private readonly string _slotId;
 
     private PlayerProfile _currentProfile;
     private RunSession? _currentRun;
+    private bool _disposed;
 
     public PlayerProfile CurrentProfile => _currentProfile;
     public RunSession? CurrentRun => _currentRun;
     public string SlotId => _slotId;
     public RunHistoryService HistoryService => _historyService;
 
-    public MetaProgressionManager(IEventBus eventBus, SaveSlotService saveSlotService, string slotId)
+    internal MetaProgressionManager(IEventBus eventBus, SlotPersistenceScope persistence)
     {
-        _saveSlotService = saveSlotService;
-        _slotId = slotId;
-        var fileSystem = new DefaultFileSystem();
-        var slotPath = _saveSlotService.GetSlotPath(slotId);
-        _profileService = new PlayerProfileService(fileSystem, slotPath);
-        _historyService = new RunHistoryService(fileSystem, slotPath);
+        _slotId = persistence.SlotId;
+        _profileService = persistence.PlayerProfile;
+        _historyService = persistence.RunHistory;
         _eventBus = eventBus;
 
         // Load profile
@@ -91,6 +90,30 @@ public sealed class MetaProgressionManager
             .ToList();
     }
 
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _eventBus.Unsubscribe<RunStartedEvent>(OnRunStarted);
+        _eventBus.Unsubscribe<RunEndedEvent>(OnRunEnded);
+        _eventBus.Unsubscribe<GoldCollectedEvent>(OnGoldCollected);
+        _eventBus.Unsubscribe<EquipmentCollectedEvent>(OnEquipmentCollected);
+        _eventBus.Unsubscribe<SessionRestartedEvent>(OnSessionRestarted);
+        _eventBus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
+        _eventBus.Unsubscribe<WaveCompletedEvent>(OnWaveCompleted);
+        _eventBus.Unsubscribe<EntityDamagedEvent>(OnEntityDamaged);
+        _eventBus.Unsubscribe<StageRunStartedEvent>(OnStageRunStarted);
+        _eventBus.Unsubscribe<StageRunCompletedEvent>(OnStageRunCompleted);
+        _eventBus.Unsubscribe<RunMetaXpBonusEvent>(OnRunMetaXpBonus);
+
+        _currentRun = null;
+    }
+
     private void OnRunStarted(RunStartedEvent evt)
     {
         _currentRun = new RunSession
@@ -103,7 +126,7 @@ public sealed class MetaProgressionManager
             BonusMetaXp = 0
         };
 
-        Console.WriteLine($"[MetaProgression] Run started: {_currentRun.RunId}");
+        RuntimeLog.Info(LogCategory, $"Run started: {_currentRun.RunId}");
     }
 
     private void OnRunEnded(RunEndedEvent evt)
@@ -127,7 +150,7 @@ public sealed class MetaProgressionManager
             BonusMetaXp = 0
         };
 
-        Console.WriteLine($"[MetaProgression] Run restarted: {_currentRun.RunId}");
+        RuntimeLog.Info(LogCategory, $"Run restarted: {_currentRun.RunId}");
     }
 
     private void OnPlayerDied(PlayerDiedEvent evt)
@@ -269,13 +292,10 @@ public sealed class MetaProgressionManager
             _eventBus.Publish(new MetaLevelUpEvent(_currentProfile.MetaLevel));
         }
 
-        Console.WriteLine($"[MetaProgression] Run finalized:");
-        Console.WriteLine($"  Wave: {_currentRun.WaveReached}");
-        Console.WriteLine($"  Kills: {_currentRun.TotalKills}");
-        Console.WriteLine($"  Gold: {_currentRun.GoldCollected}");
-        Console.WriteLine($"  Meta XP: {metaXp}");
-        Console.WriteLine($"  Total Meta XP: {_currentProfile.TotalMetaXp}");
-        Console.WriteLine($"  Meta Level: {_currentProfile.MetaLevel}");
+        RuntimeLog.Info(
+            LogCategory,
+            $"Run finalized: wave={_currentRun.WaveReached}, kills={_currentRun.TotalKills}, gold={_currentRun.GoldCollected}, " +
+            $"metaXp={metaXp}, totalMetaXp={_currentProfile.TotalMetaXp}, metaLevel={_currentProfile.MetaLevel}.");
 
         _currentRun = null;
     }

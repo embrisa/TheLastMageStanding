@@ -1,27 +1,34 @@
 using Xunit;
 using TheLastMageStanding.Game.Core.Player;
 using TheLastMageStanding.Game.Core.Loot;
+using TheLastMageStanding.Game.Core.MetaProgression;
+using TheLastMageStanding.Game.Tests.MetaProgression;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.Text.Json;
 
 namespace TheLastMageStanding.Game.Tests.Loot;
 
 public sealed class EquipmentPersistenceTests : IDisposable
 {
     private readonly EquipmentPersistenceService _service;
+    private readonly string _saveDirectory;
 
     public EquipmentPersistenceTests()
     {
-        _service = new EquipmentPersistenceService();
-        // Clear any existing save before tests
+        _saveDirectory = Path.Combine(Path.GetTempPath(), $"tlms-equipment-tests-{Guid.NewGuid():N}");
+        _service = new EquipmentPersistenceService(new DefaultFileSystem(), _saveDirectory);
         _service.ClearSave();
     }
 
     public void Dispose()
     {
-        // Clean up after tests
         _service.ClearSave();
+        if (Directory.Exists(_saveDirectory))
+        {
+            Directory.Delete(_saveDirectory, recursive: true);
+        }
     }
 
     [Fact]
@@ -54,6 +61,28 @@ public sealed class EquipmentPersistenceTests : IDisposable
         var loaded = _service.LoadEquipment();
 
         Assert.Null(loaded);
+    }
+
+    [Fact]
+    public void LoadEquipment_WithCorruptedFile_ThrowsJsonException()
+    {
+        File.WriteAllText(Path.Combine(_saveDirectory, "current_run_equipment.json"), "{ invalid json }{");
+
+        Assert.Throws<JsonException>(() => _service.LoadEquipment());
+    }
+
+    [Fact]
+    public void SaveEquipment_WhenWriteFails_ThrowsIOException()
+    {
+        var service = new EquipmentPersistenceService(
+            new ControlledFileSystem
+            {
+                DirectoryExistsResult = true,
+                WriteException = new IOException("write failed")
+            },
+            Path.Combine(Path.GetTempPath(), $"tlms-equipment-write-fail-{Guid.NewGuid():N}"));
+
+        Assert.Throws<IOException>(() => service.SaveEquipment(new EquipmentSnapshot()));
     }
 
     [Fact]

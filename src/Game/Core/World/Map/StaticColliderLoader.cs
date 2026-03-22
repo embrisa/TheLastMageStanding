@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using MonoGame.Extended.Tiled;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 
@@ -12,6 +13,7 @@ namespace TheLastMageStanding.Game.Core.World.Map;
 /// </summary>
 internal static class StaticColliderLoader
 {
+    private const string LogCategory = "World.Collision";
     /// <summary>
     /// Parses collision regions from TMX map object layers and creates static collider entities.
     /// Filters objects by type="collision_region" to avoid parsing decorative objects.
@@ -43,7 +45,7 @@ internal static class StaticColliderLoader
             }
         }
 
-        Console.WriteLine($"[StaticColliderLoader] Loaded {collisionCount} static collision regions");
+        RuntimeLog.Info(LogCategory, $"Loaded {collisionCount} static collision regions.");
     }
 
     private static bool IsCollisionObject(TiledMapObject obj)
@@ -73,7 +75,7 @@ internal static class StaticColliderLoader
         if (obj.Size.Width <= 0 || obj.Size.Height <= 0)
         {
             // Skip zero-size or point objects
-            Console.WriteLine($"[StaticColliderLoader] Skipping zero-size object '{obj.Name}' at ({obj.Position.X:F1}, {obj.Position.Y:F1})");
+            RuntimeLog.Warning(LogCategory, $"Skipping zero-size object '{obj.Name}' at ({obj.Position.X:F1}, {obj.Position.Y:F1}).");
             return false;
         }
 
@@ -82,7 +84,7 @@ internal static class StaticColliderLoader
         // For now, log non-rectangular objects and skip them
         if (obj.Type != null && obj.Type.Contains("ellipse", StringComparison.OrdinalIgnoreCase))
         {
-            Console.WriteLine($"[StaticColliderLoader] Skipping ellipse object '{obj.Name}' at ({obj.Position.X:F1}, {obj.Position.Y:F1}) - use AABB collision_region instead");
+            RuntimeLog.Warning(LogCategory, $"Skipping ellipse object '{obj.Name}' at ({obj.Position.X:F1}, {obj.Position.Y:F1}); use an AABB collision_region instead.");
             return false;
         }
 

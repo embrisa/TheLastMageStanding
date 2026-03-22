@@ -13,9 +13,9 @@ internal sealed class EquipmentAutoSaveSystem : IUpdateSystem
     private float _timeSinceLastSave;
     private const float SaveInterval = 30f; // Save every 30 seconds
 
-    public EquipmentAutoSaveSystem()
+    public EquipmentAutoSaveSystem(EquipmentPersistenceService persistenceService)
     {
-        _persistenceService = new EquipmentPersistenceService();
+        _persistenceService = persistenceService;
     }
 
     public void Initialize(EcsWorld world)

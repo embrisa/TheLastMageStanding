@@ -1,23 +1,31 @@
 using Xunit;
 using TheLastMageStanding.Game.Core.Player;
+using TheLastMageStanding.Game.Core.MetaProgression;
+using TheLastMageStanding.Game.Tests.MetaProgression;
+using System.IO;
+using System.Text.Json;
 
 namespace TheLastMageStanding.Game.Tests.Perks;
 
 public sealed class PerkPersistenceTests : IDisposable
 {
     private readonly PerkPersistenceService _service;
+    private readonly string _saveDirectory;
 
     public PerkPersistenceTests()
     {
-        _service = new PerkPersistenceService();
-        // Clear any existing save before tests
+        _saveDirectory = Path.Combine(Path.GetTempPath(), $"tlms-perk-tests-{Guid.NewGuid():N}");
+        _service = new PerkPersistenceService(new DefaultFileSystem(), _saveDirectory);
         _service.ClearSave();
     }
 
     public void Dispose()
     {
-        // Clean up after tests
         _service.ClearSave();
+        if (Directory.Exists(_saveDirectory))
+        {
+            Directory.Delete(_saveDirectory, recursive: true);
+        }
     }
 
     [Fact]
@@ -59,6 +67,28 @@ public sealed class PerkPersistenceTests : IDisposable
         var loaded = _service.LoadPerks();
 
         Assert.Null(loaded);
+    }
+
+    [Fact]
+    public void LoadPerks_WithCorruptedFile_ThrowsJsonException()
+    {
+        File.WriteAllText(Path.Combine(_saveDirectory, "current_run_perks.json"), "{ invalid json }{");
+
+        Assert.Throws<JsonException>(() => _service.LoadPerks());
+    }
+
+    [Fact]
+    public void SavePerks_WhenWriteFails_ThrowsIOException()
+    {
+        var service = new PerkPersistenceService(
+            new ControlledFileSystem
+            {
+                DirectoryExistsResult = true,
+                WriteException = new IOException("write failed")
+            },
+            Path.Combine(Path.GetTempPath(), $"tlms-perk-write-fail-{Guid.NewGuid():N}"));
+
+        Assert.Throws<IOException>(() => service.SavePerks(new PerkSnapshot()));
     }
 
     [Fact]

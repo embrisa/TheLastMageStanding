@@ -1,5 +1,7 @@
 using Xunit;
 using TheLastMageStanding.Game.Core.MetaProgression;
+using TheLastMageStanding.Game.Core.Loot;
+using TheLastMageStanding.Game.Core.Player;
 
 namespace TheLastMageStanding.Game.Tests.MetaProgression;
 
@@ -63,6 +65,67 @@ public class InMemoryFileSystem : IFileSystem
             .Where(d => d.StartsWith(path, StringComparison.OrdinalIgnoreCase))
             .ToArray();
     }
+}
+
+internal sealed class ControlledFileSystem : IFileSystem
+{
+    public bool FileExistsResult { get; init; }
+    public bool DirectoryExistsResult { get; init; } = true;
+    public Exception? ReadException { get; init; }
+    public Exception? WriteException { get; init; }
+    public Exception? DeleteException { get; init; }
+    public Exception? CopyException { get; init; }
+    public Exception? CreateDirectoryException { get; init; }
+
+    public bool FileExists(string path) => FileExistsResult;
+
+    public string ReadAllText(string path)
+    {
+        if (ReadException != null)
+        {
+            throw ReadException;
+        }
+
+        throw new FileNotFoundException($"File not found: {path}");
+    }
+
+    public void WriteAllText(string path, string content)
+    {
+        if (WriteException != null)
+        {
+            throw WriteException;
+        }
+    }
+
+    public void DeleteFile(string path)
+    {
+        if (DeleteException != null)
+        {
+            throw DeleteException;
+        }
+    }
+
+    public void CopyFile(string sourcePath, string destPath, bool overwrite)
+    {
+        if (CopyException != null)
+        {
+            throw CopyException;
+        }
+    }
+
+    public void CreateDirectory(string path)
+    {
+        if (CreateDirectoryException != null)
+        {
+            throw CreateDirectoryException;
+        }
+    }
+
+    public string[] GetFiles(string directory, string searchPattern) => [];
+
+    public bool DirectoryExists(string path) => DirectoryExistsResult;
+
+    public string[] GetDirectories(string path) => [];
 }
 
 public class PlayerProfileServiceTests
@@ -328,5 +391,80 @@ public class RunHistoryServiceTests
 
         // Assert
         Assert.Empty(runs);
+    }
+}
+
+public class PersistenceRootTests
+{
+    [Fact]
+    public void ForSlot_SeparatesProfileHistoryAndRunStateBySlot()
+    {
+        var fileSystem = new InMemoryFileSystem();
+        var root = new PersistenceRoot(fileSystem, "/test/save");
+        var slot1 = root.ForSlot("slot1");
+        var slot2 = root.ForSlot("slot2");
+
+        var slot1Profile = PlayerProfile.CreateDefault();
+        slot1Profile.TotalGold = 111;
+        slot1.PlayerProfile.SaveProfile(slot1Profile);
+
+        var slot2Profile = PlayerProfile.CreateDefault();
+        slot2Profile.TotalGold = 222;
+        slot2.PlayerProfile.SaveProfile(slot2Profile);
+
+        slot1.RunHistory.SaveRun(new RunSession { WaveReached = 3, TotalKills = 10 });
+        slot2.RunHistory.SaveRun(new RunSession { WaveReached = 9, TotalKills = 50 });
+
+        slot1.PerkPersistence.SavePerks(new PerkSnapshot { AvailablePoints = 2, TotalPointsEarned = 3 });
+        slot2.PerkPersistence.SavePerks(new PerkSnapshot { AvailablePoints = 7, TotalPointsEarned = 8 });
+
+        slot1.EquipmentPersistence.SaveEquipment(new EquipmentSnapshot
+        {
+            InventoryItems = new List<ItemInstanceData>
+            {
+                ItemInstanceData.FromItemInstance(CreateTestItem("slot1_item"))
+            }
+        });
+        slot2.EquipmentPersistence.SaveEquipment(new EquipmentSnapshot
+        {
+            InventoryItems = new List<ItemInstanceData>
+            {
+                ItemInstanceData.FromItemInstance(CreateTestItem("slot2_item"))
+            }
+        });
+
+        Assert.Equal(111, slot1.PlayerProfile.LoadProfile().TotalGold);
+        Assert.Equal(222, slot2.PlayerProfile.LoadProfile().TotalGold);
+        Assert.Equal(3, slot1.RunHistory.GetAllRuns().Single().WaveReached);
+        Assert.Equal(9, slot2.RunHistory.GetAllRuns().Single().WaveReached);
+        Assert.Equal(2, slot1.PerkPersistence.LoadPerks()!.AvailablePoints);
+        Assert.Equal(7, slot2.PerkPersistence.LoadPerks()!.AvailablePoints);
+        Assert.Equal("slot1_item", slot1.EquipmentPersistence.LoadEquipment()!.InventoryItems.Single().DefinitionId);
+        Assert.Equal("slot2_item", slot2.EquipmentPersistence.LoadEquipment()!.InventoryItems.Single().DefinitionId);
+    }
+
+    [Fact]
+    public void SaveSlotService_CreateNextSlot_SeedsProfileInsideSlotDirectory()
+    {
+        var fileSystem = new InMemoryFileSystem();
+        var root = new PersistenceRoot(fileSystem, "/test/save");
+        var saveSlots = root.CreateSaveSlotService();
+
+        var created = saveSlots.CreateNextSlot();
+
+        Assert.Equal("slot1", created.SlotId);
+        Assert.Equal("/test/save/Slots/slot1", created.SlotPath);
+        Assert.True(fileSystem.FileExists("/test/save/Slots/slot1/player_profile.json"));
+    }
+
+    private static ItemInstance CreateTestItem(string definitionId)
+    {
+        return new ItemInstance(
+            definitionId,
+            "Test Item",
+            ItemType.Weapon,
+            EquipSlot.Weapon,
+            ItemRarity.Common,
+            new List<RolledAffix>());
     }
 }

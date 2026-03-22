@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using TheLastMageStanding.Game.Core.Diagnostics;
 
 namespace TheLastMageStanding.Game.Core.Config;
 
@@ -11,6 +12,7 @@ namespace TheLastMageStanding.Game.Core.Config;
 internal sealed class AudioSettingsStore
 {
     private const string FileName = "audio-settings.json";
+    private const string LogCategory = "Config.Audio";
     private readonly string _settingsPath;
     private readonly JsonSerializerOptions _serializerOptions = new()
     {
@@ -56,7 +58,8 @@ internal sealed class AudioSettingsStore
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AudioSettingsStore] Failed to load settings, using defaults. Error: {ex.Message}");
+            RuntimeLog.Warning(LogCategory, "Failed to load audio settings. Falling back to defaults.");
+            RuntimeLog.Error(LogCategory, $"Audio settings load failed for '{_settingsPath}'.", ex);
             return AudioSettingsConfig.Default;
         }
     }
@@ -71,8 +74,7 @@ internal sealed class AudioSettingsStore
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AudioSettingsStore] Failed to save settings: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to save audio settings to '{_settingsPath}'.", ex);
         }
     }
 }
-

@@ -7,6 +7,7 @@ using Myra.Graphics2D;
 using Myra.Graphics2D.TextureAtlases;
 using Myra.Graphics2D.UI;
 using Myra.Graphics2D.Brushes;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Ecs;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Ecs.Systems;
@@ -21,6 +22,7 @@ namespace TheLastMageStanding.Game.Core.Rendering.UI;
 internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem, IDisposable
 {
     private const int SlotCount = 5;
+    private const string LogCategory = "Ui.SkillHotbar";
     
     private Desktop _desktop = null!;
     private Grid _mainContainer = null!;
@@ -234,7 +236,7 @@ internal sealed class SkillHotbarRenderer : IUiDrawSystem, ILoadContentSystem, I
         }
         catch (ContentLoadException)
         {
-            Console.WriteLine($"[SkillHotbarRenderer] Warning: Could not load icon for {skillId} at {path}");
+            RuntimeLog.Warning(LogCategory, $"Could not load icon for skill '{skillId}' at '{path}'.");
         }
     }
 

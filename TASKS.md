@@ -25,6 +25,7 @@ Use this file to track active work items. Each task should be created by copying
 5. If handing off, leave next steps, open questions, and any gotchas.
 
 ## Active tasks (In Progress)
+- [ ] [Task: 077 - Refactor Game1 bootstrap, scene loading, and shared settings flow](tasks/077-game-bootstrap-and-scene-loading-refactor.md)
 
 
 ## Backlog
@@ -38,17 +39,17 @@ Use this file to track active work items. Each task should be created by copying
 - [ ] [Task: 066 - NPC visual improvements](tasks/066-npc-visual-improvements.md)
 - [ ] [Task: 067 - Hub map environmental polish](tasks/067-hub-map-environmental-polish.md)
 - [ ] [Task: 068 - Hub tutorial and first-time UX](tasks/068-hub-tutorial-first-time-ux.md)
+- [ ] [Task: 075 - ECS runtime modularization and phase cleanup](tasks/075-ecs-runtime-modularization.md)
+- [ ] [Task: 076 - Decompose game session, pause, and settings orchestration](tasks/076-game-session-system-decomposition.md)
+- [ ] [Task: 078 - Improve ECS storage and query performance](tasks/078-ecs-storage-and-query-performance.md)
+- [ ] [Task: 079 - Unify persistence and save-slot boundaries](tasks/079-persistence-and-save-boundary-unification.md)
+- [ ] [Task: 080 - Harden event bus behavior and runtime diagnostics](tasks/080-event-bus-hardening-and-runtime-diagnostics.md)
 
 ## Blocked / Superseded / Other
-- [x] [Task: 043 — Skill Unlock Progression](tasks/043-skill-unlock-progression.md) - SUPERSEDED by Task 054
-- [ ] [Task: 046 - Shop & Equipment Purchase UI](tasks/046-shop-and-equipment-ui.md) - NEEDS UPDATE (Task 056 covers equipment UI)
-- [ ] [Task: 047 - Talent Tree Integration & Application](tasks/047-talent-tree-integration.md) - NEEDS UPDATE + BLOCKED by Task 051
-- [ ] [Task: 048 - In-Run Inventory & Equipment Swapping](tasks/048-in-run-inventory-ui.md) - CONFLICTS WITH NEW DESIGN - RECONSIDER
 - [ ] [Hub Completion Arc — Task Summary](tasks/HUB_COMPLETION_ARC.md) - : Blocking all other hub tasks
 
 ## Completed
-- [x] [Task: 042 — Skill Selection & Equipping UI](tasks/042-skill-selection-ui.md) - superseded by Task 055 (implemented as hub modal)
-- [x] [Task: 045 - Meta Hub UI & Scene](tasks/045-meta-hub-ui-and-scene.md) - ** SUPERSEDED by Task 051 (see `tasks/HUB_COMPLETION_ARC.md`)
+- [x] [Task: 081 - Hitbox debug visualization](tasks/081-hitbox-debug-visualization.md)
 - [x] [Task: 052 - Stage/act campaign system](tasks/052-stage-act-campaign-system.md)
 - [x] [Task: 049 - Run History & Stats Display UI](tasks/049-run-history-stats-ui.md)
 - [x] [Task 044 — Skill Balance & Feel Pass](tasks/044-skill-balance-and-feel-pass.md)

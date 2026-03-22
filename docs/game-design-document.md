@@ -98,17 +98,21 @@
 - **Scene Transitions**:
   - Managed by `SceneManager` with deferred transitions via `ProcessPendingTransition()`.
   - Publishes `SceneExitEvent` and `SceneEnterEvent` on transitions.
-  - Map reloading handled in `Game1.ReloadSceneContent()` based on scene type.
+  - Map reloading handled by `SceneRuntimeService` based on scene type.
+  - Stage map resolution is strict: missing stage ids, unknown stages, or stages without a `MapAssetPath` fail loudly instead of falling back to the hub map.
   - NPC entities spawned via `EcsWorldRunner.SpawnHubNpcs()` when entering hub scene.
+  - ECS runtime subscriptions are scoped per world instance and are torn down when the world is replaced or disposed.
   - `EcsWorldRunner` conditionally runs scene-specific systems:
     - `_hubOnlyUpdateSystems` / `_hubOnlyDrawSystems` for hub logic.
     - `_stageOnlyUpdateSystems` / `_stageOnlyDrawSystems` for combat logic.
     - Common systems (player rendering, SFX, input) run in both scenes.
 - **Profile Persistence**: `PlayerProfile` persists across scene transitions with `CompletedStages` tracking.
 - **Save Slots**:
-  - Slots live under the platform save root in `Slots/slotX`; legacy single-save auto-migrated to `slot1`.
+  - Slots live under the platform save root in `Slots/slotX`.
   - Continue uses the most recent slot; New Game creates the next available slot and seeds a default profile.
   - Load Game lists all slots with Created/Last Played metadata and starts the selected slot.
+  - Player-owned and run-owned data are slot-scoped: `player_profile.json`, `run_history.json`, `current_run_perks.json`, and `current_run_equipment.json` live inside the active slot directory.
+  - Global settings remain outside slots and are shared across saves: audio, video, and input config files stay under the platform app-data root.
 - **Stage Selection**:
   - `StageRegistry` defines all acts/stages with requirements (meta level, previous stage completion).
   - `StageSelectionUISystem` now renders a Myra overlay: act navigation, stage list with locked/completed indicators, detail panel, and Start/Back actions.
@@ -124,7 +128,7 @@
 - **Player Spawn**: Loaded from TMX object layer; looks for object named `player_start`; calculates position as object position + (size × 0.5) for center; fallback to Vector2.Zero if not found.
 - **World Collision**: TMX collision/object layers parsed by `CollisionLoaderService`; filters objects with `type="collision"` or name containing "collision"/"wall"; creates static collider entities in ECS.
 - **Render Order**: Map tiles (background) → world sprites (enemies, player, projectiles) → effects (VFX, telegraphs) → UI elements → render target → present scaled 2× to window.
-- **Debug Overlay**: F3 toggles cyan collision shapes for static world geometry.
+- **Debug Overlay**: Combat collision overlay is enabled by default in development and `F3` toggles it for static world geometry, hurtboxes, attack hitboxes, and projectile hitboxes.
 
 ## 5. Input & Controls
 ### Core Gameplay (`Core/Input/InputState.cs`)
@@ -161,7 +165,7 @@
 - **In-Run Progression**: Level-ups offer stat boost or skill modifier choices only.
 
 ### Debug Toggles (Development)
-- **F3**: Toggle collision/hitbox debug overlay (collider shapes, ownership lines, separation/knockback vectors).
+- **F3**: Toggle the always-on-by-default collision/hitbox debug overlay (world colliders, hurtboxes, attack/projectile hitboxes, ownership lines, separation/knockback vectors).
 - **F4**: Disable hit-stop (for testing without pauses).
 - **F5**: Toggle camera shake on/off.
 - **F6**: Toggle VFX/SFX rendering (for performance testing).
@@ -179,7 +183,8 @@
   - **Dirty flags**: Used in `EffectiveStats`, `StatModifiers` to trigger recalculations.
 - **Factory Pattern**: `PlayerEntityFactory`, `EnemyEntityFactory`, `DebugEntityFactory` construct entities with full component sets.
 - **Service Pattern**: `PerkService` (allocation/validation), `InventoryService` (inventory management), `MusicService` (playback), `DamageApplicationService` (damage events), `DamageCalculator` (damage math).
-- **Persistence Pattern**: Store classes handle JSON save/load (`AudioSettingsStore`, `PerkPersistence`, `EquipmentPersistence`); auto-save systems run every 30s.
+- **Persistence Pattern**: A shared persistence composition root owns filesystem access and slot paths. Global config stores (`AudioSettingsStore`, `VideoSettingsStore`, `InputBindingsStore`) stay app-wide, while slot scopes own profile/history/current-run JSON files. In-run autosave systems resolve their files from the active slot instead of a global app-data path.
+- Missing slot-scoped run-state files are treated as absent state, but corrupt or unreadable `current_run_perks.json` / `current_run_equipment.json` fail loudly and log an error during development instead of silently resetting.
 - Update ordering (key points from `EcsWorldRunner`):
   - Session/pause handling always first; hit-stop runs before gameplay and gates logic.
   - Input → stat recalcs → wave scheduling → spawn → AI (ranged, seek) → intents → projectile update.
@@ -282,7 +287,7 @@
   - **Integration**: Applied before static collision resolution; combines with world collision sliding.
   - **Debug visualization**: Orange arrows for knockback vectors (F3).
 - **Contact Damage**: `ContactDamageSystem` handles overlap damage; cooldown 0.5s default per attacker-target pair; adds knockback on hit.
-- **Debug Overlays** (F3): Collider shapes (cyan static, green dynamic triggers, red solid), ownership lines (hitbox to owner), separation/knockback vectors.
+- **Debug Overlays** (F3): Enabled by default during development. Collider shapes (cyan static, green dynamic triggers, red solid), hurtboxes (green/orange, white while invulnerable), attack/projectile hitboxes (magenta/blue/red), ownership lines, separation/knockback vectors.
 
 ### Animation, FX, Feedback
 - **Animation System**: Player/enemy animation with 8-way facing octants; animation states (Idle/Run/Hit); frame timing from sprite sets (run 12 fps, idle 6 fps).
@@ -535,7 +540,7 @@
 - Pipeline commands: `dotnet mgcb /@Content.mgcb /platform:DesktopGL /output:bin/Content`; editor via `dotnet mgcb-editor ./Content.mgcb`.
 
 ### Systems & Debug Toggles (key)
-- **F3**: Collision/hitbox debug overlay with vector visualization (separation, knockback, ownership lines).
+- **F3**: Toggle the default-on collision/hitbox debug overlay with vector visualization (hurtboxes, attack/projectile hitboxes, separation, knockback, ownership lines).
 - **F4**: Disable hit-stop for testing.
 - **F5**: Toggle camera shake.
 - **F6**: Toggle VFX/SFX rendering.

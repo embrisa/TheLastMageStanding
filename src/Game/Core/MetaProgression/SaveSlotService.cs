@@ -10,34 +10,38 @@ public sealed record SaveSlotInfo(
     DateTime? LastPlayedAt);
 
 /// <summary>
-/// Manages save slot discovery, creation, and legacy migration.
+/// Manages save slot discovery and creation.
 /// Slots live under {SaveRoot}/Slots/{slotId}.
 /// </summary>
 public sealed class SaveSlotService
 {
     private const string SlotPrefix = "slot";
-    private const string SlotsFolderName = "Slots";
     private const string ProfileFileName = "player_profile.json";
-    private const string RunHistoryFileName = "run_history.json";
 
+    private readonly PersistenceRoot _persistenceRoot;
     private readonly IFileSystem _fileSystem;
     private readonly string _saveRoot;
     private readonly JsonSerializerOptions _jsonOptions;
 
     public SaveSlotService(IFileSystem fileSystem, string? saveRoot = null)
+        : this(new PersistenceRoot(fileSystem, saveRoot))
     {
-        _fileSystem = fileSystem;
-        _saveRoot = saveRoot ?? PlayerProfileService.GetDefaultSaveDirectory();
+    }
+
+    internal SaveSlotService(PersistenceRoot persistenceRoot)
+    {
+        _persistenceRoot = persistenceRoot;
+        _fileSystem = persistenceRoot.FileSystem;
+        _saveRoot = persistenceRoot.RootPath;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         };
 
         EnsureDirectories();
-        TryMigrateLegacySave();
     }
 
-    public string SlotsRoot => Path.Combine(_saveRoot, SlotsFolderName);
+    public string SlotsRoot => _persistenceRoot.SlotsRootPath;
 
     /// <summary>
     /// Returns all slots (with metadata if present), sorted by last played desc then slot id.
@@ -79,7 +83,7 @@ public sealed class SaveSlotService
         _fileSystem.CreateDirectory(slotPath);
 
         // Seed with a default profile so metadata is available immediately.
-        var profileService = new PlayerProfileService(_fileSystem, slotPath);
+        var profileService = _persistenceRoot.CreatePlayerProfileService(slotPath);
         profileService.SaveProfile(PlayerProfile.CreateDefault());
 
         return BuildSlotInfo(slotId, slotPath);
@@ -90,12 +94,7 @@ public sealed class SaveSlotService
     /// </summary>
     public string GetSlotPath(string slotId)
     {
-        var slotPath = Path.Combine(SlotsRoot, slotId);
-        if (!_fileSystem.DirectoryExists(slotPath))
-        {
-            _fileSystem.CreateDirectory(slotPath);
-        }
-        return slotPath;
+        return _persistenceRoot.GetSlotPath(slotId);
     }
 
     /// <summary>
@@ -176,35 +175,6 @@ public sealed class SaveSlotService
         return $"{SlotPrefix}{nextNumber}";
     }
 
-    private void TryMigrateLegacySave()
-    {
-        var legacyProfilePath = Path.Combine(_saveRoot, ProfileFileName);
-
-        // Only migrate if legacy profile exists and there are no slots yet.
-        if (!_fileSystem.FileExists(legacyProfilePath))
-        {
-            return;
-        }
-
-        if (SafeGetDirectories(SlotsRoot).Length > 0)
-        {
-            return;
-        }
-
-        Console.WriteLine("[SaveSlotService] Migrating legacy single save to slot1");
-        var slotPath = GetSlotPath($"{SlotPrefix}1");
-
-        var targetProfilePath = Path.Combine(slotPath, ProfileFileName);
-        _fileSystem.CopyFile(legacyProfilePath, targetProfilePath, overwrite: true);
-
-        var legacyHistoryPath = Path.Combine(_saveRoot, RunHistoryFileName);
-        if (_fileSystem.FileExists(legacyHistoryPath))
-        {
-            var targetHistoryPath = Path.Combine(slotPath, RunHistoryFileName);
-            _fileSystem.CopyFile(legacyHistoryPath, targetHistoryPath, overwrite: true);
-        }
-    }
-
     private string[] SafeGetDirectories(string path)
     {
         try
@@ -217,4 +187,3 @@ public sealed class SaveSlotService
         }
     }
 }
-

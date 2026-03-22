@@ -1,4 +1,5 @@
 using System;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.SceneState;
@@ -9,6 +10,7 @@ namespace TheLastMageStanding.Game.Core.SceneState;
 /// </summary>
 internal sealed class SceneManager
 {
+    private const string LogCategory = "Scene";
     private readonly SceneStateService _sceneStateService;
     private readonly IEventBus _eventBus;
     
@@ -36,13 +38,13 @@ internal sealed class SceneManager
     {
         if (_currentScene == SceneType.Hub)
         {
-            Console.WriteLine("[SceneManager] Already in Hub scene, ignoring transition request.");
+            RuntimeLog.Debug(LogCategory, "Already in Hub scene; ignoring transition request.");
             return;
         }
 
         _pendingTransition = SceneType.Hub;
         _pendingStageId = null;
-        Console.WriteLine("[SceneManager] Queued transition to Hub");
+        RuntimeLog.Info(LogCategory, "Queued transition to Hub.");
     }
 
     /// <summary>
@@ -52,13 +54,13 @@ internal sealed class SceneManager
     {
         if (string.IsNullOrWhiteSpace(stageId))
         {
-            Console.WriteLine("[SceneManager] Ignoring transition to Stage with empty stageId.");
+            RuntimeLog.Warning(LogCategory, "Ignoring transition to Stage with empty stageId.");
             return;
         }
 
         _pendingTransition = SceneType.Stage;
         _pendingStageId = stageId;
-        Console.WriteLine($"[SceneManager] Queued transition to Stage: {stageId}");
+        RuntimeLog.Info(LogCategory, $"Queued transition to Stage '{stageId}'.");
     }
 
     /// <summary>
@@ -68,13 +70,13 @@ internal sealed class SceneManager
     {
         if (_currentScene == SceneType.MainMenu)
         {
-            Console.WriteLine("[SceneManager] Already in MainMenu, ignoring transition request.");
+            RuntimeLog.Debug(LogCategory, "Already in MainMenu; ignoring transition request.");
             return;
         }
 
         _pendingTransition = SceneType.MainMenu;
         _pendingStageId = null;
-        Console.WriteLine("[SceneManager] Queued transition to MainMenu");
+        RuntimeLog.Info(LogCategory, "Queued transition to MainMenu.");
     }
 
     /// <summary>
@@ -104,7 +106,7 @@ internal sealed class SceneManager
             ? stageId ?? _currentStageId
             : null;
 
-        Console.WriteLine($"[SceneManager] Executing transition: {_currentScene} -> {targetScene} (stageId: {resolvedStageId ?? "none"})");
+        RuntimeLog.Info(LogCategory, $"Executing transition {_currentScene} -> {targetScene} (stageId: {resolvedStageId ?? "none"}).");
 
         // Publish scene exit event
         _eventBus.Publish(new SceneExitEvent(_currentScene));
@@ -128,6 +130,6 @@ internal sealed class SceneManager
             _eventBus.Publish(new SceneEnterEvent(targetScene, null));
         }
 
-        Console.WriteLine($"[SceneManager] Scene transition complete: {targetScene} (stageId: {resolvedStageId ?? "none"})");
+        RuntimeLog.Info(LogCategory, $"Scene transition complete: {targetScene} (stageId: {resolvedStageId ?? "none"}).");
     }
 }

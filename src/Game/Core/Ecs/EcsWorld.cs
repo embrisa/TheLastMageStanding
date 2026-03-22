@@ -1,6 +1,6 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
 using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
@@ -23,33 +23,118 @@ internal interface IComponentPool
     int Count { get; }
 }
 
+/// <summary>
+/// Dense component storage backed by entity-id-to-dense-index lookup.
+/// Iteration snapshots entity ids through ArrayPool so systems can add/remove components during ForEach
+/// without per-frame list allocation or invalidating the current traversal.
+/// </summary>
 internal sealed class ComponentPool<T> : IComponentPool where T : struct
 {
-    private readonly Dictionary<int, T> _components = new();
+    private const int MissingIndex = -1;
+    private int[] _entityIds = [];
+    private T[] _components = [];
+    private int[] _entityToDenseIndex = [];
+    private int _count;
 
-    public int Count => _components.Count;
+    public int Count => _count;
 
-    public void Set(Entity entity, T component) => _components[entity.Id] = component;
-
-    public bool TryGet(Entity entity, out T component) => _components.TryGetValue(entity.Id, out component);
-
-    public bool Remove(Entity entity) => _components.Remove(entity.Id);
-
-    public void RemoveAllForEntity(int entityId) => _components.Remove(entityId);
-
-    public IReadOnlyList<Entity> SnapshotEntities()
+    public void Set(Entity entity, T component)
     {
-        var entities = new List<Entity>(_components.Count);
-        foreach (var id in _components.Keys)
+        if (TryGetDenseIndex(entity.Id, out var denseIndex))
         {
-            entities.Add(new Entity(id));
+            _components[denseIndex] = component;
+            return;
         }
 
-        return entities;
+        EnsureDenseCapacity(_count + 1);
+        EnsureSparseCapacity(entity.Id + 1);
+
+        var index = _count++;
+        _entityIds[index] = entity.Id;
+        _components[index] = component;
+        _entityToDenseIndex[entity.Id] = index;
     }
 
-    public IEnumerable<(Entity entity, T component)> Entries() =>
-        _components.Select(pair => (new Entity(pair.Key), pair.Value));
+    public bool TryGet(Entity entity, out T component)
+    {
+        if (TryGetDenseIndex(entity.Id, out var denseIndex))
+        {
+            component = _components[denseIndex];
+            return true;
+        }
+
+        component = default;
+        return false;
+    }
+
+    public bool Remove(Entity entity) => Remove(entity.Id);
+
+    public void RemoveAllForEntity(int entityId) => Remove(entityId);
+
+    public void CopyEntityIds(Span<int> destination)
+    {
+        _entityIds.AsSpan(0, _count).CopyTo(destination);
+    }
+
+    public bool TryGetDenseIndex(int entityId, out int denseIndex)
+    {
+        if ((uint)entityId < (uint)_entityToDenseIndex.Length)
+        {
+            denseIndex = _entityToDenseIndex[entityId];
+            return denseIndex != MissingIndex;
+        }
+
+        denseIndex = MissingIndex;
+        return false;
+    }
+
+    private bool Remove(int entityId)
+    {
+        if (!TryGetDenseIndex(entityId, out var denseIndex))
+        {
+            return false;
+        }
+
+        var lastIndex = _count - 1;
+        if (denseIndex != lastIndex)
+        {
+            var movedEntityId = _entityIds[lastIndex];
+            _entityIds[denseIndex] = movedEntityId;
+            _components[denseIndex] = _components[lastIndex];
+            _entityToDenseIndex[movedEntityId] = denseIndex;
+        }
+
+        _count--;
+        _entityIds[_count] = default;
+        _components[_count] = default;
+        _entityToDenseIndex[entityId] = MissingIndex;
+        return true;
+    }
+
+    private void EnsureDenseCapacity(int minimumSize)
+    {
+        if (_entityIds.Length >= minimumSize)
+        {
+            return;
+        }
+
+        var newSize = Math.Max(minimumSize, _entityIds.Length == 0 ? 4 : _entityIds.Length * 2);
+        Array.Resize(ref _entityIds, newSize);
+        Array.Resize(ref _components, newSize);
+    }
+
+    private void EnsureSparseCapacity(int minimumSize)
+    {
+        if (_entityToDenseIndex.Length >= minimumSize)
+        {
+            return;
+        }
+
+        var oldLength = _entityToDenseIndex.Length;
+        var newSize = Math.Max(minimumSize, oldLength == 0 ? 4 : oldLength * 2);
+        Array.Resize(ref _entityToDenseIndex, newSize);
+        Array.Fill(_entityToDenseIndex, MissingIndex, oldLength, newSize - oldLength);
+    }
 }
 
 internal sealed class EcsWorld
@@ -57,25 +142,33 @@ internal sealed class EcsWorld
     public IEventBus EventBus { get; set; } = null!;
 
     private int _nextEntityId;
-    private readonly HashSet<int> _alive = new();
+    private bool[] _alive = [];
     private readonly Dictionary<Type, IComponentPool> _componentPools = new();
 
     public Entity CreateEntity()
     {
         var entity = new Entity(_nextEntityId++);
-        _alive.Add(entity.Id);
+        EnsureAliveCapacity(entity.Id + 1);
+        _alive[entity.Id] = true;
         return entity;
     }
 
-    public bool IsAlive(Entity entity) => _alive.Contains(entity.Id);
+    public bool IsAlive(Entity entity) => entity.Id >= 0 &&
+                                          entity.Id < _alive.Length &&
+                                          _alive[entity.Id];
 
     public void DestroyEntity(Entity entity)
     {
-        _alive.Remove(entity.Id);
+        if (!IsAlive(entity))
+        {
+            return;
+        }
+
+        _alive[entity.Id] = false;
 
         foreach (var pool in _componentPools.Values)
         {
-            pool.Remove(entity);
+            pool.RemoveAllForEntity(entity.Id);
         }
     }
 
@@ -109,25 +202,35 @@ internal sealed class EcsWorld
     public void ForEach<T1>(EcsAction<T1> action) where T1 : struct
     {
         var pool1 = GetPool<T1>();
-        var entities = pool1.SnapshotEntities();
-        foreach (var entity in entities)
+        var entityIds = ArrayPool<int>.Shared.Rent(pool1.Count);
+        try
         {
-            if (!pool1.TryGet(entity, out var comp1))
+            var span = entityIds.AsSpan(0, pool1.Count);
+            pool1.CopyEntityIds(span);
+            foreach (var entityId in span)
             {
-                continue;
-            }
+                var entity = new Entity(entityId);
+                if (!pool1.TryGet(entity, out var comp1))
+                {
+                    continue;
+                }
 
-            var c1 = comp1;
-            action(entity, ref c1);
-            if (!IsAlive(entity))
-            {
-                continue;
-            }
+                var c1 = comp1;
+                action(entity, ref c1);
+                if (!IsAlive(entity))
+                {
+                    continue;
+                }
 
-            if (pool1.TryGet(entity, out _))
-            {
-                pool1.Set(entity, c1);
+                if (pool1.TryGet(entity, out _))
+                {
+                    pool1.Set(entity, c1);
+                }
             }
+        }
+        finally
+        {
+            ArrayPool<int>.Shared.Return(entityIds);
         }
     }
 
@@ -137,31 +240,50 @@ internal sealed class EcsWorld
     {
         var pool1 = GetPool<T1>();
         var pool2 = GetPool<T2>();
-        var entities = pool1.SnapshotEntities();
-        foreach (var entity in entities)
+        var sourceCount = Math.Min(pool1.Count, pool2.Count);
+        var entityIds = ArrayPool<int>.Shared.Rent(sourceCount);
+        try
         {
-            if (!pool1.TryGet(entity, out var comp1) || !pool2.TryGet(entity, out var comp2))
+            var span = entityIds.AsSpan(0, sourceCount);
+            if (pool1.Count <= pool2.Count)
             {
-                continue;
+                pool1.CopyEntityIds(span);
+            }
+            else
+            {
+                pool2.CopyEntityIds(span);
             }
 
-            var c1 = comp1;
-            var c2 = comp2;
-            action(entity, ref c1, ref c2);
-            if (!IsAlive(entity))
+            foreach (var entityId in span)
             {
-                continue;
-            }
+                var entity = new Entity(entityId);
+                if (!pool1.TryGet(entity, out var comp1) || !pool2.TryGet(entity, out var comp2))
+                {
+                    continue;
+                }
 
-            if (pool1.TryGet(entity, out _))
-            {
-                pool1.Set(entity, c1);
-            }
+                var c1 = comp1;
+                var c2 = comp2;
+                action(entity, ref c1, ref c2);
+                if (!IsAlive(entity))
+                {
+                    continue;
+                }
 
-            if (pool2.TryGet(entity, out _))
-            {
-                pool2.Set(entity, c2);
+                if (pool1.TryGet(entity, out _))
+                {
+                    pool1.Set(entity, c1);
+                }
+
+                if (pool2.TryGet(entity, out _))
+                {
+                    pool2.Set(entity, c2);
+                }
             }
+        }
+        finally
+        {
+            ArrayPool<int>.Shared.Return(entityIds);
         }
     }
 
@@ -173,40 +295,73 @@ internal sealed class EcsWorld
         var pool1 = GetPool<T1>();
         var pool2 = GetPool<T2>();
         var pool3 = GetPool<T3>();
-        var entities = pool1.SnapshotEntities();
-        foreach (var entity in entities)
+        var sourceCount = Math.Min(pool1.Count, Math.Min(pool2.Count, pool3.Count));
+        var entityIds = ArrayPool<int>.Shared.Rent(sourceCount);
+        try
         {
-            if (!pool1.TryGet(entity, out var comp1) ||
-                !pool2.TryGet(entity, out var comp2) ||
-                !pool3.TryGet(entity, out var comp3))
+            var span = entityIds.AsSpan(0, sourceCount);
+            if (pool1.Count <= pool2.Count && pool1.Count <= pool3.Count)
             {
-                continue;
+                pool1.CopyEntityIds(span);
+            }
+            else if (pool2.Count <= pool3.Count)
+            {
+                pool2.CopyEntityIds(span);
+            }
+            else
+            {
+                pool3.CopyEntityIds(span);
             }
 
-            var c1 = comp1;
-            var c2 = comp2;
-            var c3 = comp3;
-            action(entity, ref c1, ref c2, ref c3);
-            if (!IsAlive(entity))
+            foreach (var entityId in span)
             {
-                continue;
-            }
+                var entity = new Entity(entityId);
+                if (!pool1.TryGet(entity, out var comp1) ||
+                    !pool2.TryGet(entity, out var comp2) ||
+                    !pool3.TryGet(entity, out var comp3))
+                {
+                    continue;
+                }
 
-            if (pool1.TryGet(entity, out _))
-            {
-                pool1.Set(entity, c1);
-            }
+                var c1 = comp1;
+                var c2 = comp2;
+                var c3 = comp3;
+                action(entity, ref c1, ref c2, ref c3);
+                if (!IsAlive(entity))
+                {
+                    continue;
+                }
 
-            if (pool2.TryGet(entity, out _))
-            {
-                pool2.Set(entity, c2);
-            }
+                if (pool1.TryGet(entity, out _))
+                {
+                    pool1.Set(entity, c1);
+                }
 
-            if (pool3.TryGet(entity, out _))
-            {
-                pool3.Set(entity, c3);
+                if (pool2.TryGet(entity, out _))
+                {
+                    pool2.Set(entity, c2);
+                }
+
+                if (pool3.TryGet(entity, out _))
+                {
+                    pool3.Set(entity, c3);
+                }
             }
         }
+        finally
+        {
+            ArrayPool<int>.Shared.Return(entityIds);
+        }
+    }
+
+    private void EnsureAliveCapacity(int minimumSize)
+    {
+        if (_alive.Length >= minimumSize)
+        {
+            return;
+        }
+
+        var newSize = Math.Max(minimumSize, _alive.Length == 0 ? 4 : _alive.Length * 2);
+        Array.Resize(ref _alive, newSize);
     }
 }
-

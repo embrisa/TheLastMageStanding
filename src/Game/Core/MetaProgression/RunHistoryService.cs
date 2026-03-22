@@ -1,4 +1,5 @@
 using System.Text.Json;
+using TheLastMageStanding.Game.Core.Diagnostics;
 
 namespace TheLastMageStanding.Game.Core.MetaProgression;
 
@@ -9,6 +10,7 @@ public sealed class RunHistoryService
 {
     private const string HistoryFileName = "run_history.json";
     private const int MaxHistorySize = 50;
+    private const string LogCategory = "Persistence.RunHistory";
 
     private readonly IFileSystem _fileSystem;
     private readonly string _saveDirectory;
@@ -87,7 +89,7 @@ public sealed class RunHistoryService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving run history: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to save run history in '{_saveDirectory}'.", ex);
             // Don't throw - history save failure shouldn't crash the game
         }
     }
@@ -176,7 +178,7 @@ public sealed class RunHistoryService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading run history: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to load run history from '{historyPath}'.", ex);
             return new List<RunSession>();
         }
     }

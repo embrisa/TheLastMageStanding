@@ -14,9 +14,9 @@ internal sealed class PerkAutoSaveSystem : IUpdateSystem
     private bool _needsSave;
     private const float SaveInterval = 30f; // Save every 30 seconds
 
-    public PerkAutoSaveSystem()
+    public PerkAutoSaveSystem(PerkPersistenceService persistenceService)
     {
-        _persistenceService = new PerkPersistenceService();
+        _persistenceService = persistenceService;
     }
 
     public void Initialize(EcsWorld world)

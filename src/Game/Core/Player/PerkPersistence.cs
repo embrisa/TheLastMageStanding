@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using TheLastMageStanding.Game.Core.Diagnostics;
+using TheLastMageStanding.Game.Core.MetaProgression;
 
 namespace TheLastMageStanding.Game.Core.Player;
 
@@ -28,6 +30,8 @@ public sealed class PerkSnapshot
 internal sealed class PerkPersistenceService
 {
     private const string SaveFileName = "current_run_perks.json";
+    private const string LogCategory = "Persistence.Perks";
+    private readonly IFileSystem _fileSystem;
     private readonly string _savePath;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -35,13 +39,21 @@ internal sealed class PerkPersistenceService
         IncludeFields = true
     };
 
-    public PerkPersistenceService()
+    public PerkPersistenceService(IFileSystem fileSystem, string saveDirectory)
     {
-        // Save to user's local app data
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var gameFolder = Path.Combine(appDataPath, "TheLastMageStanding");
-        Directory.CreateDirectory(gameFolder);
-        _savePath = Path.Combine(gameFolder, SaveFileName);
+        ArgumentNullException.ThrowIfNull(fileSystem);
+        _fileSystem = fileSystem;
+        if (string.IsNullOrWhiteSpace(saveDirectory))
+        {
+            throw new ArgumentException("Save directory is required.", nameof(saveDirectory));
+        }
+
+        if (!_fileSystem.DirectoryExists(saveDirectory))
+        {
+            _fileSystem.CreateDirectory(saveDirectory);
+        }
+
+        _savePath = Path.Combine(saveDirectory, SaveFileName);
     }
 
     /// <summary>
@@ -52,11 +64,12 @@ internal sealed class PerkPersistenceService
         try
         {
             var json = JsonSerializer.Serialize(snapshot, JsonOptions);
-            File.WriteAllText(_savePath, json);
+            _fileSystem.WriteAllText(_savePath, json);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to save perks: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to save perk snapshot to '{_savePath}'.", ex);
+            throw;
         }
     }
 
@@ -66,18 +79,21 @@ internal sealed class PerkPersistenceService
     /// </summary>
     public PerkSnapshot? LoadPerks()
     {
+        if (!_fileSystem.FileExists(_savePath))
+        {
+            return null;
+        }
+
         try
         {
-            if (!File.Exists(_savePath))
-                return null;
-
-            var json = File.ReadAllText(_savePath);
-            return JsonSerializer.Deserialize<PerkSnapshot>(json, JsonOptions);
+            var json = _fileSystem.ReadAllText(_savePath);
+            return JsonSerializer.Deserialize<PerkSnapshot>(json, JsonOptions)
+                ?? throw new InvalidDataException($"Perk snapshot at '{_savePath}' is empty or invalid.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load perks: {ex.Message}");
-            return null;
+            RuntimeLog.Error(LogCategory, $"Failed to load perk snapshot from '{_savePath}'.", ex);
+            throw;
         }
     }
 
@@ -88,12 +104,15 @@ internal sealed class PerkPersistenceService
     {
         try
         {
-            if (File.Exists(_savePath))
-                File.Delete(_savePath);
+            if (_fileSystem.FileExists(_savePath))
+            {
+                _fileSystem.DeleteFile(_savePath);
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to clear perk save: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to clear perk snapshot at '{_savePath}'.", ex);
+            throw;
         }
     }
 
@@ -102,6 +121,6 @@ internal sealed class PerkPersistenceService
     /// </summary>
     public bool HasSave()
     {
-        return File.Exists(_savePath);
+        return _fileSystem.FileExists(_savePath);
     }
 }

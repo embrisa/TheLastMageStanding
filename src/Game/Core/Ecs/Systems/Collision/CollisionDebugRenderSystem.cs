@@ -11,7 +11,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems.Collision;
 internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
 {
     private Texture2D? _pixelTexture;
-    private bool _enabled;
+    private bool _enabled = true;
     private bool _showDashDebug;
 
     public bool Enabled
@@ -44,10 +44,18 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
 
         var spriteBatch = context.SpriteBatch;
         var staticPool = world.GetPool<StaticCollider>();
+        var hurtboxPool = world.GetPool<Hurtbox>();
+        var attackHitboxPool = world.GetPool<AttackHitbox>();
+        var projectilePool = world.GetPool<Projectile>();
 
-        // Draw all colliders
+        // Draw generic collision bodies first. Dedicated combat overlays render on top.
         world.ForEach<Position, Collider>((Entity entity, ref Position pos, ref Collider col) =>
         {
+            if (attackHitboxPool.TryGet(entity, out _) || projectilePool.TryGet(entity, out _) || hurtboxPool.TryGet(entity, out _))
+            {
+                return;
+            }
+
             // Color code: Static = Cyan, Trigger = Yellow, Dynamic Solid = Lime
             var isStatic = staticPool.TryGet(entity, out _);
             var color = isStatic ? Color.Cyan * 0.4f :
@@ -55,18 +63,20 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
                         Color.Lime * 0.3f;
             var worldCenter = col.GetWorldCenter(pos.Value);
 
-            if (col.Shape == ColliderShape.Circle)
-            {
-                DrawCircle(spriteBatch, worldCenter, col.Width, color, 24);
-            }
-            else if (col.Shape == ColliderShape.AABB)
-            {
-                var bounds = col.GetWorldBounds(pos.Value);
-                DrawRectangle(spriteBatch, bounds, color);
-            }
+            DrawColliderOutline(spriteBatch, pos.Value, col, color, 24);
 
             // Draw center point (red for static, otherwise original color)
             DrawPoint(spriteBatch, worldCenter, isStatic ? Color.Blue : Color.Red);
+        });
+
+        // Draw hurtboxes separately so damageable areas stand out from collision geometry.
+        world.ForEach<Position, Hurtbox, Collider>((Entity entity, ref Position pos, ref Hurtbox hurtbox, ref Collider col) =>
+        {
+            var hurtboxColor = GetHurtboxColor(world, entity, hurtbox);
+            var worldCenter = col.GetWorldCenter(pos.Value);
+
+            DrawColliderOutline(spriteBatch, pos.Value, col, hurtboxColor, 24);
+            DrawPoint(spriteBatch, worldCenter, hurtboxColor);
         });
 
         // Draw knockback vectors
@@ -100,18 +110,33 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
             var worldCenter = col.GetWorldCenter(pos.Value);
             var hitboxColor = hitbox.OwnerFaction == Faction.Player ? Color.Magenta * 0.7f : Color.Red * 0.7f;
 
-            if (col.Shape == ColliderShape.Circle)
-            {
-                DrawCircle(spriteBatch, worldCenter, col.Width, hitboxColor, 16);
-                // Draw center cross
-                DrawLine(spriteBatch, worldCenter - new Vector2(4, 0), worldCenter + new Vector2(4, 0), hitboxColor, 2f);
-                DrawLine(spriteBatch, worldCenter - new Vector2(0, 4), worldCenter + new Vector2(0, 4), hitboxColor, 2f);
+            DrawColliderOutline(spriteBatch, pos.Value, col, hitboxColor, 16);
 
-                // Draw line to owner to show which entity owns this hitbox
-                if (world.TryGetComponent(hitbox.Owner, out Position ownerPos))
-                {
-                    DrawLine(spriteBatch, worldCenter, ownerPos.Value, hitboxColor * 0.5f, 1f);
-                }
+            // Draw center cross.
+            DrawLine(spriteBatch, worldCenter - new Vector2(4, 0), worldCenter + new Vector2(4, 0), hitboxColor, 2f);
+            DrawLine(spriteBatch, worldCenter - new Vector2(0, 4), worldCenter + new Vector2(0, 4), hitboxColor, 2f);
+
+            // Draw line to owner to show which entity owns this hitbox.
+            if (world.TryGetComponent(hitbox.Owner, out Position ownerPos))
+            {
+                DrawLine(spriteBatch, worldCenter, ownerPos.Value, hitboxColor * 0.5f, 1f);
+            }
+        });
+
+        // Projectiles are also combat hitboxes, but long-lived enough to deserve their own color.
+        world.ForEach<Position, Projectile, Collider>((Entity entity, ref Position pos, ref Projectile projectile, ref Collider col) =>
+        {
+            var projectileColor = projectile.SourceFaction == Faction.Player
+                ? Color.DeepSkyBlue * 0.75f
+                : Color.OrangeRed * 0.75f;
+            var worldCenter = col.GetWorldCenter(pos.Value);
+
+            DrawColliderOutline(spriteBatch, pos.Value, col, projectileColor, 20);
+            DrawPoint(spriteBatch, worldCenter, projectileColor);
+
+            if (world.TryGetComponent(projectile.Source, out Position sourcePos))
+            {
+                DrawLine(spriteBatch, worldCenter, sourcePos.Value, projectileColor * 0.35f, 1f);
             }
         });
 
@@ -149,6 +174,39 @@ internal sealed class CollisionDebugRenderSystem : IDrawSystem, IDisposable
                     var endPos = pos.Value + direction * remaining;
                     DrawArrow(spriteBatch, pos.Value, endPos, Color.Yellow * 0.8f, 2f);
                 });
+        }
+    }
+
+    private static Color GetHurtboxColor(EcsWorld world, Entity entity, in Hurtbox hurtbox)
+    {
+        if (hurtbox.IsInvulnerable)
+        {
+            return Color.White * 0.85f;
+        }
+
+        if (world.TryGetComponent(entity, out Faction faction))
+        {
+            return faction == Faction.Player
+                ? Color.LawnGreen * 0.8f
+                : Color.Orange * 0.8f;
+        }
+
+        return Color.LightGray * 0.8f;
+    }
+
+    private void DrawColliderOutline(SpriteBatch spriteBatch, Vector2 position, in Collider col, Color color, int circleSegments)
+    {
+        var worldCenter = col.GetWorldCenter(position);
+        if (col.Shape == ColliderShape.Circle)
+        {
+            DrawCircle(spriteBatch, worldCenter, col.Width, color, circleSegments);
+            return;
+        }
+
+        if (col.Shape == ColliderShape.AABB)
+        {
+            var bounds = col.GetWorldBounds(position);
+            DrawRectangle(spriteBatch, bounds, color);
         }
     }
 

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using TheLastMageStanding.Game.Core.Diagnostics;
 
 namespace TheLastMageStanding.Game.Core.MetaProgression;
 
@@ -10,6 +11,7 @@ public sealed class PlayerProfileService
     private const string ProfileFileName = "player_profile.json";
     private const string BackupPrefix = "player_profile.backup";
     private const int MaxBackups = 3;
+    private const string LogCategory = "Persistence.Profile";
 
     private readonly IFileSystem _fileSystem;
     private readonly string _saveDirectory;
@@ -81,7 +83,7 @@ public sealed class PlayerProfileService
 
             if (profile == null)
             {
-                Console.WriteLine("Failed to deserialize profile, creating default.");
+                RuntimeLog.Warning(LogCategory, "Failed to deserialize player profile. Creating a default profile.");
                 return PlayerProfile.CreateDefault();
             }
 
@@ -95,18 +97,18 @@ public sealed class PlayerProfileService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading profile: {ex.Message}");
-            Console.WriteLine("Attempting to restore from backup...");
+            RuntimeLog.Error(LogCategory, $"Failed to load player profile from '{profilePath}'.", ex);
+            RuntimeLog.Warning(LogCategory, "Attempting to restore player profile from backup.");
 
             // Try to restore from backup
             var restoredProfile = TryRestoreFromBackup();
             if (restoredProfile != null)
             {
-                Console.WriteLine("Successfully restored profile from backup.");
+                RuntimeLog.Warning(LogCategory, "Successfully restored player profile from backup.");
                 return restoredProfile;
             }
 
-            Console.WriteLine("No valid backup found, creating default profile.");
+            RuntimeLog.Warning(LogCategory, "No valid player profile backup was found. Creating a default profile.");
             return PlayerProfile.CreateDefault();
         }
     }
@@ -143,7 +145,7 @@ public sealed class PlayerProfileService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving profile: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to save player profile to '{profilePath}'.", ex);
             // Clean up temp file if it exists
             if (_fileSystem.FileExists(tempPath))
             {
@@ -187,7 +189,7 @@ public sealed class PlayerProfileService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error creating backup: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to create a profile backup in '{_saveDirectory}'.", ex);
             // Don't throw - backup failure shouldn't prevent saving
         }
     }
@@ -223,7 +225,7 @@ public sealed class PlayerProfileService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error restoring from backup: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed while scanning profile backups in '{_saveDirectory}'.", ex);
         }
 
         return null;

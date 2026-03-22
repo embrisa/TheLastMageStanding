@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using Myra.Graphics2D.UI;
 using TheLastMageStanding.Game.Core.Config;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.UI.Myra;
@@ -121,6 +122,7 @@ internal sealed class EventBusUiSoundPlayer : IUiSoundPlayer
 /// </summary>
 internal sealed class DirectUiSoundPlayer : IUiSoundPlayer
 {
+    private const string LogCategory = "Audio.Ui";
     private readonly AudioSettingsConfig _settings;
     private readonly SoundEffect? _hover;
     private readonly SoundEffect? _click;
@@ -160,9 +162,8 @@ internal sealed class DirectUiSoundPlayer : IUiSoundPlayer
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[UI SFX] Failed to load {assetName}: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to load UI sound asset '{assetName}'.", ex);
             return null;
         }
     }
 }
-

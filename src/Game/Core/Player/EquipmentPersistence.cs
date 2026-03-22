@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Loot;
+using TheLastMageStanding.Game.Core.MetaProgression;
 
 namespace TheLastMageStanding.Game.Core.Player;
 
@@ -104,6 +106,8 @@ public sealed class AffixData
 internal sealed class EquipmentPersistenceService
 {
     private const string SaveFileName = "current_run_equipment.json";
+    private const string LogCategory = "Persistence.Equipment";
+    private readonly IFileSystem _fileSystem;
     private readonly string _savePath;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -111,13 +115,21 @@ internal sealed class EquipmentPersistenceService
         IncludeFields = true
     };
 
-    public EquipmentPersistenceService()
+    public EquipmentPersistenceService(IFileSystem fileSystem, string saveDirectory)
     {
-        // Save to user's local app data
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var gameFolder = Path.Combine(appDataPath, "TheLastMageStanding");
-        Directory.CreateDirectory(gameFolder);
-        _savePath = Path.Combine(gameFolder, SaveFileName);
+        ArgumentNullException.ThrowIfNull(fileSystem);
+        _fileSystem = fileSystem;
+        if (string.IsNullOrWhiteSpace(saveDirectory))
+        {
+            throw new ArgumentException("Save directory is required.", nameof(saveDirectory));
+        }
+
+        if (!_fileSystem.DirectoryExists(saveDirectory))
+        {
+            _fileSystem.CreateDirectory(saveDirectory);
+        }
+
+        _savePath = Path.Combine(saveDirectory, SaveFileName);
     }
 
     /// <summary>
@@ -128,11 +140,12 @@ internal sealed class EquipmentPersistenceService
         try
         {
             var json = JsonSerializer.Serialize(snapshot, JsonOptions);
-            File.WriteAllText(_savePath, json);
+            _fileSystem.WriteAllText(_savePath, json);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to save equipment: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to save equipment snapshot to '{_savePath}'.", ex);
+            throw;
         }
     }
 
@@ -142,18 +155,21 @@ internal sealed class EquipmentPersistenceService
     /// </summary>
     public EquipmentSnapshot? LoadEquipment()
     {
+        if (!_fileSystem.FileExists(_savePath))
+        {
+            return null;
+        }
+
         try
         {
-            if (!File.Exists(_savePath))
-                return null;
-
-            var json = File.ReadAllText(_savePath);
-            return JsonSerializer.Deserialize<EquipmentSnapshot>(json, JsonOptions);
+            var json = _fileSystem.ReadAllText(_savePath);
+            return JsonSerializer.Deserialize<EquipmentSnapshot>(json, JsonOptions)
+                ?? throw new InvalidDataException($"Equipment snapshot at '{_savePath}' is empty or invalid.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load equipment: {ex.Message}");
-            return null;
+            RuntimeLog.Error(LogCategory, $"Failed to load equipment snapshot from '{_savePath}'.", ex);
+            throw;
         }
     }
 
@@ -164,12 +180,15 @@ internal sealed class EquipmentPersistenceService
     {
         try
         {
-            if (File.Exists(_savePath))
-                File.Delete(_savePath);
+            if (_fileSystem.FileExists(_savePath))
+            {
+                _fileSystem.DeleteFile(_savePath);
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to clear equipment save: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to clear equipment snapshot at '{_savePath}'.", ex);
+            throw;
         }
     }
 
@@ -178,6 +197,6 @@ internal sealed class EquipmentPersistenceService
     /// </summary>
     public bool HasSave()
     {
-        return File.Exists(_savePath);
+        return _fileSystem.FileExists(_savePath);
     }
 }

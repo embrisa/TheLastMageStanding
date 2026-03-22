@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 
@@ -11,6 +12,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// </summary>
 internal sealed class VfxSystem : IUpdateSystem
 {
+    private const string LogCategory = "Vfx";
     private readonly HashSet<string> _missingAssets = new();
     private EcsWorld _world = null!;
 
@@ -58,7 +60,7 @@ internal sealed class VfxSystem : IUpdateSystem
         // For now, we don't have actual VFX assets, so we'll log once and track missing
         if (!_missingAssets.Contains(evt.EffectName))
         {
-            Console.WriteLine($"[VFX] Missing asset: {evt.EffectName} at {evt.Position} (will not log again)");
+            RuntimeLog.Warning(LogCategory, $"Missing VFX asset '{evt.EffectName}' at {evt.Position}. This warning will only be logged once.");
             _missingAssets.Add(evt.EffectName);
         }
 

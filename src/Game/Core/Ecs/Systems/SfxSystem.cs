@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using TheLastMageStanding.Game.Core.Config;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Events;
 
 namespace TheLastMageStanding.Game.Core.Ecs.Systems;
@@ -13,6 +14,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// </summary>
 internal sealed class SfxSystem : IUpdateSystem, ILoadContentSystem
 {
+    private const string LogCategory = "Audio.Sfx";
     private readonly record struct ActiveSound(SoundEffectInstance Instance, SfxCategory Category, float BaseVolume);
 
     private readonly Dictionary<SfxCategory, float> _categoryBaseVolumes = new()
@@ -96,7 +98,7 @@ internal sealed class SfxSystem : IUpdateSystem, ILoadContentSystem
         {
             if (!_missingAssets.Contains(evt.SoundName))
             {
-                Console.WriteLine($"[SFX] Missing asset: {evt.SoundName} category={evt.Category} (will not log again)");
+                RuntimeLog.Warning(LogCategory, $"Missing SFX asset '{evt.SoundName}' for category {evt.Category}. This warning will only be logged once.");
                 _missingAssets.Add(evt.SoundName);
             }
             return;
@@ -125,7 +127,7 @@ internal sealed class SfxSystem : IUpdateSystem, ILoadContentSystem
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[SFX] Failed to play sound {evt.SoundName}: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to play sound '{evt.SoundName}'.", ex);
             instance.Dispose();
         }
     }
@@ -139,7 +141,7 @@ internal sealed class SfxSystem : IUpdateSystem, ILoadContentSystem
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[SFX] Failed to load {assetName}: {ex.Message}");
+            RuntimeLog.Error(LogCategory, $"Failed to load sound asset '{assetName}'.", ex);
             _missingAssets.Add(key);
         }
     }

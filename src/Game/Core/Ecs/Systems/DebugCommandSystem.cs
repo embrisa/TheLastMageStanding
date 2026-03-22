@@ -5,6 +5,7 @@ using System.Threading;
 using Microsoft.Xna.Framework;
 using TheLastMageStanding.Game.Core.Combat;
 using TheLastMageStanding.Game.Core.Config;
+using TheLastMageStanding.Game.Core.Diagnostics;
 using TheLastMageStanding.Game.Core.Ecs.Components;
 using TheLastMageStanding.Game.Core.Events;
 
@@ -16,6 +17,7 @@ namespace TheLastMageStanding.Game.Core.Ecs.Systems;
 /// </summary>
 internal sealed class DebugCommandSystem : IUpdateSystem
 {
+    private const string LogCategory = "Debug.Command";
     private readonly ConcurrentQueue<string> _pending = new();
     private Thread? _readerThread;
     private EcsWorld _world = null!;
@@ -86,7 +88,7 @@ internal sealed class DebugCommandSystem : IUpdateSystem
             _world.RemoveComponent<ActiveStatusEffects>(player);
             _world.RemoveComponent<StatusEffectModifiers>(player);
             _world.RemoveComponent<StatusEffectVisual>(player);
-            Console.WriteLine("[Debug] Cleared status effects from player.");
+            RuntimeLog.Debug(LogCategory, "Cleared status effects from player.");
             return;
         }
 
@@ -100,13 +102,13 @@ internal sealed class DebugCommandSystem : IUpdateSystem
 
             if (!TryParseStatusType(parts[2], out var type))
             {
-                Console.WriteLine($"[Debug] Unknown status type: '{parts[2]}'");
+                RuntimeLog.Warning(LogCategory, $"Unknown status type '{parts[2]}'.");
                 return;
             }
 
             if (!float.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out var duration))
             {
-                Console.WriteLine($"[Debug] Invalid duration: '{parts[3]}'");
+                RuntimeLog.Warning(LogCategory, $"Invalid duration '{parts[3]}'.");
                 return;
             }
 
@@ -129,7 +131,7 @@ internal sealed class DebugCommandSystem : IUpdateSystem
 
             var pos = _world.TryGetComponent(player, out Position position) ? position.Value : Vector2.Zero;
             _world.EventBus.Publish(new EntityDamagedEvent(Entity.None, player, 0f, info, pos, Faction.Neutral));
-            Console.WriteLine($"[Debug] Applied {type} for {duration:F2}s to player.");
+            RuntimeLog.Debug(LogCategory, $"Applied {type} for {duration:F2}s to player.");
             return;
         }
 
@@ -143,7 +145,7 @@ internal sealed class DebugCommandSystem : IUpdateSystem
 
             if (!TryParseStatusType(parts[2], out var type))
             {
-                Console.WriteLine($"[Debug] Unknown status type: '{parts[2]}'");
+                RuntimeLog.Warning(LogCategory, $"Unknown status type '{parts[2]}'.");
                 return;
             }
 
@@ -168,7 +170,7 @@ internal sealed class DebugCommandSystem : IUpdateSystem
 
             immunities.Flags ^= flag;
             _world.SetComponent(player, immunities);
-            Console.WriteLine($"[Debug] Immunity {type}: {(immunities.IsImmune(type) ? "ON" : "OFF")}");
+            RuntimeLog.Debug(LogCategory, $"Immunity {type}: {(immunities.IsImmune(type) ? "ON" : "OFF")}");
             return;
         }
 
@@ -182,13 +184,13 @@ internal sealed class DebugCommandSystem : IUpdateSystem
 
             if (!TryParseStatusType(parts[2], out var type))
             {
-                Console.WriteLine($"[Debug] Unknown status type: '{parts[2]}'");
+                RuntimeLog.Warning(LogCategory, $"Unknown status type '{parts[2]}'.");
                 return;
             }
 
             if (!float.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out var amount))
             {
-                Console.WriteLine($"[Debug] Invalid resist amount: '{parts[3]}'");
+                RuntimeLog.Warning(LogCategory, $"Invalid resist amount '{parts[3]}'.");
                 return;
             }
 
@@ -217,7 +219,7 @@ internal sealed class DebugCommandSystem : IUpdateSystem
                 _world.SetComponent(player, computed);
             }
 
-            Console.WriteLine($"[Debug] Set resist for {type} mapping to {amount:F0}.");
+            RuntimeLog.Debug(LogCategory, $"Set resist for {type} mapping to {amount:F0}.");
             return;
         }
 
@@ -263,11 +265,6 @@ internal sealed class DebugCommandSystem : IUpdateSystem
 
     private static void PrintUsage()
     {
-        Console.WriteLine("[Debug] Status commands:");
-        Console.WriteLine("  status apply <type> <durationSeconds>");
-        Console.WriteLine("  status clear");
-        Console.WriteLine("  status immune <type>");
-        Console.WriteLine("  status resist <type> <amount>");
-        Console.WriteLine("  types: burn freeze slow shock poison");
+        RuntimeLog.Info(LogCategory, "Status commands: status apply <type> <durationSeconds>, status clear, status immune <type>, status resist <type> <amount>, types: burn freeze slow shock poison");
     }
 }

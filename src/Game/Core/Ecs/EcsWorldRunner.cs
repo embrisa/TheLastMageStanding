@@ -1,61 +1,39 @@
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using TheLastMageStanding.Game.Core.Camera;
-using TheLastMageStanding.Game.Core.Ecs.Config;
-using TheLastMageStanding.Game.Core.Ecs.Components;
-using TheLastMageStanding.Game.Core.Ecs.Systems;
-using TheLastMageStanding.Game.Core.Ecs.Systems.Collision;
-using TheLastMageStanding.Game.Core.Input;
-using TheLastMageStanding.Game.Core.Events;
-using TheLastMageStanding.Game.Core.Config;
 using TheLastMageStanding.Game.Core.Audio;
-using TheLastMageStanding.Game.Core.Perks;
-using TheLastMageStanding.Game.Core.Skills;
+using TheLastMageStanding.Game.Core.Camera;
+using TheLastMageStanding.Game.Core.Campaign;
+using TheLastMageStanding.Game.Core.Config;
+using TheLastMageStanding.Game.Core.Ecs.Components;
+using TheLastMageStanding.Game.Core.Ecs.Config;
+using TheLastMageStanding.Game.Core.Ecs.Runtime;
+using TheLastMageStanding.Game.Core.Ecs.Systems;
+using TheLastMageStanding.Game.Core.Events;
+using TheLastMageStanding.Game.Core.Input;
 using TheLastMageStanding.Game.Core.Loot;
 using TheLastMageStanding.Game.Core.MetaProgression;
-using TheLastMageStanding.Game.Core.SceneState;
+using TheLastMageStanding.Game.Core.Perks;
 using TheLastMageStanding.Game.Core.Progression;
-using TheLastMageStanding.Game.Core.Campaign;
+using TheLastMageStanding.Game.Core.SceneState;
+using TheLastMageStanding.Game.Core.Skills;
 
 namespace TheLastMageStanding.Game.Core.Ecs;
 
-internal sealed class EcsWorldRunner
+internal sealed class EcsWorldRunner : IDisposable
 {
     private readonly EcsWorld _world = new();
     private readonly EventBus _eventBus;
-    private readonly PlayerEntityFactory _playerFactory;
-    private readonly EnemyEntityFactory _enemyFactory;
-    private readonly EnemyWaveConfig _waveConfig;
-    private readonly ProgressionConfig _progressionConfig;
-    private readonly AudioSettingsConfig _audioSettings;
-    private readonly AudioSettingsStore _audioSettingsStore;
-    private readonly VideoSettingsConfig _videoSettings;
-    private readonly VideoSettingsStore _videoSettingsStore;
-    private readonly InputBindingsConfig _inputBindings;
-    private readonly InputBindingsStore _inputBindingsStore;
-    private readonly MusicService _musicService;
-    private readonly SaveSlotService _saveSlotService;
-    private readonly string _slotId;
-    private readonly SfxSystem _sfxSystem;
-    private readonly GameSessionSystem _gameSessionSystem;
-    private readonly HitStopSystem _hitStopSystem;
-    private readonly MetaProgressionManager _metaProgressionManager;
-    private readonly SceneStateService _sceneStateService;
-    private readonly StageRegistry _stageRegistry;
-    private readonly List<IUpdateSystem> _updateSystems;
-    private readonly List<IUpdateSystem> _hubOnlyUpdateSystems;
-    private readonly List<IUpdateSystem> _stageOnlyUpdateSystems;
-    private readonly List<IDrawSystem> _drawSystems;
-    private readonly List<IDrawSystem> _hubOnlyDrawSystems;
-    private readonly List<IDrawSystem> _stageOnlyDrawSystems;
-    private readonly List<IUiDrawSystem> _hubOnlyUiDrawSystems;
-    private readonly List<IUiDrawSystem> _uiDrawSystems;
-    private readonly List<IUiDrawSystem> _screenSpaceUiDrawSystems;
-    private readonly List<ILoadContentSystem> _loadSystems;
+    private readonly ScopedEventBus _worldEventBus;
     private readonly Camera2D _camera;
+    private readonly SceneStateService _sceneStateService;
+    private readonly SessionStateSystem _sessionStateSystem;
+    private readonly PauseMenuSystem _pauseMenuSystem;
+    private readonly HitStopSystem _hitStopSystem;
+    private readonly EcsRuntimeRegistration _runtime;
+    private readonly SlotPersistenceScope _slotPersistence;
+    private readonly List<IDisposable> _disposables = new();
+    private bool _disposed;
 
     public EcsWorldRunner(
         Camera2D camera,
@@ -70,306 +48,120 @@ internal sealed class EcsWorldRunner
         StageRegistry stageRegistry,
         SceneStateService sceneStateService,
         SceneManager sceneManager,
-        SaveSlotService saveSlotService,
-        string slotId)
+        SlotPersistenceScope slotPersistence)
     {
         _eventBus = eventBus;
-        _world.EventBus = _eventBus;
+        _worldEventBus = new ScopedEventBus(_eventBus);
+        _world.EventBus = _worldEventBus;
         _camera = camera;
         _sceneStateService = sceneStateService;
-        _stageRegistry = stageRegistry;
-        _audioSettings = audioSettings;
-        _audioSettingsStore = audioSettingsStore;
-        _videoSettings = videoSettings;
-        _videoSettingsStore = videoSettingsStore;
-        _inputBindings = inputBindings;
-        _inputBindingsStore = inputBindingsStore;
-        _musicService = musicService;
-        _saveSlotService = saveSlotService;
-        _slotId = slotId;
-        _waveConfig = EnemyWaveConfig.Default;
-        _progressionConfig = ProgressionConfig.Default;
+        _slotPersistence = slotPersistence;
+
+        var waveConfig = EnemyWaveConfig.Default;
+        var progressionConfig = ProgressionConfig.Default;
         var perkTreeConfig = PerkTreeConfig.Default;
         var perkService = new PerkService(perkTreeConfig);
-        _playerFactory = new PlayerEntityFactory(_world, _progressionConfig);
-        _enemyFactory = new EnemyEntityFactory(_world);
-        _playerFactory.CreatePlayer(Vector2.Zero);
-
-        // Initialize meta progression system
-        _metaProgressionManager = new MetaProgressionManager(_eventBus, _saveSlotService, _slotId);
-
         var lootConfig = LootDropConfig.CreateDefault();
         var itemRegistry = new ItemRegistry();
         var itemFactory = new ItemFactory(itemRegistry.GetAllDefinitions(), lootConfig);
-
-        _sfxSystem = new SfxSystem(_audioSettings);
-        _gameSessionSystem = new GameSessionSystem(_audioSettings, _audioSettingsStore, _videoSettings, _videoSettingsStore, _inputBindings, _inputBindingsStore, _musicService, _sfxSystem);
-        var enemyRenderSystem = new EnemyRenderSystem();
-        var playerRenderSystem = new PlayerRenderSystem();
-        var hitReactionSystem = new HitReactionSystem();
-        var hitEffectSystem = new HitEffectSystem();
-        var damageNumberSystem = new DamageNumberSystem();
-        var xpOrbRenderSystem = new XpOrbRenderSystem();
-        var collisionSystem = new CollisionSystem();
-        var collisionResolutionSystem = new CollisionResolutionSystem();
-        var knockbackSystem = new KnockbackSystem();
-        var dynamicSeparationSystem = new DynamicSeparationSystem();
-        var contactDamageSystem = new ContactDamageSystem();
-        var meleeHitSystem = new MeleeHitSystem();
-        var projectileRenderSystem = new ProjectileRenderSystem();
-        var collisionDebugRenderSystem = new CollisionDebugRenderSystem();
-        var statusEffectDebugSystem = new StatusEffectDebugSystem();
-        var aiDebugRenderSystem = new AiDebugRenderSystem();
-        var debugInputSystem = new DebugInputSystem(collisionDebugRenderSystem, _enemyFactory, statusEffectDebugSystem, aiDebugRenderSystem);
-        var debugCommandSystem = new DebugCommandSystem();
-        var animationEventSystem = new AnimationEventSystem();
-        var hitStopSystem = new HitStopSystem();
-        _hitStopSystem = hitStopSystem;  // Store reference for hit-stop checks
-        var vfxSystem = new VfxSystem();
-        var telegraphSystem = new TelegraphSystem();
-        var telegraphRenderSystem = new TelegraphRenderSystem();
-        var perkPointGrantSystem = new PerkPointGrantSystem(perkTreeConfig);
-        var perkEffectApplicationSystem = new PerkEffectApplicationSystem(perkService);
-        var perkAutoSaveSystem = new PerkAutoSaveSystem();
-        var perkTreeUISystem = new PerkTreeUISystem(perkTreeConfig, perkService);
-        var statusEffectApplicationSystem = new StatusEffectApplicationSystem();
-        var statusEffectTickSystem = new StatusEffectTickSystem();
-        var statusEffectVfxSystem = new StatusEffectVfxSystem();
-        var eliteModifierSystem = new EliteModifierSystem();
-        var statRecalculationSystem = new StatRecalculationSystem();
-        var aiChargerSystem = new AiChargerSystem();
-        var aiProtectorSystem = new AiProtectorSystem();
-        var aiBufferSystem = new AiBufferSystem();
-        var buffTickSystem = new BuffTickSystem();
-        var lootDropSystem = new LootDropSystem(itemFactory, lootConfig);
-        var lootPickupSystem = new LootPickupSystem();
-
-        // Skill system
         var skillRegistry = new SkillRegistry();
-        var playerSkillInputSystem = new PlayerSkillInputSystem();
-        var skillCastSystem = new SkillCastSystem(skillRegistry);
-        var skillExecutionSystem = new SkillExecutionSystem(skillRegistry);
-        var skillHotbarRenderer = new Rendering.UI.SkillHotbarRenderer(skillRegistry);
         var levelUpChoiceGenerator = new LevelUpChoiceGenerator(LevelUpChoiceConfig.Default, skillRegistry);
-        var levelUpChoiceSystem = new LevelUpChoiceSystem(levelUpChoiceGenerator);
-        var dashInputSystem = new DashInputSystem();
-        var dashExecutionSystem = new DashExecutionSystem(hitStopSystem);
-        var dashMovementSystem = new DashMovementSystem();
 
-        // Hub-specific systems
-        var profileService = new PlayerProfileService(new DefaultFileSystem(), _saveSlotService.GetSlotPath(_slotId));
-        var campaignProgressionService = new CampaignProgressionService(_stageRegistry, profileService);
-        var stageSelectionUI = new StageSelectionUISystem(_stageRegistry, sceneManager, campaignProgressionService);
-        var runHistoryUI = new RunHistoryUISystem(_metaProgressionManager.HistoryService, _sceneStateService);
-        var pauseMenuUiSystem = new PauseMenuMyraSystem(_sceneStateService);
-        var levelUpChoiceUiSystem = new LevelUpChoiceMyraSystem(_sceneStateService);
-        var inventoryUiSystem = new InventoryUiSystem();
-        var proximityInteractionSystem = new ProximityInteractionSystem();
-        var interactionInputSystem = new InteractionInputSystem();
-        var hubMenuSystem = new HubMenuSystem(_sceneStateService);
-        var proximityPromptRenderSystem = new ProximityPromptRenderSystem();
-        var npcRenderSystem = new NpcRenderSystem();
-        var equippedSkillsSyncSystem = new EquippedSkillsProfileSyncSystem(_sceneStateService, _metaProgressionManager);
-        var skillSelectionUI = new SkillSelectionUISystem(_sceneStateService, _metaProgressionManager, skillRegistry);
+        var playerFactory = new PlayerEntityFactory(_world, progressionConfig);
+        var enemyFactory = new EnemyEntityFactory(_world);
+        playerFactory.CreatePlayer(Vector2.Zero);
 
-        // Stage completion system
-        var stageRunInitializationSystem = new StageRunInitializationSystem(_sceneStateService, _stageRegistry);
-        var stageCompletionSystem = new StageCompletionSystem(sceneManager, _sceneStateService, campaignProgressionService);
-        var bossPhaseSystem = new BossPhaseSystem(_stageRegistry);
+        var metaProgressionManager = new MetaProgressionManager(_worldEventBus, _slotPersistence);
+        var profileService = _slotPersistence.PlayerProfile;
+        var campaignProgressionService = new CampaignProgressionService(stageRegistry, profileService);
 
-        // Stage-only systems (combat, waves, etc)
-        _stageOnlyUpdateSystems =
-        [
-            _gameSessionSystem,  // Run timer, pause menu, wave tracking (stage-only)
-            stageRunInitializationSystem, // Sync stage run parameters
-            stageCompletionSystem,  // Handle stage completion and transitions
-            dashInputSystem,
-            dashExecutionSystem,
-            dashMovementSystem,
-            playerSkillInputSystem,  // Convert attack input to skill cast requests
-            skillCastSystem,  // Validate and gate skill casts
-            skillExecutionSystem,  // Execute completed skill casts
-            hitReactionSystem, // Reduce health before status application
-            statusEffectApplicationSystem,  // Apply statuses from hits
-            statusEffectTickSystem,  // Tick DoTs/debuffs
-            eliteModifierSystem, // Elite modifier runtime effects
-            statRecalculationSystem,  // Recalculate stats before combat systems
-            new WaveSchedulerSystem(_waveConfig),
-            new SpawnSystem(_enemyFactory),
-            bossPhaseSystem,
-            new AiSeekSystem(),
-            new RangedAttackSystem(),  // Handle ranged enemy AI
-            aiChargerSystem,
-            aiProtectorSystem,
-            aiBufferSystem,
-            buffTickSystem,
-            new ProjectileUpdateSystem(),  // Update projectile lifetimes
-            knockbackSystem,  // Apply knockback before collision resolution
-            dynamicSeparationSystem,  // Separate overlapping dynamic entities
-            contactDamageSystem,  // Handle contact damage with cooldowns
-            meleeHitSystem,  // Handle attack hitbox collisions
-            new ProjectileHitSystem(),  // Handle projectile collisions
-            animationEventSystem,  // Process animation events and spawn hitboxes
-            new CombatSystem(),
-            hitStopSystem,  // Handle hit-stop timing
-            vfxSystem,  // Process VFX spawns
-            statusEffectVfxSystem,  // Status VFX/SFX hooks
-            telegraphSystem,  // Update telegraph lifetimes
-            hitEffectSystem,
-            new XpOrbSpawnSystem(_progressionConfig),
-            new XpCollectionSystem(_progressionConfig),
-            lootDropSystem,
-            lootPickupSystem,
-            new LevelUpSystem(levelUpChoiceGenerator),
-            perkPointGrantSystem,
-            perkEffectApplicationSystem,
-        ];
+        var sfxSystem = new SfxSystem(audioSettings);
+        var settingsService = new RuntimeSettingsService(
+            audioSettings,
+            audioSettingsStore,
+            videoSettings,
+            videoSettingsStore,
+            inputBindings,
+            inputBindingsStore,
+            musicService,
+            sfxSystem);
+        _sessionStateSystem = new SessionStateSystem();
+        _pauseMenuSystem = new PauseMenuSystem();
+        _hitStopSystem = new HitStopSystem();
+        var settingsMenuSystem = new SettingsMenuSystem(settingsService);
+        var sessionNotificationSystem = new SessionNotificationSystem();
 
-        // Hub-only systems
-        _hubOnlyUpdateSystems =
-        [
-            stageSelectionUI,
-            skillSelectionUI,
-            runHistoryUI,
-            proximityInteractionSystem,
-            interactionInputSystem,
-            hubMenuSystem,
-        ];
+        var context = new EcsRuntimeModuleContext(
+            _world,
+            _eventBus,
+            _camera,
+            sceneStateService,
+            sceneManager,
+            stageRegistry,
+            playerFactory,
+            enemyFactory,
+            waveConfig,
+            progressionConfig,
+            audioSettings,
+            audioSettingsStore,
+            videoSettings,
+            videoSettingsStore,
+            inputBindings,
+            inputBindingsStore,
+            musicService,
+            _slotPersistence,
+            metaProgressionManager,
+            campaignProgressionService,
+            perkTreeConfig,
+            perkService,
+            lootConfig,
+            itemFactory,
+            skillRegistry,
+            levelUpChoiceGenerator,
+            _sessionStateSystem,
+            _pauseMenuSystem,
+            settingsMenuSystem,
+            sessionNotificationSystem,
+            _hitStopSystem,
+            sfxSystem);
 
-        // Common systems (run in both hub and stage)
-        _updateSystems =
-        [
-            debugInputSystem,  // Handle debug input early
-            debugCommandSystem,  // Optional console-driven debug commands
-            new InputSystem(),  // Read input (WASD, etc.)
-            equippedSkillsSyncSystem,
-            levelUpChoiceSystem,  // Level-up choice input should work while paused
-            new MovementIntentSystem(),  // Convert input to velocity
-            new MovementSystem(),  // Apply velocity to position
-            new CameraFollowSystem(),  // Camera follows player
-            collisionResolutionSystem,  // Resolve collisions before applying movement
-            collisionSystem,  // Detect collisions after resolution
-            _sfxSystem,  // Process SFX playback
-            enemyRenderSystem,
-            playerRenderSystem,
-            damageNumberSystem,
-            perkAutoSaveSystem,
-            perkTreeUISystem,
-            inventoryUiSystem,  // Allow inventory viewing in both hub and stage
-            new CleanupSystem(),
-            new IntentResetSystem(),
-        ];
+        _runtime = EcsRuntimeComposer.Compose(context);
 
-        _stageOnlyDrawSystems =
-        [
-            enemyRenderSystem,
-            playerRenderSystem,
-            new RenderDebugSystem(),
-            statusEffectDebugSystem,
-            aiDebugRenderSystem,
-            projectileRenderSystem,
-            telegraphRenderSystem,  // Draw telegraphs and VFX
-            damageNumberSystem,
-            xpOrbRenderSystem,
-            collisionDebugRenderSystem,  // Draw collision debug last
-        ];
-
-        _hubOnlyDrawSystems =
-        [
-            npcRenderSystem,
-            proximityPromptRenderSystem,
-        ];
-
-        // Common draw systems
-        _drawSystems =
-        [
-            playerRenderSystem,
-            damageNumberSystem,
-        ];
-
-        _hubOnlyUiDrawSystems =
-        [
-            hubMenuSystem,
-        ];
-
-        _screenSpaceUiDrawSystems =
-        [
-            inventoryUiSystem,
-            stageSelectionUI,
-            skillSelectionUI,
-            runHistoryUI,
-            pauseMenuUiSystem,
-            levelUpChoiceUiSystem,
-        ];
-
-        _uiDrawSystems =
-        [
-            new HudRenderSystem(),
-            skillHotbarRenderer,
-            perkTreeUISystem,
-        ];
-
-        _loadSystems =
-            _updateSystems.OfType<ILoadContentSystem>()
-                .Concat(_hubOnlyUpdateSystems.OfType<ILoadContentSystem>())
-                .Concat(_stageOnlyUpdateSystems.OfType<ILoadContentSystem>())
-                .Concat(_drawSystems.OfType<ILoadContentSystem>())
-                .Concat(_hubOnlyDrawSystems.OfType<ILoadContentSystem>())
-                .Concat(_stageOnlyDrawSystems.OfType<ILoadContentSystem>())
-                .Concat(_hubOnlyUiDrawSystems.OfType<ILoadContentSystem>())
-                .Concat(_screenSpaceUiDrawSystems.OfType<ILoadContentSystem>())
-                .Concat(_uiDrawSystems.OfType<ILoadContentSystem>())
-                .Distinct()
-                .ToList();
-
-        // Initialize each system once even if it appears in multiple lists.
-        var initialized = new HashSet<IEcsSystem>(ReferenceEqualityComparer.Instance);
-        InitializeOnce(_updateSystems);
-        InitializeOnce(_hubOnlyUpdateSystems);
-        InitializeOnce(_stageOnlyUpdateSystems);
-        InitializeOnce(_drawSystems);
-        InitializeOnce(_hubOnlyDrawSystems);
-        InitializeOnce(_stageOnlyDrawSystems);
-        InitializeOnce(_hubOnlyUiDrawSystems);
-        InitializeOnce(_uiDrawSystems);
-        InitializeOnce(_screenSpaceUiDrawSystems);
-
-        void InitializeOnce(IEnumerable<IEcsSystem> systems)
+        foreach (var system in _runtime.EnumerateSystemsForInitialization())
         {
-            foreach (var system in systems)
+            system.Initialize(_world);
+            if (system is IDisposable disposable)
             {
-                if (initialized.Add(system))
-                {
-                    system.Initialize(_world);
-                }
+                _disposables.Add(disposable);
             }
         }
 
-        // Create session entity with initial state
-        var sessionEntity = _world.CreateEntity();
-        _world.SetComponent(sessionEntity, new GameSession(_waveConfig.WaveIntervalSeconds));
+        _disposables.Add(metaProgressionManager);
 
-        // Publish run started event for meta progression
+        var sessionEntity = _world.CreateEntity();
+        _world.SetComponent(sessionEntity, new GameSession(waveConfig.WaveIntervalSeconds));
+
         _eventBus.Publish(new RunStartedEvent());
     }
 
-    public bool ExitRequested => _gameSessionSystem.ExitRequested;
+    public bool ExitRequested => _pauseMenuSystem.ExitRequested;
 
-    /// <summary>
-    /// Exposes the ECS world for map collision loading and other external integrations.
-    /// </summary>
     public EcsWorld World => _world;
 
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {
-        foreach (var loadSystem in _loadSystems)
+        ThrowIfDisposed();
+
+        foreach (var system in _runtime.LoadContent.Systems)
         {
-            loadSystem.LoadContent(_world, graphicsDevice, content);
+            system.LoadContent(_world, graphicsDevice, content);
         }
     }
 
     public void SetPlayerPosition(Vector2 position)
     {
+        ThrowIfDisposed();
+
         _world.ForEach<PlayerTag, Position>(
             (Entity entity, ref PlayerTag _, ref Position playerPosition) =>
             {
@@ -384,19 +176,18 @@ internal sealed class EcsWorldRunner
             });
     }
 
-    /// <summary>
-    /// Clears stage-only state when starting a fresh run (stage reload/restart).
-    /// </summary>
     public void ResetStageStateForNewRun()
     {
-        _gameSessionSystem.ResetForNewStage(_world);
+        ThrowIfDisposed();
+
+        _sessionStateSystem.ResetForNewStage(_world);
     }
 
     public void Update(GameTime gameTime, InputState input)
     {
-        // Transform mouse screen position to world space
-        var mouseWorldPosition = _camera.ScreenToWorld(input.MouseScreenPosition);
+        ThrowIfDisposed();
 
+        var mouseWorldPosition = _camera.ScreenToWorld(input.MouseScreenPosition);
         var context = new EcsUpdateContext(
             gameTime,
             (float)gameTime.ElapsedGameTime.TotalSeconds,
@@ -404,63 +195,33 @@ internal sealed class EcsWorldRunner
             _camera,
             mouseWorldPosition);
 
-        var isInHub = _sceneStateService.IsInHub();
-        var isInStage = _sceneStateService.IsInStage();
+        RunUpdatePhase(_runtime.Update.Common, context);
 
-        // Always run common systems
-        foreach (var system in _updateSystems)
+        if (_sceneStateService.IsInHub())
         {
-            system.Update(_world, context);
+            RunUpdatePhase(_runtime.Update.Hub, context);
         }
-
-        // Run scene-specific systems
-        if (isInHub)
+        else if (_sceneStateService.IsInStage())
         {
-            foreach (var system in _hubOnlyUpdateSystems)
-            {
-                system.Update(_world, context);
-            }
-        }
-        else if (isInStage)
-        {
-            // Always run session system to handle pause/resume/restart
-            _gameSessionSystem.Update(_world, context);
+            RunUpdatePhase(_runtime.StageSessionUpdate.Stage, context);
 
-            var sessionState = GetSessionState();
-            if (sessionState == GameState.Playing)
+            if (GetSessionState() == GameState.Playing)
             {
-                // Run hit-stop system first to track timing
-                _hitStopSystem.Update(_world, context);
-
-                // Apply camera shake from hit-stop system
+                RunUpdatePhase(_runtime.StagePreGameplayUpdate.Stage, context);
                 _camera.ShakeOffset = _hitStopSystem.CameraShakeOffset;
 
-                // If hit-stopped, only update certain systems (VFX, SFX, visual feedback)
                 if (_hitStopSystem.IsHitStopped())
                 {
-                    // During hit-stop, only update visual/audio feedback systems
-                    // Skip movement, combat logic, etc.
-                    foreach (var system in _stageOnlyUpdateSystems)
-                    {
-                        // Allow VFX, SFX, visual effects to update during hit-stop
-                        if (system is VfxSystem || system is SfxSystem ||
-                            system is HitEffectSystem || system is TelegraphSystem)
-                        {
-                            system.Update(_world, context);
-                        }
-                    }
+                    RunUpdatePhase(_runtime.StageHitStopFeedbackUpdate.Stage, context);
                 }
                 else
                 {
-                    // Normal update - run all stage systems except hit-stop (already run)
-                    foreach (var system in _stageOnlyUpdateSystems)
-                    {
-                        if (system != _hitStopSystem)
-                        {
-                            system.Update(_world, context);
-                        }
-                    }
+                    RunUpdatePhase(_runtime.StageGameplayUpdate.Stage, context);
                 }
+            }
+            else
+            {
+                _camera.ShakeOffset = Vector2.Zero;
             }
         }
 
@@ -469,58 +230,56 @@ internal sealed class EcsWorldRunner
 
     public void Draw(SpriteBatch spriteBatch)
     {
+        ThrowIfDisposed();
+
         var context = new EcsDrawContext(spriteBatch, _camera);
-        var isInHub = _sceneStateService.IsInHub();
-        var isInStage = _sceneStateService.IsInStage();
 
-        // Draw common systems
-        foreach (var system in _drawSystems)
-        {
-            system.Draw(_world, context);
-        }
+        RunDrawPhase(_runtime.Draw.Common, context);
 
-        // Draw scene-specific systems
-        if (isInHub)
+        if (_sceneStateService.IsInHub())
         {
-            foreach (var system in _hubOnlyDrawSystems)
-            {
-                system.Draw(_world, context);
-            }
+            RunDrawPhase(_runtime.Draw.Hub, context);
         }
-        else if (isInStage)
+        else if (_sceneStateService.IsInStage())
         {
-            foreach (var system in _stageOnlyDrawSystems)
-            {
-                system.Draw(_world, context);
-            }
+            RunDrawPhase(_runtime.Draw.Stage, context);
         }
     }
 
     public void DrawUI(SpriteBatch spriteBatch)
     {
-        var context = new EcsDrawContext(spriteBatch, _camera);
-        var isInHub = _sceneStateService.IsInHub();
+        ThrowIfDisposed();
 
-        if (isInHub)
+        var context = new EcsDrawContext(spriteBatch, _camera);
+
+        if (_sceneStateService.IsInHub())
         {
-            foreach (var system in _hubOnlyUiDrawSystems)
-            {
-                system.Draw(_world, context);
-            }
+            RunUiDrawPhase(_runtime.UiDraw.Hub, context);
         }
 
-        foreach (var system in _uiDrawSystems)
+        RunUiDrawPhase(_runtime.UiDraw.Common, context);
+
+        if (_sceneStateService.IsInStage())
         {
-            system.Draw(_world, context);
+            RunUiDrawPhase(_runtime.UiDraw.Stage, context);
         }
     }
 
     public void DrawScreenSpaceUI(SpriteBatch spriteBatch)
     {
+        ThrowIfDisposed();
+
         var context = new EcsDrawContext(spriteBatch, _camera);
-        foreach (var system in _screenSpaceUiDrawSystems)
+
+        RunUiDrawPhase(_runtime.ScreenSpaceUiDraw.Common, context);
+
+        if (_sceneStateService.IsInHub())
         {
-            system.Draw(_world, context);
+            RunUiDrawPhase(_runtime.ScreenSpaceUiDraw.Hub, context);
+        }
+        else if (_sceneStateService.IsInStage())
+        {
+            RunUiDrawPhase(_runtime.ScreenSpaceUiDraw.Stage, context);
         }
     }
 
@@ -535,23 +294,83 @@ internal sealed class EcsWorldRunner
         return state;
     }
 
-    /// <summary>
-    /// Spawns NPC entities from the hub map after map loading.
-    /// Should be called when entering the hub scene.
-    /// </summary>
     public void SpawnHubNpcs(MonoGame.Extended.Tiled.TiledMap hubMap)
     {
+        ThrowIfDisposed();
+
         var npcSpawnSystem = new NpcSpawnSystem(hubMap);
         npcSpawnSystem.Initialize(_world);
 
-        // Run once to spawn NPCs
         var dummyContext = new EcsUpdateContext(
-            new Microsoft.Xna.Framework.GameTime(),
+            new GameTime(),
             0f,
-            new Input.InputState(),
+            new InputState(),
             _camera,
-            Microsoft.Xna.Framework.Vector2.Zero
-        );
+            Vector2.Zero);
         npcSpawnSystem.Update(_world, dummyContext);
+    }
+
+    private void RunUpdatePhase(System.Collections.Generic.IEnumerable<IUpdateSystem> systems, in EcsUpdateContext context)
+    {
+        foreach (var system in systems)
+        {
+            system.Update(_world, context);
+        }
+    }
+
+    private void RunDrawPhase(System.Collections.Generic.IEnumerable<IDrawSystem> systems, in EcsDrawContext context)
+    {
+        foreach (var system in systems)
+        {
+            system.Draw(_world, context);
+        }
+    }
+
+    private void RunUiDrawPhase(System.Collections.Generic.IEnumerable<IUiDrawSystem> systems, in EcsDrawContext context)
+    {
+        foreach (var system in systems)
+        {
+            system.Draw(_world, context);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _worldEventBus.Dispose();
+
+        Exception? disposeError = null;
+        for (var i = _disposables.Count - 1; i >= 0; i--)
+        {
+            try
+            {
+                _disposables[i].Dispose();
+            }
+            catch (Exception ex)
+            {
+                disposeError ??= ex;
+            }
+        }
+
+        _disposables.Clear();
+
+        if (disposeError != null)
+        {
+            throw disposeError;
+        }
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(EcsWorldRunner));
+        }
     }
 }

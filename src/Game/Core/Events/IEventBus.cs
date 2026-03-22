@@ -19,4 +19,9 @@ public interface IEventBus
     /// Unsubscribes from an event type.
     /// </summary>
     void Unsubscribe<T>(Action<T> handler) where T : struct;
+
+    /// <summary>
+    /// Processes all queued events for the current frame.
+    /// </summary>
+    void ProcessEvents();
 }
